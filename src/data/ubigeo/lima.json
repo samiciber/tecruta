@@ -1,0 +1,225 @@
+{
+  "provincias": [
+    {
+      "nombre": "Barranca",
+      "distritos": [
+        "Barranca",
+        "Paramonga",
+        "Pativilca",
+        "Supe",
+        "Supe Puerto"
+      ]
+    },
+    {
+      "nombre": "Cajatambo",
+      "distritos": [
+        "Cajatambo",
+        "Copa",
+        "Gorgor",
+        "Huancapon",
+        "Manas"
+      ]
+    },
+    {
+      "nombre": "Canta",
+      "distritos": [
+        "Arahuay",
+        "Canta",
+        "Huamantanga",
+        "Huaros",
+        "Lachaqui",
+        "San Buenaventura",
+        "Santa Rosa de Quives"
+      ]
+    },
+    {
+      "nombre": "Cañete",
+      "distritos": [
+        "Asia",
+        "Calango",
+        "Cerro Azul",
+        "Chilca",
+        "Coayllo",
+        "Imperial",
+        "Lunahuana",
+        "Mala",
+        "Nuevo Imperial",
+        "Pacaran",
+        "Quilmana",
+        "San Antonio",
+        "San Luis",
+        "San Vicente de Cañete",
+        "Santa Cruz de Flores",
+        "Zúñiga"
+      ]
+    },
+    {
+      "nombre": "Huaral",
+      "distritos": [
+        "Atavillos Alto",
+        "Atavillos Bajo",
+        "Aucallama",
+        "Chancay",
+        "Huaral",
+        "Ihuari",
+        "Lampian",
+        "Pacaraos",
+        "San Miguel de Acos",
+        "Santa Cruz de Andamarca",
+        "Sumbilca",
+        "Veintisiete de Noviembre"
+      ]
+    },
+    {
+      "nombre": "Huarochirí",
+      "distritos": [
+        "Antioquia",
+        "Callahuanca",
+        "Carampoma",
+        "Chicla",
+        "Cuenca",
+        "Huachupampa",
+        "Huanza",
+        "Huarochiri",
+        "Lahuaytambo",
+        "Langa",
+        "Laraos",
+        "Mariatana",
+        "Matucana",
+        "Ricardo Palma",
+        "San Andrés de Tupicocha",
+        "San Antonio",
+        "San Bartolomé",
+        "San Damian",
+        "San Juan de Iris",
+        "San Juan de Tantaranche",
+        "San Lorenzo de Quinti",
+        "San Mateo",
+        "San Mateo de Otao",
+        "San Pedro de Casta",
+        "San Pedro de Huancayre",
+        "Sangallaya",
+        "Santa Cruz de Cocachacra",
+        "Santa Eulalia",
+        "Santiago de Anchucaya",
+        "Santiago de Tuna",
+        "Santo Domingo de Los Olleros",
+        "Surco"
+      ]
+    },
+    {
+      "nombre": "Huaura",
+      "distritos": [
+        "Ambar",
+        "Caleta de Carquin",
+        "Checras",
+        "Huacho",
+        "Hualmay",
+        "Huaura",
+        "Leoncio Prado",
+        "Paccho",
+        "Santa Leonor",
+        "Santa María",
+        "Sayan",
+        "Vegueta"
+      ]
+    },
+    {
+      "nombre": "Lima",
+      "distritos": [
+        "Ancón",
+        "Ate",
+        "Barranco",
+        "Breña",
+        "Carabayllo",
+        "Chaclacayo",
+        "Chorrillos",
+        "Cieneguilla",
+        "Comas",
+        "El Agustino",
+        "Independencia",
+        "Jesús María",
+        "La Molina",
+        "La Victoria",
+        "Lima",
+        "Lince",
+        "Los Olivos",
+        "Lurigancho",
+        "Lurin",
+        "Magdalena del Mar",
+        "Miraflores",
+        "Pachacamac",
+        "Pucusana",
+        "Pueblo Libre",
+        "Puente Piedra",
+        "Punta Hermosa",
+        "Punta Negra",
+        "Rímac",
+        "San Bartolo",
+        "San Borja",
+        "San Isidro",
+        "San Juan de Lurigancho",
+        "San Juan de Miraflores",
+        "San Luis",
+        "San Martín de Porres",
+        "San Miguel",
+        "Santa Anita",
+        "Santa María del Mar",
+        "Santa Rosa",
+        "Santiago de Surco",
+        "Surquillo",
+        "Villa El Salvador",
+        "Villa María del Triunfo"
+      ]
+    },
+    {
+      "nombre": "Oyón",
+      "distritos": [
+        "Andajes",
+        "Caujul",
+        "Cochamarca",
+        "Navan",
+        "Oyon",
+        "Pachangara"
+      ]
+    },
+    {
+      "nombre": "Yauyos",
+      "distritos": [
+        "Alis",
+        "Allauca",
+        "Ayaviri",
+        "Azángaro",
+        "Cacra",
+        "Carania",
+        "Catahuasi",
+        "Chocos",
+        "Cochas",
+        "Colonia",
+        "Hongos",
+        "Huampara",
+        "Huancaya",
+        "Huangascar",
+        "Huantan",
+        "Huañec",
+        "Laraos",
+        "Lincha",
+        "Madean",
+        "Miraflores",
+        "Omas",
+        "Putinza",
+        "Quinches",
+        "Quinocay",
+        "San Joaquín",
+        "San Pedro de Pilas",
+        "Tanta",
+        "Tauripampa",
+        "Tomas",
+        "Tupe",
+        "Vitis",
+        "Viñac",
+        "Yauyos"
+      ]
+    }
+  ]
+}

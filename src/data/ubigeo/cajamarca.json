@@ -1,0 +1,196 @@
+{
+  "provincias": [
+    {
+      "nombre": "Cajabamba",
+      "distritos": [
+        "Cachachi",
+        "Cajabamba",
+        "Condebamba",
+        "Sitacocha"
+      ]
+    },
+    {
+      "nombre": "Cajamarca",
+      "distritos": [
+        "Asunción",
+        "Cajamarca",
+        "Chetilla",
+        "Cospan",
+        "Encañada",
+        "Jesús",
+        "Llacanora",
+        "Los Baños del Inca",
+        "Magdalena",
+        "Matara",
+        "Namora",
+        "San Juan"
+      ]
+    },
+    {
+      "nombre": "Celendín",
+      "distritos": [
+        "Celendín",
+        "Chumuch",
+        "Cortegana",
+        "Huasmin",
+        "Jorge Chávez",
+        "José Gálvez",
+        "La Libertad de Pallan",
+        "Miguel Iglesias",
+        "Oxamarca",
+        "Sorochuco",
+        "Sucre",
+        "Utco"
+      ]
+    },
+    {
+      "nombre": "Chota",
+      "distritos": [
+        "Anguia",
+        "Chadin",
+        "Chalamarca",
+        "Chiguirip",
+        "Chimban",
+        "Choropampa",
+        "Chota",
+        "Cochabamba",
+        "Conchan",
+        "Huambos",
+        "Lajas",
+        "Llama",
+        "Miracosta",
+        "Paccha",
+        "Pion",
+        "Querocoto",
+        "San Juan de Licupis",
+        "Tacabamba",
+        "Tocmoche"
+      ]
+    },
+    {
+      "nombre": "Contumazá",
+      "distritos": [
+        "Chilete",
+        "Contumaza",
+        "Cupisnique",
+        "Guzmango",
+        "San Benito",
+        "Santa Cruz de Toledo",
+        "Tantarica",
+        "Yonan"
+      ]
+    },
+    {
+      "nombre": "Cutervo",
+      "distritos": [
+        "Callayuc",
+        "Choros",
+        "Cujillo",
+        "Cutervo",
+        "La Ramada",
+        "Pimpingos",
+        "Querocotillo",
+        "San Andrés de Cutervo",
+        "San Juan de Cutervo",
+        "San Luis de Lucma",
+        "Santa Cruz",
+        "Santo Domingo de la Capilla",
+        "Santo Tomas",
+        "Socota",
+        "Toribio Casanova"
+      ]
+    },
+    {
+      "nombre": "Hualgayoc",
+      "distritos": [
+        "Bambamarca",
+        "Chugur",
+        "Hualgayoc"
+      ]
+    },
+    {
+      "nombre": "Jaén",
+      "distritos": [
+        "Bellavista",
+        "Chontali",
+        "Colasay",
+        "Huabal",
+        "Jaén",
+        "Las Pirias",
+        "Pomahuaca",
+        "Pucara",
+        "Sallique",
+        "San Felipe",
+        "San José del Alto",
+        "Santa Rosa"
+      ]
+    },
+    {
+      "nombre": "San Ignacio",
+      "distritos": [
+        "Chirinos",
+        "Huarango",
+        "La Coipa",
+        "Namballe",
+        "San Ignacio",
+        "San José de Lourdes",
+        "Tabaconas"
+      ]
+    },
+    {
+      "nombre": "San Marcos",
+      "distritos": [
+        "Chancay",
+        "Eduardo Villanueva",
+        "Gregorio Pita",
+        "Ichocan",
+        "José Manuel Quiroz",
+        "José Sabogal",
+        "Pedro Gálvez"
+      ]
+    },
+    {
+      "nombre": "San Miguel",
+      "distritos": [
+        "Bolívar",
+        "Calquis",
+        "Catilluc",
+        "El Prado",
+        "La Florida",
+        "Llapa",
+        "Nanchoc",
+        "Niepos",
+        "San Gregorio",
+        "San Miguel",
+        "San Silvestre de Cochan",
+        "Tongod",
+        "Unión Agua Blanca"
+      ]
+    },
+    {
+      "nombre": "San Pablo",
+      "distritos": [
+        "San Bernardino",
+        "San Luis",
+        "San Pablo",
+        "Tumbaden"
+      ]
+    },
+    {
+      "nombre": "Santa Cruz",
+      "distritos": [
+        "Andabamba",
+        "Catache",
+        "Chancayabaños",
+        "La Esperanza",
+        "Ninabamba",
+        "Pulan",
+        "Santa Cruz",
+        "Saucepampa",
+        "Sexi",
+        "Uticyacu",
+        "Yauyucan"
+      ]
+    }
+  ]
+}

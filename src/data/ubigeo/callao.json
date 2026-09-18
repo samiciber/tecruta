@@ -1,0 +1,16 @@
+{
+  "provincias": [
+    {
+      "nombre": "Callao",
+      "distritos": [
+        "Bellavista",
+        "Callao",
+        "Carmen de la Legua Reynoso",
+        "La Perla",
+        "La Punta",
+        "Mi Perú",
+        "Ventanilla"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "provincias": [
+    {
+      "nombre": "Acomayo",
+      "distritos": [
+        "Acomayo",
+        "Acopia",
+        "Acos",
+        "Mosoc Llacta",
+        "Pomacanchi",
+        "Rondocan",
+        "Sangarara"
+      ]
+    },
+    {
+      "nombre": "Anta",
+      "distritos": [
+        "Ancahuasi",
+        "Anta",
+        "Cachimayo",
+        "Chinchaypujio",
+        "Huarocondo",
+        "Limatambo",
+        "Mollepata",
+        "Pucyura",
+        "Zurite"
+      ]
+    },
+    {
+      "nombre": "Calca",
+      "distritos": [
+        "Calca",
+        "Coya",
+        "Lamay",
+        "Lares",
+        "Pisac",
+        "San Salvador",
+        "Taray",
+        "Yanatile"
+      ]
+    },
+    {
+      "nombre": "Canas",
+      "distritos": [
+        "Checca",
+        "Kunturkanki",
+        "Langui",
+        "Layo",
+        "Pampamarca",
+        "Quehue",
+        "Tupac Amaru",
+        "Yanaoca"
+      ]
+    },
+    {
+      "nombre": "Canchis",
+      "distritos": [
+        "Checacupe",
+        "Combapata",
+        "Marangani",
+        "Pitumarca",
+        "San Pablo",
+        "San Pedro",
+        "Sicuani",
+        "Tinta"
+      ]
+    },
+    {
+      "nombre": "Chumbivilcas",
+      "distritos": [
+        "Capacmarca",
+        "Chamaca",
+        "Colquemarca",
+        "Livitaca",
+        "Llusco",
+        "Quiñota",
+        "Santo Tomas",
+        "Velille"
+      ]
+    },
+    {
+      "nombre": "Cusco",
+      "distritos": [
+        "Ccorca",
+        "Cusco",
+        "Poroy",
+        "San Jerónimo",
+        "San Sebastian",
+        "Santiago",
+        "Saylla",
+        "Wanchaq"
+      ]
+    },
+    {
+      "nombre": "Espinar",
+      "distritos": [
+        "Alto Pichigua",
+        "Condoroma",
+        "Coporaque",
+        "Espinar",
+        "Ocoruro",
+        "Pallpata",
+        "Pichigua",
+        "Suyckutambo"
+      ]
+    },
+    {
+      "nombre": "La Convención",
+      "distritos": [
+        "Echarate",
+        "Huayopata",
+        "Inkawasi",
+        "Kimbiri",
+        "Maranura",
+        "Megantoni",
+        "Ocobamba",
+        "Pichari",
+        "Quellouno",
+        "Santa Ana",
+        "Santa Teresa",
+        "Vilcabamba",
+        "Villa Kintiarina",
+        "Villa Virgen"
+      ]
+    },
+    {
+      "nombre": "Paruro",
+      "distritos": [
+        "Accha",
+        "Ccapi",
+        "Colcha",
+        "Huanoquite",
+        "Omachaç",
+        "Paccaritambo",
+        "Paruro",
+        "Pillpinto",
+        "Yaurisque"
+      ]
+    },
+    {
+      "nombre": "Paucartambo",
+      "distritos": [
+        "Caicay",
+        "Challabamba",
+        "Colquepata",
+        "Huancarani",
+        "Kosñipata",
+        "Paucartambo"
+      ]
+    },
+    {
+      "nombre": "Quispicanchi",
+      "distritos": [
+        "Andahuaylillas",
+        "Camanti",
+        "Ccarhuayo",
+        "Ccatca",
+        "Cusipata",
+        "Huaro",
+        "Lucre",
+        "Marcapata",
+        "Ocongate",
+        "Oropesa",
+        "Quiquijana",
+        "Urcos"
+      ]
+    },
+    {
+      "nombre": "Urubamba",
+      "distritos": [
+        "Chinchero",
+        "Huayllabamba",
+        "Machupicchu",
+        "Maras",
+        "Ollantaytambo",
+        "Urubamba",
+        "Yucay"
+      ]
+    }
+  ]
+}

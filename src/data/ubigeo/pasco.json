@@ -1,0 +1,48 @@
+{
+  "provincias": [
+    {
+      "nombre": "Daniel Alcides Carrión",
+      "distritos": [
+        "Chacayan",
+        "Goyllarisquizga",
+        "Paucar",
+        "San Pedro de Pillao",
+        "Santa Ana de Tusi",
+        "Tapuc",
+        "Vilcabamba",
+        "Yanahuanca"
+      ]
+    },
+    {
+      "nombre": "Oxapampa",
+      "distritos": [
+        "Chontabamba",
+        "Constitución",
+        "Huancabamba",
+        "Oxapampa",
+        "Palcazu",
+        "Pozuzo",
+        "Puerto Bermúdez",
+        "Villa Rica"
+      ]
+    },
+    {
+      "nombre": "Pasco",
+      "distritos": [
+        "Chaupimarca",
+        "Huachon",
+        "Huariaca",
+        "Huayllay",
+        "Ninacaca",
+        "Pallanchacra",
+        "Paucartambo",
+        "San Francisco de Asís de Yarusyacan",
+        "Simon Bolívar",
+        "Ticlacayan",
+        "Tinyahuarco",
+        "Vicco",
+        "Yanacancha"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "provincias": [
+    {
+      "nombre": "Chincha",
+      "distritos": [
+        "Alto Laran",
+        "Chavin",
+        "Chincha Alta",
+        "Chincha Baja",
+        "El Carmen",
+        "Grocio Prado",
+        "Pueblo Nuevo",
+        "San Juan de Yanac",
+        "San Pedro de Huacarpana",
+        "Sunampe",
+        "Tambo de Mora"
+      ]
+    },
+    {
+      "nombre": "Ica",
+      "distritos": [
+        "Ica",
+        "La Tinguiña",
+        "Los Aquijes",
+        "Ocucaje",
+        "Pachacutec",
+        "Parcona",
+        "Pueblo Nuevo",
+        "Salas",
+        "San José de Los Molinos",
+        "San Juan Bautista",
+        "Santiago",
+        "Subtanjalla",
+        "Tate",
+        "Yauca del Rosario"
+      ]
+    },
+    {
+      "nombre": "Nasca",
+      "distritos": [
+        "Changuillo",
+        "El Ingenio",
+        "Marcona",
+        "Nasca",
+        "Vista Alegre"
+      ]
+    },
+    {
+      "nombre": "Palpa",
+      "distritos": [
+        "Llipata",
+        "Palpa",
+        "Río Grande",
+        "Santa Cruz",
+        "Tibillo"
+      ]
+    },
+    {
+      "nombre": "Pisco",
+      "distritos": [
+        "Huancano",
+        "Humay",
+        "Independencia",
+        "Paracas",
+        "Pisco",
+        "San Andrés",
+        "San Clemente",
+        "Tupac Amaru Inca"
+      ]
+    }
+  ]
+}

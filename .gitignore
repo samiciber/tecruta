@@ -1,0 +1,13 @@
+node_modules
+dist
+.DS_Store
+*.log
+
+# Variables de entorno con secretos reales: nunca deben subirse al repo.
+# Los .env.example sí se mantienen versionados como plantilla.
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example

@@ -1,0 +1,32 @@
+{
+  "provincias": [
+    {
+      "nombre": "Contralmirante Villar",
+      "distritos": [
+        "Canoas de Punta Sal",
+        "Casitas",
+        "Zorritos"
+      ]
+    },
+    {
+      "nombre": "Tumbes",
+      "distritos": [
+        "Corrales",
+        "La Cruz",
+        "Pampas de Hospital",
+        "San Jacinto",
+        "San Juan de la Virgen",
+        "Tumbes"
+      ]
+    },
+    {
+      "nombre": "Zarumilla",
+      "distritos": [
+        "Aguas Verdes",
+        "Matapalo",
+        "Papayal",
+        "Zarumilla"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "provincias": [
+    {
+      "nombre": "Chiclayo",
+      "distritos": [
+        "Cayalti",
+        "Chiclayo",
+        "Chongoyape",
+        "Eten",
+        "Eten Puerto",
+        "José Leonardo Ortiz",
+        "La Victoria",
+        "Lagunas",
+        "Monsefu",
+        "Nueva Arica",
+        "Oyotun",
+        "Patapo",
+        "Picsi",
+        "Pimentel",
+        "Pomalca",
+        "Pucala",
+        "Reque",
+        "Santa Rosa",
+        "Saña",
+        "Tuman"
+      ]
+    },
+    {
+      "nombre": "Ferreñafe",
+      "distritos": [
+        "Cañaris",
+        "Ferreñafe",
+        "Incahuasi",
+        "Manuel Antonio Mesones Muro",
+        "Pitipo",
+        "Pueblo Nuevo"
+      ]
+    },
+    {
+      "nombre": "Lambayeque",
+      "distritos": [
+        "Chochope",
+        "Illimo",
+        "Jayanca",
+        "Lambayeque",
+        "Mochumi",
+        "Morrope",
+        "Motupe",
+        "Olmos",
+        "Pacora",
+        "Salas",
+        "San José",
+        "Tucume"
+      ]
+    }
+  ]
+}

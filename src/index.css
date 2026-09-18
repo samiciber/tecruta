@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink font-body antialiased transition-colors duration-300;
+  }
+  html.dark body {
+    @apply bg-night text-paper;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+  p {
+    white-space: pre-line;
+  }
+  ::selection {
+    @apply bg-route/20;
+  }
+  :focus-visible {
+    outline: 2px solid #3D5AFE;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-paper-line dark:bg-night-line rounded-full;
+  }
+}
+
+@layer components {
+  .container-tr {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-route px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-route-dark active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-paper-line bg-paper-surface px-5 py-3 text-sm font-semibold text-ink transition-all hover:border-ink/30 active:scale-[0.98] dark:border-night-line dark:bg-night-surface dark:text-paper dark:hover:border-paper/30;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-ink/5 dark:text-paper/70 dark:hover:bg-paper/10;
+  }
+  .card-surface {
+    @apply rounded-xl2 border border-paper-line bg-paper-surface shadow-card dark:border-night-line dark:bg-night-surface dark:shadow-card-dark;
+  }
+  .input-tr {
+    @apply w-full rounded-xl border border-paper-line bg-paper-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 outline-none transition-colors focus:border-route dark:border-night-line dark:bg-night-surface dark:text-paper;
+  }
+  .route-dot {
+    @apply inline-block h-1.5 w-1.5 rounded-full bg-route;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

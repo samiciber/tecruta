@@ -1,0 +1,97 @@
+{
+  "provincias": [
+    {
+      "nombre": "Alto Amazonas",
+      "distritos": [
+        "Balsapuerto",
+        "Jeberos",
+        "Lagunas",
+        "Santa Cruz",
+        "Teniente Cesar López Rojas",
+        "Yurimaguas"
+      ]
+    },
+    {
+      "nombre": "Datem del Marañón",
+      "distritos": [
+        "Andoas",
+        "Barranca",
+        "Cahuapanas",
+        "Manseriche",
+        "Morona",
+        "Pastaza"
+      ]
+    },
+    {
+      "nombre": "Loreto",
+      "distritos": [
+        "Nauta",
+        "Parinari",
+        "Tigre",
+        "Trompeteros",
+        "Urarinas"
+      ]
+    },
+    {
+      "nombre": "Mariscal Ramón Castilla",
+      "distritos": [
+        "Pebas",
+        "Ramón Castilla",
+        "San Pablo",
+        "Yavari"
+      ]
+    },
+    {
+      "nombre": "Maynas",
+      "distritos": [
+        "Alto Nanay",
+        "Belén",
+        "Fernando Lores",
+        "Indiana",
+        "Iquitos",
+        "Las Amazonas",
+        "Mazan",
+        "Napo",
+        "Punchana",
+        "San Juan Bautista",
+        "Torres Causana"
+      ]
+    },
+    {
+      "nombre": "Putumayo",
+      "distritos": [
+        "Putumayo",
+        "Rosa Panduro",
+        "Teniente Manuel Clavero",
+        "Yaguas"
+      ]
+    },
+    {
+      "nombre": "Requena",
+      "distritos": [
+        "Alto Tapiche",
+        "Capelo",
+        "Emilio San Martín",
+        "Jenaro Herrera",
+        "Maquia",
+        "Puinahua",
+        "Requena",
+        "Saquena",
+        "Soplin",
+        "Tapiche",
+        "Yaquerana"
+      ]
+    },
+    {
+      "nombre": "Ucayali",
+      "distritos": [
+        "Contamana",
+        "Inahuaya",
+        "Padre Márquez",
+        "Pampa Hermosa",
+        "Sarayacu",
+        "Vargas Guerra"
+      ]
+    }
+  ]
+}

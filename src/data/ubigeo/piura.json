@@ -1,0 +1,109 @@
+{
+  "provincias": [
+    {
+      "nombre": "Ayabaca",
+      "distritos": [
+        "Ayabaca",
+        "Frias",
+        "Jilili",
+        "Lagunas",
+        "Montero",
+        "Pacaipampa",
+        "Paimas",
+        "Sapillica",
+        "Sicchez",
+        "Suyo"
+      ]
+    },
+    {
+      "nombre": "Huancabamba",
+      "distritos": [
+        "Canchaque",
+        "El Carmen de la Frontera",
+        "Huancabamba",
+        "Huarmaca",
+        "Lalaquiz",
+        "San Miguel de El Faique",
+        "Sondor",
+        "Sondorillo"
+      ]
+    },
+    {
+      "nombre": "Morropón",
+      "distritos": [
+        "Buenos Aires",
+        "Chalaco",
+        "Chulucanas",
+        "La Matanza",
+        "Morropon",
+        "Salitral",
+        "San Juan de Bigote",
+        "Santa Catalina de Mossa",
+        "Santo Domingo",
+        "Yamango"
+      ]
+    },
+    {
+      "nombre": "Paita",
+      "distritos": [
+        "Amotape",
+        "Arenal",
+        "Colan",
+        "La Huaca",
+        "Paita",
+        "Tamarindo",
+        "Vichayal"
+      ]
+    },
+    {
+      "nombre": "Piura",
+      "distritos": [
+        "Castilla",
+        "Catacaos",
+        "Cura Mori",
+        "El Tallan",
+        "La Arena",
+        "La Unión",
+        "Las Lomas",
+        "Piura",
+        "Tambo Grande",
+        "Veintiseis de Octubre"
+      ]
+    },
+    {
+      "nombre": "Sechura",
+      "distritos": [
+        "Bellavista de la Unión",
+        "Bernal",
+        "Cristo Nos Valga",
+        "Rinconada Llicuar",
+        "Sechura",
+        "Vice"
+      ]
+    },
+    {
+      "nombre": "Sullana",
+      "distritos": [
+        "Bellavista",
+        "Ignacio Escudero",
+        "Lancones",
+        "Marcavelica",
+        "Miguel Checa",
+        "Querecotillo",
+        "Salitral",
+        "Sullana"
+      ]
+    },
+    {
+      "nombre": "Talara",
+      "distritos": [
+        "El Alto",
+        "La Brea",
+        "Lobitos",
+        "Los Organos",
+        "Mancora",
+        "Pariñas"
+      ]
+    }
+  ]
+}

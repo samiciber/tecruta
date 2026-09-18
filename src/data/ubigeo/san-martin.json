@@ -1,0 +1,131 @@
+{
+  "provincias": [
+    {
+      "nombre": "Bellavista",
+      "distritos": [
+        "Alto Biavo",
+        "Bajo Biavo",
+        "Bellavista",
+        "Huallaga",
+        "San Pablo",
+        "San Rafael"
+      ]
+    },
+    {
+      "nombre": "El Dorado",
+      "distritos": [
+        "Agua Blanca",
+        "San José de Sisa",
+        "San Martín",
+        "Santa Rosa",
+        "Shatoja"
+      ]
+    },
+    {
+      "nombre": "Huallaga",
+      "distritos": [
+        "Alto Saposoa",
+        "El Eslabón",
+        "Piscoyacu",
+        "Sacanche",
+        "Saposoa",
+        "Tingo de Saposoa"
+      ]
+    },
+    {
+      "nombre": "Lamas",
+      "distritos": [
+        "Alonso de Alvarado",
+        "Barranquita",
+        "Caynarachi",
+        "Cuñumbuqui",
+        "Lamas",
+        "Pinto Recodo",
+        "Rumisapa",
+        "San Roque de Cumbaza",
+        "Shanao",
+        "Tabalosos",
+        "Zapatero"
+      ]
+    },
+    {
+      "nombre": "Mariscal Cáceres",
+      "distritos": [
+        "Campanilla",
+        "Huicungo",
+        "Juanjuí",
+        "Pachiza",
+        "Pajarillo"
+      ]
+    },
+    {
+      "nombre": "Moyobamba",
+      "distritos": [
+        "Calzada",
+        "Habana",
+        "Jepelacio",
+        "Moyobamba",
+        "Soritor",
+        "Yantalo"
+      ]
+    },
+    {
+      "nombre": "Picota",
+      "distritos": [
+        "Buenos Aires",
+        "Caspisapa",
+        "Picota",
+        "Pilluana",
+        "Pucacaca",
+        "San Cristóbal",
+        "San Hilarión",
+        "Shamboyacu",
+        "Tingo de Ponasa",
+        "Tres Unidos"
+      ]
+    },
+    {
+      "nombre": "Rioja",
+      "distritos": [
+        "Awajun",
+        "Elías Soplin Vargas",
+        "Nueva Cajamarca",
+        "Pardo Miguel",
+        "Posic",
+        "Rioja",
+        "San Fernando",
+        "Yorongos",
+        "Yuracyacu"
+      ]
+    },
+    {
+      "nombre": "San Martín",
+      "distritos": [
+        "Alberto Leveau",
+        "Cacatachi",
+        "Chazuta",
+        "Chipurana",
+        "El Porvenir",
+        "Huimbayoc",
+        "Juan Guerra",
+        "La Banda de Shilcayo",
+        "Morales",
+        "Papaplaya",
+        "San Antonio",
+        "Sauce",
+        "Shapaja",
+        "Tarapoto"
+      ]
+    },
+    {
+      "nombre": "Tocache",
+      "distritos": [
+        "Nuevo Progreso",
+        "Polvora",
+        "Shunte",
+        "Tocache",
+        "Uchiza"
+      ]
+    }
+  ]
+}

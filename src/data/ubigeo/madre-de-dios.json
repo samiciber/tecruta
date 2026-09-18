@@ -1,0 +1,30 @@
+{
+  "provincias": [
+    {
+      "nombre": "Manu",
+      "distritos": [
+        "Fitzcarrald",
+        "Huepetuhe",
+        "Madre de Dios",
+        "Manu"
+      ]
+    },
+    {
+      "nombre": "Tahuamanu",
+      "distritos": [
+        "Iberia",
+        "Iñapari",
+        "Tahuamanu"
+      ]
+    },
+    {
+      "nombre": "Tambopata",
+      "distritos": [
+        "Inambari",
+        "Laberinto",
+        "Las Piedras",
+        "Tambopata"
+      ]
+    }
+  ]
+}

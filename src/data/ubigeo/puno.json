@@ -1,0 +1,179 @@
+{
+  "provincias": [
+    {
+      "nombre": "Azángaro",
+      "distritos": [
+        "Achaya",
+        "Arapa",
+        "Asillo",
+        "Azángaro",
+        "Caminaca",
+        "Chupa",
+        "José Domingo Choquehuanca",
+        "Muñani",
+        "Potoni",
+        "Saman",
+        "San Anton",
+        "San José",
+        "San Juan de Salinas",
+        "Santiago de Pupuja",
+        "Tirapata"
+      ]
+    },
+    {
+      "nombre": "Carabaya",
+      "distritos": [
+        "Ajoyani",
+        "Ayapata",
+        "Coasa",
+        "Corani",
+        "Crucero",
+        "Ituata",
+        "Macusani",
+        "Ollachea",
+        "San Gaban",
+        "Usicayos"
+      ]
+    },
+    {
+      "nombre": "Chucuito",
+      "distritos": [
+        "Desaguadero",
+        "Huacullani",
+        "Juli",
+        "Kelluyo",
+        "Pisacoma",
+        "Pomata",
+        "Zepita"
+      ]
+    },
+    {
+      "nombre": "El Collao",
+      "distritos": [
+        "Capazo",
+        "Conduriri",
+        "Ilave",
+        "Pilcuyo",
+        "Santa Rosa"
+      ]
+    },
+    {
+      "nombre": "Huancané",
+      "distritos": [
+        "Cojata",
+        "Huancane",
+        "Huatasani",
+        "Inchupalla",
+        "Pusi",
+        "Rosaspata",
+        "Taraco",
+        "Vilque Chico"
+      ]
+    },
+    {
+      "nombre": "Lampa",
+      "distritos": [
+        "Cabanilla",
+        "Calapuja",
+        "Lampa",
+        "Nicasio",
+        "Ocuviri",
+        "Palca",
+        "Paratia",
+        "Pucara",
+        "Santa Lucia",
+        "Vilavila"
+      ]
+    },
+    {
+      "nombre": "Melgar",
+      "distritos": [
+        "Antauta",
+        "Ayaviri",
+        "Cupi",
+        "Llalli",
+        "Macari",
+        "Nuñoa",
+        "Orurillo",
+        "Santa Rosa",
+        "Umachiri"
+      ]
+    },
+    {
+      "nombre": "Moho",
+      "distritos": [
+        "Conima",
+        "Huayrapata",
+        "Moho",
+        "Tilali"
+      ]
+    },
+    {
+      "nombre": "Puno",
+      "distritos": [
+        "Acora",
+        "Amantani",
+        "Atuncolla",
+        "Capachica",
+        "Chucuito",
+        "Coata",
+        "Huata",
+        "Mañazo",
+        "Paucarcolla",
+        "Pichacani",
+        "Plateria",
+        "Puno",
+        "San Antonio",
+        "Tiquillaca",
+        "Vilque"
+      ]
+    },
+    {
+      "nombre": "San Antonio de Putina",
+      "distritos": [
+        "Ananea",
+        "Pedro Vilca Apaza",
+        "Putina",
+        "Quilcapuncu",
+        "Sina"
+      ]
+    },
+    {
+      "nombre": "San Román",
+      "distritos": [
+        "Cabana",
+        "Cabanillas",
+        "Caracoto",
+        "Juliaca",
+        "San Miguel"
+      ]
+    },
+    {
+      "nombre": "Sandia",
+      "distritos": [
+        "Alto Inambari",
+        "Cuyocuyo",
+        "Limbani",
+        "Patambuco",
+        "Phara",
+        "Quiaca",
+        "San Juan del Oro",
+        "San Pedro de Putina Punco",
+        "Sandia",
+        "Yanahuaya"
+      ]
+    },
+    {
+      "nombre": "Yunguyo",
+      "distritos": [
+        "Anapia",
+        "Copani",
+        "Cuturapi",
+        "Ollaraya",
+        "Tinicachi",
+        "Unicachi",
+        "Yunguyo"
+      ]
+    }
+  ]
+}

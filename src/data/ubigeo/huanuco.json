@@ -1,0 +1,143 @@
+{
+  "provincias": [
+    {
+      "nombre": "Ambo",
+      "distritos": [
+        "Ambo",
+        "Cayna",
+        "Colpas",
+        "Conchamarca",
+        "Huacar",
+        "San Francisco",
+        "San Rafael",
+        "Tomay Kichwa"
+      ]
+    },
+    {
+      "nombre": "Dos de Mayo",
+      "distritos": [
+        "Chuquis",
+        "La Unión",
+        "Marías",
+        "Pachas",
+        "Quivilla",
+        "Ripan",
+        "Shunqui",
+        "Sillapata",
+        "Yanas"
+      ]
+    },
+    {
+      "nombre": "Huacaybamba",
+      "distritos": [
+        "Canchabamba",
+        "Cochabamba",
+        "Huacaybamba",
+        "Pinra"
+      ]
+    },
+    {
+      "nombre": "Huamalíes",
+      "distritos": [
+        "Arancay",
+        "Chavín de Pariarca",
+        "Jacas Grande",
+        "Jircan",
+        "Llata",
+        "Miraflores",
+        "Monzón",
+        "Punchao",
+        "Puños",
+        "Singa",
+        "Tantamayo"
+      ]
+    },
+    {
+      "nombre": "Huánuco",
+      "distritos": [
+        "Amarilis",
+        "Chinchao",
+        "Churubamba",
+        "Huanuco",
+        "Margos",
+        "Pillco Marca",
+        "Quisqui (Kichki)",
+        "San Francisco de Cayran",
+        "San Pablo de Pillao",
+        "San Pedro de Chaulan",
+        "Santa María del Valle",
+        "Yacus",
+        "Yarumayo"
+      ]
+    },
+    {
+      "nombre": "Lauricocha",
+      "distritos": [
+        "Baños",
+        "Jesús",
+        "Jivia",
+        "Queropalca",
+        "Rondos",
+        "San Francisco de Asís",
+        "San Miguel de Cauri"
+      ]
+    },
+    {
+      "nombre": "Leoncio Prado",
+      "distritos": [
+        "Castillo Grande",
+        "Daniel Alomía Robles",
+        "Hermílio Valdizan",
+        "José Crespo y Castillo",
+        "Luyando",
+        "Mariano Damaso Beraun",
+        "Pucayacu",
+        "Pueblo Nuevo",
+        "Rupa-Rupa",
+        "Santo Domingo de Anda"
+      ]
+    },
+    {
+      "nombre": "Marañón",
+      "distritos": [
+        "Cholon",
+        "Huacrachuco",
+        "La Morada",
+        "San Buenaventura",
+        "Santa Rosa de Alto Yanajanca"
+      ]
+    },
+    {
+      "nombre": "Pachitea",
+      "distritos": [
+        "Chaglla",
+        "Molino",
+        "Panao",
+        "Umari"
+      ]
+    },
+    {
+      "nombre": "Puerto Inca",
+      "distritos": [
+        "Codo del Pozuzo",
+        "Honoria",
+        "Puerto Inca",
+        "Tournavista",
+        "Yuyapichis"
+      ]
+    },
+    {
+      "nombre": "Yarowilca",
+      "distritos": [
+        "Aparicio Pomares",
+        "Cahuac",
+        "Chacabamba",
+        "Chavinillo",
+        "Choras",
+        "Jacas Chico",
+        "Obas",
+        "Pampamarca"
+      ]
+    }
+  ]
+}

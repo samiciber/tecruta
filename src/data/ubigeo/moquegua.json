@@ -1,0 +1,39 @@
+{
+  "provincias": [
+    {
+      "nombre": "General Sánchez Cerro",
+      "distritos": [
+        "Chojata",
+        "Coalaque",
+        "Ichuña",
+        "La Capilla",
+        "Lloque",
+        "Matalaque",
+        "Omate",
+        "Puquina",
+        "Quinistaquillas",
+        "Ubinas",
+        "Yunga"
+      ]
+    },
+    {
+      "nombre": "Ilo",
+      "distritos": [
+        "El Algarrobal",
+        "Ilo",
+        "Pacocha"
+      ]
+    },
+    {
+      "nombre": "Mariscal Nieto",
+      "distritos": [
+        "Carumas",
+        "Cuchumbaya",
+        "Moquegua",
+        "Samegua",
+        "San Cristóbal",
+        "Torata"
+      ]
+    }
+  ]
+}

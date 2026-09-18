@@ -1,0 +1,147 @@
+{
+  "provincias": [
+    {
+      "nombre": "Ascope",
+      "distritos": [
+        "Ascope",
+        "Casa Grande",
+        "Chicama",
+        "Chocope",
+        "Magdalena de Cao",
+        "Paijan",
+        "Rázuri",
+        "Santiago de Cao"
+      ]
+    },
+    {
+      "nombre": "Bolívar",
+      "distritos": [
+        "Bambamarca",
+        "Bolívar",
+        "Condormarca",
+        "Longotea",
+        "Uchumarca",
+        "Ucuncha"
+      ]
+    },
+    {
+      "nombre": "Chepén",
+      "distritos": [
+        "Chepen",
+        "Pacanga",
+        "Pueblo Nuevo"
+      ]
+    },
+    {
+      "nombre": "Gran Chimú",
+      "distritos": [
+        "Cascas",
+        "Lucma",
+        "Marmot",
+        "Sayapullo"
+      ]
+    },
+    {
+      "nombre": "Julcán",
+      "distritos": [
+        "Calamarca",
+        "Carabamba",
+        "Huaso",
+        "Julcan"
+      ]
+    },
+    {
+      "nombre": "Otuzco",
+      "distritos": [
+        "Agallpampa",
+        "Charat",
+        "Huaranchal",
+        "La Cuesta",
+        "Mache",
+        "Otuzco",
+        "Paranday",
+        "Salpo",
+        "Sinsicap",
+        "Usquil"
+      ]
+    },
+    {
+      "nombre": "Pacasmayo",
+      "distritos": [
+        "Guadalupe",
+        "Jequetepeque",
+        "Pacasmayo",
+        "San José",
+        "San Pedro de Lloc"
+      ]
+    },
+    {
+      "nombre": "Pataz",
+      "distritos": [
+        "Buldibuyo",
+        "Chillia",
+        "Huancaspata",
+        "Huaylillas",
+        "Huayo",
+        "Ongon",
+        "Parcoy",
+        "Pataz",
+        "Pias",
+        "Santiago de Challas",
+        "Taurija",
+        "Tayabamba",
+        "Urpay"
+      ]
+    },
+    {
+      "nombre": "Santiago de Chuco",
+      "distritos": [
+        "Angasmarca",
+        "Cachicadan",
+        "Mollebamba",
+        "Mollepata",
+        "Quiruvilca",
+        "Santa Cruz de Chuca",
+        "Santiago de Chuco",
+        "Sitabamba"
+      ]
+    },
+    {
+      "nombre": "Sánchez Carrión",
+      "distritos": [
+        "Chugay",
+        "Cochorco",
+        "Curgos",
+        "Huamachuco",
+        "Marcabal",
+        "Sanagoran",
+        "Sarin",
+        "Sartimbamba"
+      ]
+    },
+    {
+      "nombre": "Trujillo",
+      "distritos": [
+        "El Porvenir",
+        "Florencia de Mora",
+        "Huanchaco",
+        "La Esperanza",
+        "Laredo",
+        "Moche",
+        "Poroto",
+        "Salaverry",
+        "Simbal",
+        "Trujillo",
+        "Victor Larco Herrera"
+      ]
+    },
+    {
+      "nombre": "Virú",
+      "distritos": [
+        "Chao",
+        "Guadalupito",
+        "Viru"
+      ]
+    }
+  ]
+}

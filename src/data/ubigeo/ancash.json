@@ -1,0 +1,270 @@
+{
+  "provincias": [
+    {
+      "nombre": "Aija",
+      "distritos": [
+        "Aija",
+        "Coris",
+        "Huacllan",
+        "La Merced",
+        "Succha"
+      ]
+    },
+    {
+      "nombre": "Antonio Raymondi",
+      "distritos": [
+        "Aczo",
+        "Chaccho",
+        "Chingas",
+        "Llamellin",
+        "Mirgas",
+        "San Juan de Rontoy"
+      ]
+    },
+    {
+      "nombre": "Asunción",
+      "distritos": [
+        "Acochaca",
+        "Chacas"
+      ]
+    },
+    {
+      "nombre": "Bolognesi",
+      "distritos": [
+        "Abelardo Pardo Lezameta",
+        "Antonio Raymondi",
+        "Aquia",
+        "Cajacay",
+        "Canis",
+        "Chiquian",
+        "Colquioc",
+        "Huallanca",
+        "Huasta",
+        "Huayllacayan",
+        "La Primavera",
+        "Mangas",
+        "Pacllon",
+        "San Miguel de Corpanqui",
+        "Ticllos"
+      ]
+    },
+    {
+      "nombre": "Carhuaz",
+      "distritos": [
+        "Acopampa",
+        "Amashca",
+        "Anta",
+        "Ataquero",
+        "Carhuaz",
+        "Marcara",
+        "Pariahuanca",
+        "San Miguel de Aco",
+        "Shilla",
+        "Tinco",
+        "Yungar"
+      ]
+    },
+    {
+      "nombre": "Carlos Fermín Fitzcarrald",
+      "distritos": [
+        "San Luis",
+        "San Nicolás",
+        "Yauya"
+      ]
+    },
+    {
+      "nombre": "Casma",
+      "distritos": [
+        "Buena Vista Alta",
+        "Casma",
+        "Comandante Noel",
+        "Yautan"
+      ]
+    },
+    {
+      "nombre": "Corongo",
+      "distritos": [
+        "Aco",
+        "Bambas",
+        "Corongo",
+        "Cusca",
+        "La Pampa",
+        "Yanac",
+        "Yupan"
+      ]
+    },
+    {
+      "nombre": "Huaraz",
+      "distritos": [
+        "Cochabamba",
+        "Colcabamba",
+        "Huanchay",
+        "Huaraz",
+        "Independencia",
+        "Jangas",
+        "La Libertad",
+        "Olleros",
+        "Pampas Grande",
+        "Pariacoto",
+        "Pira",
+        "Tarica"
+      ]
+    },
+    {
+      "nombre": "Huari",
+      "distritos": [
+        "Anra",
+        "Cajay",
+        "Chavin de Huantar",
+        "Huacachi",
+        "Huacchis",
+        "Huachis",
+        "Huantar",
+        "Huari",
+        "Masin",
+        "Paucas",
+        "Ponto",
+        "Rahuapampa",
+        "Rapayan",
+        "San Marcos",
+        "San Pedro de Chana",
+        "Uco"
+      ]
+    },
+    {
+      "nombre": "Huarmey",
+      "distritos": [
+        "Cochapeti",
+        "Culebras",
+        "Huarmey",
+        "Huayan",
+        "Malvas"
+      ]
+    },
+    {
+      "nombre": "Huaylas",
+      "distritos": [
+        "Caraz",
+        "Huallanca",
+        "Huata",
+        "Huaylas",
+        "Mato",
+        "Pamparomas",
+        "Pueblo Libre",
+        "Santa Cruz",
+        "Santo Toribio",
+        "Yuracmarca"
+      ]
+    },
+    {
+      "nombre": "Mariscal Luzuriaga",
+      "distritos": [
+        "Casca",
+        "Eleazar Guzmán Barron",
+        "Fidel Olivas Escudero",
+        "Llama",
+        "Llumpa",
+        "Lucma",
+        "Musga",
+        "Piscobamba"
+      ]
+    },
+    {
+      "nombre": "Ocros",
+      "distritos": [
+        "Acas",
+        "Cajamarquilla",
+        "Carhuapampa",
+        "Cochas",
+        "Congas",
+        "Llipa",
+        "Ocros",
+        "San Cristóbal de Rajan",
+        "San Pedro",
+        "Santiago de Chilcas"
+      ]
+    },
+    {
+      "nombre": "Pallasca",
+      "distritos": [
+        "Bolognesi",
+        "Cabana",
+        "Conchucos",
+        "Huacaschuque",
+        "Huandoval",
+        "Lacabamba",
+        "Llapo",
+        "Pallasca",
+        "Pampas",
+        "Santa Rosa",
+        "Tauca"
+      ]
+    },
+    {
+      "nombre": "Pomabamba",
+      "distritos": [
+        "Huayllan",
+        "Parobamba",
+        "Pomabamba",
+        "Quinuabamba"
+      ]
+    },
+    {
+      "nombre": "Recuay",
+      "distritos": [
+        "Catac",
+        "Cotaparaco",
+        "Huayllapampa",
+        "Llacllin",
+        "Marca",
+        "Pampas Chico",
+        "Pararin",
+        "Recuay",
+        "Tapacocha",
+        "Ticapampa"
+      ]
+    },
+    {
+      "nombre": "Santa",
+      "distritos": [
+        "Chimbote",
+        "Coishco",
+        "Cáceres del Perú",
+        "Macate",
+        "Moro",
+        "Nepeña",
+        "Nuevo Chimbote",
+        "Samanco",
+        "Santa"
+      ]
+    },
+    {
+      "nombre": "Sihuas",
+      "distritos": [
+        "Acobamba",
+        "Alfonso Ugarte",
+        "Cashapampa",
+        "Chingalpo",
+        "Huayllabamba",
+        "Quiches",
+        "Ragash",
+        "San Juan",
+        "Sicsibamba",
+        "Sihuas"
+      ]
+    },
+    {
+      "nombre": "Yungay",
+      "distritos": [
+        "Cascapara",
+        "Mancos",
+        "Matacoto",
+        "Quillo",
+        "Ranrahirca",
+        "Shupluy",
+        "Yanama",
+        "Yungay"
+      ]
+    }
+  ]
+}

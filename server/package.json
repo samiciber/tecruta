@@ -1,0 +1,32 @@
+{
+  "name": "tecruta-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "API de TecRuta: catálogo, clientes, pedidos y ventas. Consumida por la web y, en el futuro, por la app móvil.",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "seed": "node prisma/seed.js",
+    "make-admin": "node prisma/make-admin.js"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.7.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "prisma": "^5.19.1"
+  }
+}

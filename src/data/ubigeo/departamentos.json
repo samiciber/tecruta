@@ -1,0 +1,102 @@
+[
+  {
+    "slug": "amazonas",
+    "name": "Amazonas"
+  },
+  {
+    "slug": "ancash",
+    "name": "Áncash"
+  },
+  {
+    "slug": "apurimac",
+    "name": "Apurímac"
+  },
+  {
+    "slug": "arequipa",
+    "name": "Arequipa"
+  },
+  {
+    "slug": "ayacucho",
+    "name": "Ayacucho"
+  },
+  {
+    "slug": "cajamarca",
+    "name": "Cajamarca"
+  },
+  {
+    "slug": "callao",
+    "name": "Callao"
+  },
+  {
+    "slug": "cusco",
+    "name": "Cusco"
+  },
+  {
+    "slug": "huancavelica",
+    "name": "Huancavelica"
+  },
+  {
+    "slug": "huanuco",
+    "name": "Huánuco"
+  },
+  {
+    "slug": "ica",
+    "name": "Ica"
+  },
+  {
+    "slug": "junin",
+    "name": "Junín"
+  },
+  {
+    "slug": "la-libertad",
+    "name": "La Libertad"
+  },
+  {
+    "slug": "lambayeque",
+    "name": "Lambayeque"
+  },
+  {
+    "slug": "lima",
+    "name": "Lima"
+  },
+  {
+    "slug": "loreto",
+    "name": "Loreto"
+  },
+  {
+    "slug": "madre-de-dios",
+    "name": "Madre de Dios"
+  },
+  {
+    "slug": "moquegua",
+    "name": "Moquegua"
+  },
+  {
+    "slug": "pasco",
+    "name": "Pasco"
+  },
+  {
+    "slug": "piura",
+    "name": "Piura"
+  },
+  {
+    "slug": "puno",
+    "name": "Puno"
+  },
+  {
+    "slug": "san-martin",
+    "name": "San Martín"
+  },
+  {
+    "slug": "tacna",
+    "name": "Tacna"
+  },
+  {
+    "slug": "tumbes",
+    "name": "Tumbes"
+  },
+  {
+    "slug": "ucayali",
+    "name": "Ucayali"
+  }
+]

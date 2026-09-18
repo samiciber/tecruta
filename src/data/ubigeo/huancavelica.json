@@ -1,0 +1,139 @@
+{
+  "provincias": [
+    {
+      "nombre": "Acobamba",
+      "distritos": [
+        "Acobamba",
+        "Andabamba",
+        "Anta",
+        "Caja",
+        "Marcas",
+        "Paucara",
+        "Pomacocha",
+        "Rosario"
+      ]
+    },
+    {
+      "nombre": "Angaraes",
+      "distritos": [
+        "Anchonga",
+        "Callanmarca",
+        "Ccochaccasa",
+        "Chincho",
+        "Congalla",
+        "Huanca-Huanca",
+        "Huayllay Grande",
+        "Julcamarca",
+        "Lircay",
+        "San Antonio de Antaparco",
+        "Santo Tomas de Pata",
+        "Secclla"
+      ]
+    },
+    {
+      "nombre": "Castrovirreyna",
+      "distritos": [
+        "Arma",
+        "Aurahua",
+        "Capillas",
+        "Castrovirreyna",
+        "Chupamarca",
+        "Cocas",
+        "Huachos",
+        "Huamatambo",
+        "Mollepampa",
+        "San Juan",
+        "Santa Ana",
+        "Tantara",
+        "Ticrapo"
+      ]
+    },
+    {
+      "nombre": "Churcampa",
+      "distritos": [
+        "Anco",
+        "Chinchihuasi",
+        "Churcampa",
+        "Cosme",
+        "El Carmen",
+        "La Merced",
+        "Locroja",
+        "Pachamarca",
+        "Paucarbamba",
+        "San Miguel de Mayocc",
+        "San Pedro de Coris"
+      ]
+    },
+    {
+      "nombre": "Huancavelica",
+      "distritos": [
+        "Acobambilla",
+        "Acoria",
+        "Ascensión",
+        "Conayca",
+        "Cuenca",
+        "Huachocolpa",
+        "Huancavelica",
+        "Huando",
+        "Huayllahuara",
+        "Izcuchaca",
+        "Laria",
+        "Manta",
+        "Mariscal Cáceres",
+        "Moya",
+        "Nuevo Occoro",
+        "Palca",
+        "Pilchaca",
+        "Vilca",
+        "Yauli"
+      ]
+    },
+    {
+      "nombre": "Huaytará",
+      "distritos": [
+        "Ayavi",
+        "Córdova",
+        "Huayacundo Arma",
+        "Huaytara",
+        "Laramarca",
+        "Ocoyo",
+        "Pilpichaca",
+        "Querco",
+        "Quito-Arma",
+        "San Antonio de Cusicancha",
+        "San Francisco de Sangayaico",
+        "San Isidro",
+        "Santiago de Chocorvos",
+        "Santiago de Quirahuara",
+        "Santo Domingo de Capillas",
+        "Tambo"
+      ]
+    },
+    {
+      "nombre": "Tayacaja",
+      "distritos": [
+        "Acostambo",
+        "Acraquia",
+        "Ahuaycha",
+        "Andaymarca",
+        "Colcabamba",
+        "Daniel Hernández",
+        "Huachocolpa",
+        "Huaribamba",
+        "Pampas",
+        "Pazos",
+        "Pichos",
+        "Quichuas",
+        "Quishuar",
+        "Roble",
+        "Salcabamba",
+        "Salcahuasi",
+        "San Marcos de Rocchac",
+        "Santiago de Tucuma",
+        "Surcubamba",
+        "Tintay Puncu",
+        "Ñahuimpuquio"
+      ]
+    }
+  ]
+}

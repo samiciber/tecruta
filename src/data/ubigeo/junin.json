@@ -1,0 +1,173 @@
+{
+  "provincias": [
+    {
+      "nombre": "Chanchamayo",
+      "distritos": [
+        "Chanchamayo",
+        "Perene",
+        "Pichanaqui",
+        "San Luis de Shuaro",
+        "San Ramón",
+        "Vitoc"
+      ]
+    },
+    {
+      "nombre": "Chupaca",
+      "distritos": [
+        "Ahuac",
+        "Chongos Bajo",
+        "Chupaca",
+        "Huachac",
+        "Huamancaca Chico",
+        "San Juan de Iscos",
+        "San Juan de Jarpa",
+        "Tres de Diciembre",
+        "Yanacancha"
+      ]
+    },
+    {
+      "nombre": "Concepción",
+      "distritos": [
+        "Aco",
+        "Andamarca",
+        "Chambara",
+        "Cochas",
+        "Comas",
+        "Concepción",
+        "Heroínas Toledo",
+        "Manzanares",
+        "Mariscal Castilla",
+        "Matahuasi",
+        "Mito",
+        "Nueve de Julio",
+        "Orcotuna",
+        "San José de Quero",
+        "Santa Rosa de Ocopa"
+      ]
+    },
+    {
+      "nombre": "Huancayo",
+      "distritos": [
+        "Carhuacallanga",
+        "Chacapampa",
+        "Chicche",
+        "Chilca",
+        "Chongos Alto",
+        "Chupuro",
+        "Colca",
+        "Cullhuas",
+        "El Tambo",
+        "Huacrapuquio",
+        "Hualhuas",
+        "Huancan",
+        "Huancayo",
+        "Huasicancha",
+        "Huayucachi",
+        "Ingenio",
+        "Pariahuanca",
+        "Pilcomayo",
+        "Pucara",
+        "Quichuay",
+        "Quilcas",
+        "San Agustín",
+        "San Jerónimo de Tunan",
+        "Santo Domingo de Acobamba",
+        "Sapallanga",
+        "Saño",
+        "Sicaya",
+        "Viques"
+      ]
+    },
+    {
+      "nombre": "Jauja",
+      "distritos": [
+        "Acolla",
+        "Apata",
+        "Ataura",
+        "Canchayllo",
+        "Curicaca",
+        "El Mantaro",
+        "Huamali",
+        "Huaripampa",
+        "Huertas",
+        "Janjaillo",
+        "Jauja",
+        "Julcán",
+        "Leonor Ordóñez",
+        "Llocllapampa",
+        "Marco",
+        "Masma",
+        "Masma Chicche",
+        "Molinos",
+        "Monobamba",
+        "Muqui",
+        "Muquiyauyo",
+        "Paca",
+        "Paccha",
+        "Pancan",
+        "Parco",
+        "Pomacancha",
+        "Ricran",
+        "San Lorenzo",
+        "San Pedro de Chunan",
+        "Sausa",
+        "Sincos",
+        "Tunan Marca",
+        "Yauli",
+        "Yauyos"
+      ]
+    },
+    {
+      "nombre": "Junín",
+      "distritos": [
+        "Carhuamayo",
+        "Junin",
+        "Ondores",
+        "Ulcumayo"
+      ]
+    },
+    {
+      "nombre": "Satipo",
+      "distritos": [
+        "Coviriali",
+        "Llaylla",
+        "Mazamari",
+        "Pampa Hermosa",
+        "Pangoa",
+        "Río Negro",
+        "Río Tambo",
+        "Satipo",
+        "Vizcatan del Ene"
+      ]
+    },
+    {
+      "nombre": "Tarma",
+      "distritos": [
+        "Acobamba",
+        "Huaricolca",
+        "Huasahuasi",
+        "La Unión",
+        "Palca",
+        "Palcamayo",
+        "San Pedro de Cajas",
+        "Tapo",
+        "Tarma"
+      ]
+    },
+    {
+      "nombre": "Yauli",
+      "distritos": [
+        "Chacapalpa",
+        "Huay-Huay",
+        "La Oroya",
+        "Marcapomacocha",
+        "Morococha",
+        "Paccha",
+        "Santa Bárbara de Carhuacayan",
+        "Santa Rosa de Sacco",
+        "Suitucancha",
+        "Yauli"
+      ]
+    }
+  ]
+}

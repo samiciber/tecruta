@@ -1,0 +1,123 @@
+{
+  "provincias": [
+    {
+      "nombre": "Abancay",
+      "distritos": [
+        "Abancay",
+        "Chacoche",
+        "Circa",
+        "Curahuasi",
+        "Huanipaca",
+        "Lambrama",
+        "Pichirhua",
+        "San Pedro de Cachora",
+        "Tamburco"
+      ]
+    },
+    {
+      "nombre": "Andahuaylas",
+      "distritos": [
+        "Andahuaylas",
+        "Andarapa",
+        "Chiara",
+        "Huancarama",
+        "Huancaray",
+        "Huayana",
+        "José María Arguedas",
+        "Kaquiabamba",
+        "Kishuara",
+        "Pacobamba",
+        "Pacucha",
+        "Pampachiri",
+        "Pomacocha",
+        "San Antonio de Cachi",
+        "San Jerónimo",
+        "San Miguel de Chaccrampa",
+        "Santa María de Chicmo",
+        "Talavera",
+        "Tumay Huaraca",
+        "Turpo"
+      ]
+    },
+    {
+      "nombre": "Antabamba",
+      "distritos": [
+        "Antabamba",
+        "El Oro",
+        "Huaquirca",
+        "Juan Espinoza Medrano",
+        "Oropesa",
+        "Pachaconas",
+        "Sabaino"
+      ]
+    },
+    {
+      "nombre": "Aymaraes",
+      "distritos": [
+        "Capaya",
+        "Caraybamba",
+        "Chalhuanca",
+        "Chapimarca",
+        "Colcabamba",
+        "Cotaruse",
+        "Ihuayllo",
+        "Justo Apu Sahuaraura",
+        "Lucre",
+        "Pocohuanca",
+        "San Juan de Chacña",
+        "Sañayca",
+        "Soraya",
+        "Tapairihua",
+        "Tintay",
+        "Toraya",
+        "Yanaca"
+      ]
+    },
+    {
+      "nombre": "Chincheros",
+      "distritos": [
+        "Anco_Huallo",
+        "Chincheros",
+        "Cocharcas",
+        "El Porvenir",
+        "Huaccana",
+        "Los Chankas",
+        "Ocobamba",
+        "Ongoy",
+        "Ranracancha",
+        "Rocchacc",
+        "Uranmarca"
+      ]
+    },
+    {
+      "nombre": "Cotabambas",
+      "distritos": [
+        "Challhuahuacho",
+        "Cotabambas",
+        "Coyllurqui",
+        "Haquira",
+        "Mara",
+        "Tambobamba"
+      ]
+    },
+    {
+      "nombre": "Grau",
+      "distritos": [
+        "Chuquibambilla",
+        "Curasco",
+        "Curpahuasi",
+        "Gamarra",
+        "Huayllati",
+        "Mamara",
+        "Micaela Bastidas",
+        "Pataypampa",
+        "Progreso",
+        "San Antonio",
+        "Santa Rosa",
+        "Turpay",
+        "Vilcabamba",
+        "Virundo"
+      ]
+    }
+  ]
+}

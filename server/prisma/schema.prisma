@@ -1,0 +1,266 @@
+// Esquema de base de datos de TecRuta.
+//
+// Cubre lo que hoy vive disperso en localStorage / archivos estáticos del
+// frontend (AuthContext, CartContext, products.js, paymentConfig.js) más
+// las entidades nuevas necesarias para tener un sistema de ventas real:
+// pedidos con estado, historial de compras y direcciones guardadas.
+//
+// Esta es la fuente única de verdad del modelo de datos. Tanto la web
+// como una futura app móvil consumen esta misma base a través de la API,
+// nunca directamente.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// Cuentas y direcciones
+// ---------------------------------------------------------------------
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  nombre            String
+  apellido          String
+  fechaNacimiento   DateTime?
+  role              Role      @default(CUSTOMER)
+  verified          Boolean   @default(false)
+  verificationCode  String?
+  resetCode         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  addresses Address[]
+  orders    Order[]
+  cart      Cart?
+
+  @@map("users")
+}
+
+model Address {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  etiqueta     String? // "Casa", "Trabajo", etc. (opcional, uso futuro)
+  departamento String
+  provincia    String
+  distrito     String
+  direccion    String?
+  numero       String?
+  interior     String?
+  referencia   String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@map("addresses")
+}
+
+// ---------------------------------------------------------------------
+// Catálogo
+// ---------------------------------------------------------------------
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  icon        String?
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String         @id @default(cuid())
+  slug             String         @unique
+  name             String
+  brand            String?
+  description      String?
+  shortDescription String?
+  price            Decimal        @db.Decimal(10, 2)
+  compareAtPrice   Decimal?       @db.Decimal(10, 2)
+  stock            Int            @default(0)
+  featured         Boolean        @default(false)
+  bestSeller       Boolean        @default(false)
+  image            String?
+  tags             String[]
+  specifications   Json?
+  // --- Campos 3D (opcionales, aditivos) ---------------------------------
+  // Ningún producto existente los tiene todavía; el frontend siempre
+  // funciona con la galería de imágenes normal cuando faltan. Ver
+  // Product3DViewer.jsx (src/components/3d/) para el consumo de estos
+  // campos y el ProductForm del admin para su edición.
+  model3DUrl       String? // URL pública del .glb/.gltf
+  model3DPoster    String? // imagen de respaldo mientras carga o si el 3D falla
+  enable3D         Boolean        @default(false)
+  hotspots         Json? // [{ id, x, y, z, title, description }]
+  categoryId       String
+  category         Category       @relation(fields: [categoryId], references: [id])
+  images           ProductImage[]
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  position  Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// ---------------------------------------------------------------------
+// Métodos de pago (hoy: paymentConfig.js hardcodeado → administrable)
+// ---------------------------------------------------------------------
+
+model PaymentMethod {
+  id     String  @id @default(cuid())
+  key    String  @unique // 'yape' | 'plin' | 'bankTransfer' | 'cashOnDelivery'
+  label  String
+  active Boolean @default(true)
+  // Datos específicos de cada método (phoneNumber/holderName/qrImageUrl,
+  // o bankName/accountNumber/cci, etc.) — se guardan flexibles en JSON
+  // porque cada método tiene campos distintos.
+  config Json
+  orders Order[]
+
+  @@map("payment_methods")
+}
+
+// ---------------------------------------------------------------------
+// Carrito persistente (para clientes con sesión iniciada; los invitados
+// siguen usando localStorage en el frontend, sin cambios)
+// ---------------------------------------------------------------------
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+
+  @@map("carts")
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int     @default(1)
+
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// ---------------------------------------------------------------------
+// Pedidos (hoy: solo un mensaje de WhatsApp, sin registro consultable)
+// ---------------------------------------------------------------------
+
+enum DeliveryType {
+  SHIPPING
+  PICKUP
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id                String       @id @default(cuid())
+  userId            String?
+  user              User?        @relation(fields: [userId], references: [id])
+
+  // Datos de cliente en el momento del pedido (se copian aquí aunque el
+  // usuario esté logueado, para que el pedido quede intacto si luego el
+  // cliente edita su perfil).
+  customerNombre    String
+  customerApellido  String
+  customerCorreo    String
+  customerCelular   String
+
+  // Entrega
+  deliveryType      DeliveryType
+  departamento      String
+  provincia         String
+  distrito          String
+  direccion         String?
+  numero            String?
+  interior          String?
+  referencia        String?
+
+  // Facturación
+  quiereComprobante Boolean      @default(false)
+  documento         String?
+  otraPersona       Boolean      @default(false)
+  personaNombre     String?
+  personaCelular    String?
+
+  // Pago y totales
+  paymentMethodId   String?
+  paymentMethod     PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  subtotal          Decimal      @db.Decimal(10, 2)
+  savings           Decimal      @db.Decimal(10, 2) @default(0)
+  total             Decimal      @db.Decimal(10, 2)
+
+  status            OrderStatus  @default(PENDING)
+  whatsappSentAt    DateTime?
+
+  items             OrderItem[]
+  statusHistory     OrderStatusHistory[]
+
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  name      String // copia del nombre al momento de la venta (histórico)
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  @@map("order_status_history")
+}

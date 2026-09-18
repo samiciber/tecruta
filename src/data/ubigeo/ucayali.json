@@ -1,0 +1,41 @@
+{
+  "provincias": [
+    {
+      "nombre": "Atalaya",
+      "distritos": [
+        "Raymondi",
+        "Sepahua",
+        "Tahuania",
+        "Yurua"
+      ]
+    },
+    {
+      "nombre": "Coronel Portillo",
+      "distritos": [
+        "Calleria",
+        "Campoverde",
+        "Iparia",
+        "Manantay",
+        "Masisea",
+        "Nueva Requena",
+        "Yarinacocha"
+      ]
+    },
+    {
+      "nombre": "Padre Abad",
+      "distritos": [
+        "Alexander Von Humboldt",
+        "Curimana",
+        "Irazola",
+        "Neshuya",
+        "Padre Abad"
+      ]
+    },
+    {
+      "nombre": "Purús",
+      "distritos": [
+        "Purus"
+      ]
+    }
+  ]
+}

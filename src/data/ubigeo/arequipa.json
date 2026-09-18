@@ -1,0 +1,153 @@
+{
+  "provincias": [
+    {
+      "nombre": "Arequipa",
+      "distritos": [
+        "Alto Selva Alegre",
+        "Arequipa",
+        "Cayma",
+        "Cerro Colorado",
+        "Characato",
+        "Chiguata",
+        "Jacobo Hunter",
+        "José Luis Bustamante Y Rivero",
+        "La Joya",
+        "Mariano Melgar",
+        "Miraflores",
+        "Mollebaya",
+        "Paucarpata",
+        "Pocsi",
+        "Polobaya",
+        "Queqeña",
+        "Sabandia",
+        "Sachaca",
+        "San Juan de Siguas",
+        "San Juan de Tarucani",
+        "Santa Isabel de Siguas",
+        "Santa Rita de Siguas",
+        "Socabaya",
+        "Tiabaya",
+        "Uchumayo",
+        "Vitor",
+        "Yanahuara",
+        "Yarabamba",
+        "Yura"
+      ]
+    },
+    {
+      "nombre": "Camaná",
+      "distritos": [
+        "Camaná",
+        "José María Quimper",
+        "Mariano Nicolás Valcárcel",
+        "Mariscal Cáceres",
+        "Nicolás de Pierola",
+        "Ocoña",
+        "Quilca",
+        "Samuel Pastor"
+      ]
+    },
+    {
+      "nombre": "Caravelí",
+      "distritos": [
+        "Acarí",
+        "Atico",
+        "Atiquipa",
+        "Bella Unión",
+        "Cahuacho",
+        "Caravelí",
+        "Chala",
+        "Chaparra",
+        "Huanuhuanu",
+        "Jaqui",
+        "Lomas",
+        "Quicacha",
+        "Yauca"
+      ]
+    },
+    {
+      "nombre": "Castilla",
+      "distritos": [
+        "Andagua",
+        "Aplao",
+        "Ayo",
+        "Chachas",
+        "Chilcaymarca",
+        "Choco",
+        "Huancarqui",
+        "Machaguay",
+        "Orcopampa",
+        "Pampacolca",
+        "Tipan",
+        "Uraca",
+        "Uñon",
+        "Viraco"
+      ]
+    },
+    {
+      "nombre": "Caylloma",
+      "distritos": [
+        "Achoma",
+        "Cabanaconde",
+        "Callalli",
+        "Caylloma",
+        "Chivay",
+        "Coporaque",
+        "Huambo",
+        "Huanca",
+        "Ichupampa",
+        "Lari",
+        "Lluta",
+        "Maca",
+        "Madrigal",
+        "Majes",
+        "San Antonio de Chuca",
+        "Sibayo",
+        "Tapay",
+        "Tisco",
+        "Tuti",
+        "Yanque"
+      ]
+    },
+    {
+      "nombre": "Condesuyos",
+      "distritos": [
+        "Andaray",
+        "Cayarani",
+        "Chichas",
+        "Chuquibamba",
+        "Iray",
+        "Río Grande",
+        "Salamanca",
+        "Yanaquihua"
+      ]
+    },
+    {
+      "nombre": "Islay",
+      "distritos": [
+        "Cocachacra",
+        "Dean Valdivia",
+        "Islay",
+        "Mejia",
+        "Mollendo",
+        "Punta de Bombón"
+      ]
+    },
+    {
+      "nombre": "La Uniòn",
+      "distritos": [
+        "Alca",
+        "Charcana",
+        "Cotahuasi",
+        "Huaynacotas",
+        "Pampamarca",
+        "Puyca",
+        "Quechualla",
+        "Sayla",
+        "Tauria",
+        "Tomepampa",
+        "Toro"
+      ]
+    }
+  ]
+}

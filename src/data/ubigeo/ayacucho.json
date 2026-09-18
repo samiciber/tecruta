@@ -1,0 +1,178 @@
+{
+  "provincias": [
+    {
+      "nombre": "Cangallo",
+      "distritos": [
+        "Cangallo",
+        "Chuschi",
+        "Los Morochucos",
+        "María Parado de Bellido",
+        "Paras",
+        "Totos"
+      ]
+    },
+    {
+      "nombre": "Huamanga",
+      "distritos": [
+        "Acocro",
+        "Acos Vinchos",
+        "Andrés Avelino Cáceres Dorregaray",
+        "Ayacucho",
+        "Carmen Alto",
+        "Chiara",
+        "Jesús Nazareno",
+        "Ocros",
+        "Pacaycasa",
+        "Quinua",
+        "San José de Ticllas",
+        "San Juan Bautista",
+        "Santiago de Pischa",
+        "Socos",
+        "Tambillo",
+        "Vinchos"
+      ]
+    },
+    {
+      "nombre": "Huanca Sancos",
+      "distritos": [
+        "Carapo",
+        "Sacsamarca",
+        "Sancos",
+        "Santiago de Lucanamarca"
+      ]
+    },
+    {
+      "nombre": "Huanta",
+      "distritos": [
+        "Ayahuanco",
+        "Canayre",
+        "Chaca",
+        "Huamanguilla",
+        "Huanta",
+        "Iguain",
+        "Llochegua",
+        "Luricocha",
+        "Pucacolpa",
+        "Santillana",
+        "Sivia",
+        "Uchuraccay"
+      ]
+    },
+    {
+      "nombre": "La Mar",
+      "distritos": [
+        "Anchihuay",
+        "Anco",
+        "Ayna",
+        "Chilcas",
+        "Chungui",
+        "Luis Carranza",
+        "Oronccoy",
+        "Samugari",
+        "San Miguel",
+        "Santa Rosa",
+        "Tambo"
+      ]
+    },
+    {
+      "nombre": "Lucanas",
+      "distritos": [
+        "Aucara",
+        "Cabana",
+        "Carmen Salcedo",
+        "Chaviña",
+        "Chipao",
+        "Huac-Huas",
+        "Laramate",
+        "Leoncio Prado",
+        "Llauta",
+        "Lucanas",
+        "Ocaña",
+        "Otoca",
+        "Puquio",
+        "Saisa",
+        "San Cristóbal",
+        "San Juan",
+        "San Pedro",
+        "San Pedro de Palco",
+        "Sancos",
+        "Santa Ana de Huaycahuacho",
+        "Santa Lucia"
+      ]
+    },
+    {
+      "nombre": "Parinacochas",
+      "distritos": [
+        "Chumpi",
+        "Coracora",
+        "Coronel Castañeda",
+        "Pacapausa",
+        "Pullo",
+        "Puyusca",
+        "San Francisco de Ravacayco",
+        "Upahuacho"
+      ]
+    },
+    {
+      "nombre": "Pàucar del Sara Sara",
+      "distritos": [
+        "Colta",
+        "Corculla",
+        "Lampa",
+        "Marcabamba",
+        "Oyolo",
+        "Pararca",
+        "Pausa",
+        "San Javier de Alpabamba",
+        "San José de Ushua",
+        "Sara Sara"
+      ]
+    },
+    {
+      "nombre": "Sucre",
+      "distritos": [
+        "Belén",
+        "Chalcos",
+        "Chilcayoc",
+        "Huacaña",
+        "Morcolla",
+        "Paico",
+        "Querobamba",
+        "San Pedro de Larcay",
+        "San Salvador de Quije",
+        "Santiago de Paucaray",
+        "Soras"
+      ]
+    },
+    {
+      "nombre": "Vilcas Huamán",
+      "distritos": [
+        "Accomarca",
+        "Carhuanca",
+        "Concepción",
+        "Huambalpa",
+        "Independencia",
+        "Saurama",
+        "Vilcas Huaman",
+        "Vischongo"
+      ]
+    },
+    {
+      "nombre": "Víctor Fajardo",
+      "distritos": [
+        "Alcamenca",
+        "Apongo",
+        "Asquipata",
+        "Canaria",
+        "Cayara",
+        "Colca",
+        "Hualla",
+        "Huamanquiquia",
+        "Huancapi",
+        "Huancaraylla",
+        "Sarhua",
+        "Vilcanchos"
+      ]
+    }
+  ]
+}

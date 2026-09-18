@@ -1,0 +1,52 @@
+{
+  "provincias": [
+    {
+      "nombre": "Candarave",
+      "distritos": [
+        "Cairani",
+        "Camilaca",
+        "Candarave",
+        "Curibaya",
+        "Huanuara",
+        "Quilahuani"
+      ]
+    },
+    {
+      "nombre": "Jorge Basadre",
+      "distritos": [
+        "Ilabaya",
+        "Ite",
+        "Locumba"
+      ]
+    },
+    {
+      "nombre": "Tacna",
+      "distritos": [
+        "Alto de la Alianza",
+        "Calana",
+        "Ciudad Nueva",
+        "Coronel Gregorio Albarracín Lanchipa",
+        "Inclan",
+        "La Yarada los Palos",
+        "Pachia",
+        "Palca",
+        "Pocollay",
+        "Sama",
+        "Tacna"
+      ]
+    },
+    {
+      "nombre": "Tarata",
+      "distritos": [
+        "Estique",
+        "Estique-Pampa",
+        "Héroes Albarracín",
+        "Sitajara",
+        "Susapaya",
+        "Tarata",
+        "Tarucachi",
+        "Ticaco"
+      ]
+    }
+  ]
+}
