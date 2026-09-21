@@ -14,13 +14,16 @@ export const storeConfig = {
   // Número de WhatsApp para pedidos. Formato internacional sin "+" ni espacios.
   // Reemplaza este valor por el número real de la tienda antes de publicar.
   whatsapp: {
-  number: '51927412366',
-  displayNumber: '+51 927 412 366',
-},
+    number: '51927412366',
+    displayNumber: '+51 927 412 366',
+  },
 
   social: {
-    instagram: 'https://instagram.com/tecruta.pe',
-    tiktok: 'https://tiktok.com/@tecruta.pe',
+    instagram: 'https://www.instagram.com/samuelfs_10?stkn=MXV6OGNnZnY0YjhjZg==',
+    tiktok: 'https://www.tiktok.com/@samuel_fs01?_r=1&_t=ZS-99u6WOgpYlW',
+    facebook: 'https://www.facebook.com/samu25534454',
+    youtube: 'https://www.youtube.com/@samuelfs10',
+    linkedin: 'https://www.linkedin.com/in/marcosfabiansalas',
     email: 'hola@tecruta.pe',
   },
 
@@ -35,7 +38,7 @@ export const storeConfig = {
     sunday: 'Domingos: cerrado',
   },
 
-    freeShipping: {
+  freeShipping: {
     threshold: 150,
   },
 
