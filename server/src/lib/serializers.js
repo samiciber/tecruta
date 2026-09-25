@@ -37,6 +37,7 @@ export function serializeOrder(order) {
     savings: Number(order.savings),
     total: Number(order.total),
     paymentMethodLabel: order.paymentMethod?.label ?? null,
+    receiptUrl: order.receiptUrl ?? null,
     items: (order.items || []).map((it) => ({
       id: it.id,
       productId: it.productId,

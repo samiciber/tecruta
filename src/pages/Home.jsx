@@ -8,6 +8,7 @@ import BestSellers from '../components/home/BestSellers.jsx'
 import OffersSection from '../components/home/OffersSection.jsx'
 import ExploreCategories from '../components/home/ExploreCategories.jsx'
 import TrustSection from '../components/home/TrustSection.jsx'
+import Testimonials from '../components/home/Testimonials.jsx'
 import Reveal from '../components/animations/Reveal.jsx'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 
@@ -73,6 +74,10 @@ export default function Home() {
 
       <Reveal>
         <BestSellers products={bestSellers} />
+      </Reveal>
+
+      <Reveal>
+        <Testimonials />
       </Reveal>
 
       <Reveal>

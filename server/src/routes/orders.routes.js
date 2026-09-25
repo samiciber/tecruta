@@ -5,6 +5,7 @@ import { requireAuth, optionalAuth } from '../middleware/auth.js'
 import { serializeOrder } from '../lib/serializers.js'
 import { validate } from '../middleware/validate.js'
 import { createOrderSchema } from '../lib/schemas.js'
+import { uploadReceiptToCloudinary } from '../lib/cloudinary.js'
 
 export const ordersRouter = Router()
 
@@ -112,6 +113,67 @@ ordersRouter.post(
     })
 
     res.status(201).json(serializeOrder(order))
+  }),
+)
+
+// Tipos de archivo aceptados para el comprobante — solo imágenes o PDF.
+const RECEIPT_ALLOWED_PREFIXES = ['data:image/', 'data:application/pdf']
+// Mismo criterio de "estricto" que la subida de imágenes de producto del
+// admin (ver MAX_UPLOAD_BYTES en src/pages/admin/ProductForm.jsx), con un
+// poco más de margen porque una foto de comprobante tomada con el
+// celular suele pesar más que una foto de producto ya optimizada.
+const RECEIPT_MAX_BYTES = 8 * 1024 * 1024 // 8MB
+
+// Calcula el tamaño real en bytes de una data URL en base64 (sin contar
+// el prefijo "data:...;base64,"), para no depender de un Content-Length
+// que el cliente podría falsear.
+function base64DataUrlSizeInBytes(dataUrl) {
+  const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
+  const padding = base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0
+  return Math.floor((base64.length * 3) / 4) - padding
+}
+
+// POST /api/orders/:orderId/receipt
+//
+// Sube el comprobante de pago (imagen o PDF) a Cloudinary y guarda la URL
+// resultante en el pedido. Es un endpoint PÚBLICO a propósito (sin
+// requireAuth ni auth de admin): el checkout permite comprar como
+// invitado, así que el cliente que recién creó su pedido todavía puede
+// no tener sesión iniciada. La única validación de "permiso" es que el
+// pedido exista de verdad (si no, 404) — no hay otra restricción por
+// diseño, según lo acordado.
+//
+// Este MISMO endpoint lo reutiliza el panel admin (AdminOrders.jsx) para
+// subir o reemplazar el comprobante de un pedido manualmente — no hay un
+// endpoint separado para eso.
+ordersRouter.post(
+  '/:orderId/receipt',
+  asyncHandler(async (req, res) => {
+    const { orderId } = req.params
+    const { file } = req.body || {}
+
+    const order = await prisma.order.findUnique({ where: { id: orderId } })
+    if (!order) {
+      return res.status(404).json({ error: 'El pedido indicado no existe.' })
+    }
+
+    if (!file || typeof file !== 'string' || !RECEIPT_ALLOWED_PREFIXES.some((prefix) => file.startsWith(prefix))) {
+      return res.status(400).json({ error: 'El comprobante debe ser una imagen o un PDF (data URL en base64).' })
+    }
+
+    if (base64DataUrlSizeInBytes(file) > RECEIPT_MAX_BYTES) {
+      return res.status(400).json({ error: 'El comprobante pesa demasiado (máximo 8MB).' })
+    }
+
+    const url = await uploadReceiptToCloudinary(file)
+
+    const updated = await prisma.order.update({
+      where: { id: orderId },
+      data: { receiptUrl: url },
+      include: orderInclude,
+    })
+
+    res.json({ url, order: serializeOrder(updated) })
   }),
 )
 

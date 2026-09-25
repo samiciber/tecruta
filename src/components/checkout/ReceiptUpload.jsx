@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { FileUp, FileText, X, Info } from 'lucide-react'
+import { ToastContext } from '../ui/ToastProvider.jsx'
+
+// Mismo límite que valida el backend en POST /api/orders/:orderId/receipt
+// (ver RECEIPT_MAX_BYTES en server/src/routes/orders.routes.js) — se
+// repite aquí para avisar al cliente antes de intentar subir el archivo,
+// no como único punto de validación.
+const MAX_RECEIPT_BYTES = 8 * 1024 * 1024
 
 export default function ReceiptUpload({ file, onChange }) {
   const [previewUrl, setPreviewUrl] = useState(null)
+  const toast = useContext(ToastContext)
 
   useEffect(() => {
     if (!file || !file.type?.startsWith('image/')) {
@@ -16,7 +24,20 @@ export default function ReceiptUpload({ file, onChange }) {
 
   const handleSelect = (e) => {
     const selected = e.target.files?.[0]
-    if (selected) onChange(selected)
+    e.target.value = ''
+    if (!selected) return
+
+    const isImage = selected.type?.startsWith('image/')
+    const isPdf = selected.type === 'application/pdf'
+    if (!isImage && !isPdf) {
+      toast?.showToast('El comprobante debe ser una imagen o un PDF.', 'error')
+      return
+    }
+    if (selected.size > MAX_RECEIPT_BYTES) {
+      toast?.showToast('El comprobante pesa demasiado (máximo 8MB).', 'error')
+      return
+    }
+    onChange(selected)
   }
 
   return (
@@ -50,7 +71,7 @@ export default function ReceiptUpload({ file, onChange }) {
       )}
       <p className="flex items-start gap-1.5 text-xs text-ink-soft/70 dark:text-paper/50">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        El comprobante se adjunta solo como referencia local: aún no se envía a ningún servidor. La confirmación final de tu pago se coordina por WhatsApp.
+        El comprobante se guarda junto a tu pedido (imagen o PDF, máximo 8MB). La confirmación final de tu pago igual se coordina por WhatsApp.
       </p>
     </div>
   )

@@ -60,11 +60,8 @@ export default function HeroSlider() {
 
   return (
     <section
+      id="home-hero"
       className="relative w-full overflow-hidden border-b border-paper-line bg-ink dark:border-night-line"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)}
-      onBlur={() => setPaused(false)}
       aria-roledescription="carrusel"
       aria-label="Categorías destacadas"
     >
@@ -153,6 +150,10 @@ export default function HeroSlider() {
           <button
             type="button"
             onClick={() => goTo(active - 1)}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
             aria-label="Categoría anterior"
             className="absolute left-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:flex"
           >
@@ -161,6 +162,10 @@ export default function HeroSlider() {
           <button
             type="button"
             onClick={() => goTo(active + 1)}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
             aria-label="Siguiente categoría"
             className="absolute right-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:flex"
           >
@@ -171,6 +176,10 @@ export default function HeroSlider() {
             className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2"
             role="tablist"
             aria-label="Seleccionar categoría"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
           >
             {slides.map((slide, i) => (
               <button

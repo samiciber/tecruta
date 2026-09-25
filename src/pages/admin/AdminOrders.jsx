@@ -1,9 +1,97 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, FileText, Upload, ExternalLink } from 'lucide-react'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { formatCurrency } from '../../utils/formatCurrency.js'
+
+// Mismo límite que valida el backend (ver RECEIPT_MAX_BYTES en
+// server/src/routes/orders.routes.js).
+const MAX_RECEIPT_BYTES = 8 * 1024 * 1024
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+// Comprobante de pago del pedido: lo muestra si ya existe (imagen o PDF,
+// según la extensión de la URL) y siempre permite subir uno nuevo o
+// reemplazar el actual — reutiliza el MISMO endpoint público que usa el
+// checkout (POST /api/orders/:orderId/receipt), sin ruta separada para
+// admin.
+function ReceiptManager({ order, onUpdated }) {
+  const toast = useContext(ToastContext)
+  const [uploading, setUploading] = useState(false)
+
+  const isPdf = order.receiptUrl?.toLowerCase().split('?')[0].endsWith('.pdf')
+
+  const handleSelect = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    const isImage = file.type?.startsWith('image/')
+    const isFilePdf = file.type === 'application/pdf'
+    if (!isImage && !isFilePdf) {
+      toast?.showToast('El comprobante debe ser una imagen o un PDF.', 'error')
+      return
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+      toast?.showToast('El comprobante pesa demasiado (máximo 8MB).', 'error')
+      return
+    }
+
+    setUploading(true)
+    try {
+      const dataUrl = await fileToDataUrl(file)
+      const { order: updated } = await api.orders.uploadReceipt(order.id, dataUrl)
+      onUpdated(updated)
+      toast?.showToast('Comprobante actualizado.', 'success')
+    } catch (err) {
+      toast?.showToast(err.message, 'error')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 border-t border-paper-line pt-3 dark:border-night-line">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-soft/70 dark:text-paper/40">Comprobante de pago</p>
+
+      {order.receiptUrl ? (
+        <a
+          href={order.receiptUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-fit items-center gap-3 rounded-lg border border-paper-line p-2 transition-colors hover:border-ink/30 dark:border-night-line dark:hover:border-paper/30"
+        >
+          {isPdf ? (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-route-soft text-route dark:bg-route-softDark">
+              <FileText className="h-5 w-5" />
+            </div>
+          ) : (
+            <img src={order.receiptUrl} alt="Comprobante de pago" className="h-12 w-12 shrink-0 rounded-md object-cover" />
+          )}
+          <span className="flex items-center gap-1 text-sm font-medium text-route">
+            Ver comprobante <ExternalLink className="h-3.5 w-3.5" />
+          </span>
+        </a>
+      ) : (
+        <p className="text-sm text-ink-soft/70 dark:text-paper/40">El cliente no adjuntó comprobante.</p>
+      )}
+
+      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-route hover:text-route dark:border-night-line dark:text-paper/60">
+        <Upload className="h-3.5 w-3.5" />
+        {uploading ? 'Subiendo…' : order.receiptUrl ? 'Reemplazar comprobante' : 'Subir comprobante'}
+        <input type="file" accept="image/*,application/pdf" className="hidden" disabled={uploading} onChange={handleSelect} />
+      </label>
+    </div>
+  )
+}
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
 const STATUS_LABELS = {
@@ -102,6 +190,10 @@ function OrderRow({ order, token, onUpdated }) {
               {order.direccion} {order.numero} {order.referencia ? `· ${order.referencia}` : ''}
             </p>
           )}
+
+          <div className="mt-3">
+            <ReceiptManager order={order} onUpdated={onUpdated} />
+          </div>
         </div>
       )}
     </div>

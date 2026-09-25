@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { User, LogOut, Package, MapPin, UserCircle, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 
-export default function AccountMenu() {
+export default function AccountMenu({ transparent = false }) {
   const { user, isAuthenticated, logout } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -22,7 +22,11 @@ export default function AccountMenu() {
     return (
       <Link
         to="/iniciar-sesion"
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-paper-line text-ink-soft transition-colors hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper"
+        className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+          transparent
+            ? 'lg:border-white/30 lg:text-white lg:hover:border-white/60 lg:hover:text-white border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
+            : 'border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
+        }`}
         aria-label="Iniciar sesión"
       >
         <User className="h-[18px] w-[18px]" />
@@ -35,7 +39,11 @@ export default function AccountMenu() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 w-10 items-center justify-center rounded-full border border-route/40 bg-route-soft text-route transition-colors hover:border-route dark:bg-route-softDark"
+        className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+          transparent
+            ? 'lg:border-white/50 lg:bg-white/15 lg:text-white lg:hover:border-white border-route/40 bg-route-soft text-route hover:border-route dark:bg-route-softDark'
+            : 'border-route/40 bg-route-soft text-route hover:border-route dark:bg-route-softDark'
+        }`}
         aria-label="Cuenta"
         aria-expanded={open}
       >

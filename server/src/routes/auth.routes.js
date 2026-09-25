@@ -1,9 +1,12 @@
+import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
 import { signToken } from '../lib/token.js'
 import { serializeUser } from '../lib/serializers.js'
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/mailer.js'
+import { buildGoogleAuthUrl, exchangeCodeForAccessToken, fetchGoogleProfile } from '../lib/google.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth } from '../middleware/auth.js'
 import { loginRateLimiter, authActionRateLimiter } from '../middleware/rateLimit.js'
@@ -247,5 +250,128 @@ authRouter.post(
     const passwordHash = await bcrypt.hash(newPassword, 10)
     await prisma.user.update({ where: { id: user.id }, data: { passwordHash, resetCode: null } })
     res.json({ ok: true })
+  }),
+)
+
+// -----------------------------------------------------------------------
+// Login con Google (OAuth 2.0, flujo "Authorization Code").
+//
+// Flujo completo:
+//   1. El botón "Continuar con Google" del frontend hace un GET normal
+//      (navegación de navegador, no fetch) a /api/auth/google.
+//   2. Esta ruta redirige a la pantalla de consentimiento de Google, con
+//      un `state` firmado (JWT de corta duración) como mitigación CSRF.
+//   3. Google redirige de vuelta a /api/auth/google/callback con `code`
+//      y el mismo `state`.
+//   4. El callback valida el `state`, intercambia el `code` por un perfil
+//      de Google, busca/crea/vincula el usuario, y redirige al frontend
+//      con un token de sesión de TecRuta (el mismo formato que devuelve
+//      /api/auth/login) en la URL — el frontend lo recoge en
+//      /auth/google/callback y completa el login igual que uno normal.
+// -----------------------------------------------------------------------
+
+const GOOGLE_STATE_PURPOSE = 'google-oauth-state'
+
+function getFrontendUrl() {
+  // Reutiliza CORS_ORIGIN: ya es, por definición, el origen del frontend
+  // que esta API acepta — no hace falta una variable de entorno nueva.
+  return (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, '')
+}
+
+// GET /api/auth/google
+// Navegación de navegador (no fetch/XHR): el botón de la UI es un <a> o
+// hace window.location.href = esta URL.
+authRouter.get('/google', (req, res) => {
+  try {
+    const state = jwt.sign({ purpose: GOOGLE_STATE_PURPOSE }, process.env.JWT_SECRET, { expiresIn: '10m' })
+    res.redirect(buildGoogleAuthUrl(state))
+  } catch (err) {
+    console.error('No se pudo iniciar el login con Google:', err.message)
+    res.redirect(`${getFrontendUrl()}/iniciar-sesion?googleError=config`)
+  }
+})
+
+// GET /api/auth/google/callback
+authRouter.get(
+  '/google/callback',
+  asyncHandler(async (req, res) => {
+    const frontendUrl = getFrontendUrl()
+    const { code, state, error } = req.query || {}
+
+    if (error) {
+      // El usuario canceló el consentimiento, o Google reportó un error.
+      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=denied`)
+    }
+
+    if (!code || !state) {
+      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=invalid`)
+    }
+
+    try {
+      const statePayload = jwt.verify(state, process.env.JWT_SECRET)
+      if (statePayload.purpose !== GOOGLE_STATE_PURPOSE) throw new Error('state inválido')
+    } catch {
+      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=state`)
+    }
+
+    let profile
+    try {
+      const accessToken = await exchangeCodeForAccessToken(code)
+      profile = await fetchGoogleProfile(accessToken)
+    } catch (err) {
+      console.error('Falló el intercambio con Google:', err.message)
+      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=exchange`)
+    }
+
+    if (!profile?.email) {
+      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=no-email`)
+    }
+
+    const email = normalizeEmail(profile.email)
+
+    // 1) ¿Ya existe una cuenta vinculada a este googleId? (login recurrente)
+    let user = await prisma.user.findUnique({ where: { googleId: profile.sub } })
+
+    // 2) Si no, ¿existe una cuenta con este correo creada por otra vía
+    //    (registro tradicional, o un login de Google anterior con otro
+    //    googleId)? Si existe, se vincula esta cuenta de Google a ella en
+    //    vez de crear un usuario duplicado.
+    if (!user) {
+      const existingByEmail = await prisma.user.findUnique({ where: { email } })
+      if (existingByEmail) {
+        user = await prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            googleId: profile.sub,
+            // Si la cuenta existente aún no estaba verificada, el login
+            // con Google confirma que el correo sí es del usuario.
+            verified: true,
+          },
+        })
+      }
+    }
+
+    // 3) Si tampoco existe por correo, se crea una cuenta nueva. La
+    //    contraseña se genera aleatoria e inutilizable — este usuario
+    //    inicia sesión con Google; si más adelante quiere una contraseña
+    //    propia, puede definirla con el flujo existente de "olvidé mi
+    //    contraseña" (POST /api/auth/forgot-password).
+    if (!user) {
+      const randomPassword = crypto.randomBytes(32).toString('hex')
+      const passwordHash = await bcrypt.hash(randomPassword, 10)
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          nombre: profile.given_name?.trim() || profile.name?.trim() || 'Cliente',
+          apellido: profile.family_name?.trim() || '',
+          googleId: profile.sub,
+          verified: true,
+        },
+      })
+    }
+
+    const token = signToken({ sub: user.id })
+    res.redirect(`${frontendUrl}/auth/google/callback?token=${encodeURIComponent(token)}`)
   }),
 )

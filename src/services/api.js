@@ -11,7 +11,7 @@
 // responde, el error simplemente se propaga y AuthContext lo muestra
 // como mensaje de error al usuario.
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 async function request(path, { method = 'GET', body, token } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -63,6 +63,12 @@ export const api = {
     // esa acción. Quien la llama (Checkout.jsx) debe atrapar el error.
     create: (payload, token) => request('/api/orders', { method: 'POST', body: payload, token }),
     mine: (token) => request('/api/orders/me', { token }),
+    // Sube el comprobante de pago (imagen o PDF, como data URL en base64)
+    // y lo guarda en el pedido. Endpoint público — no lleva token: lo usa
+    // tanto el checkout de invitado como el panel admin para reemplazar
+    // el comprobante manualmente.
+    uploadReceipt: (orderId, fileDataUrl) =>
+      request(`/api/orders/${encodeURIComponent(orderId)}/receipt`, { method: 'POST', body: { file: fileDataUrl } }),
   },
 
   // Carrito persistente en servidor — solo para clientes con sesión

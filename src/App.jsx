@@ -14,6 +14,7 @@ const Legal = lazy(() => import('./pages/Legal.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
 const Register = lazy(() => import('./pages/Register.jsx'))
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'))
+const GoogleCallback = lazy(() => import('./pages/GoogleCallback.jsx'))
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
 const OrderHistory = lazy(() => import('./pages/OrderHistory.jsx'))
 const Addresses = lazy(() => import('./pages/Addresses.jsx'))
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/iniciar-sesion" element={<Login />} />
             <Route path="/crear-cuenta" element={<Register />} />
             <Route path="/verificar-correo" element={<VerifyEmail />} />
+            <Route path="/auth/google/callback" element={<GoogleCallback />} />
             <Route path="/recuperar-contrasena" element={<ForgotPassword />} />
             <Route path="/mis-pedidos" element={<OrderHistory />} />
             <Route path="/mis-direcciones" element={<Addresses />} />

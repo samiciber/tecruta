@@ -19,6 +19,29 @@ import { storeConfig } from '../config/storeConfig.js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+// Sube el comprobante a Cloudinary (vía POST /api/orders/:orderId/receipt)
+// y lo asocia al pedido ya creado. Falla en silencio (solo advertencia en
+// consola) a propósito: si esto no funciona, la compra ya se concretó por
+// WhatsApp de todos modos — el cliente siempre puede mandar el
+// comprobante por ese medio, o el admin subirlo manualmente después.
+async function uploadReceiptFile(orderId, file) {
+  try {
+    const dataUrl = await fileToDataUrl(file)
+    await api.orders.uploadReceipt(orderId, dataUrl)
+  } catch (err) {
+    console.warn('No se pudo subir el comprobante de pago (el pedido ya se envió por WhatsApp igual):', err.message)
+  }
+}
+
 export default function Checkout() {
   const { items, subtotal, itemCount, setIsOpen, clearCart } = useCart()
   const { user, token } = useAuth()
@@ -191,16 +214,24 @@ export default function Checkout() {
   // esto solo deja el registro en la base de datos para el historial de
   // compras del cliente.
   const handleBeforeSend = () => {
-    api.orders
-      .create(
-        {
-          customer,
-          delivery,
-          paymentMethod,
-          items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
-        },
-        token,
-      )
+    const orderPromise = api.orders.create(
+      {
+        customer,
+        delivery,
+        paymentMethod,
+        items: items.map((item) => ({ productId: item.id, quantity: item.quantity })),
+      },
+      token,
+    )
+
+    orderPromise
+      .then((order) => {
+        // El comprobante (si el cliente adjuntó uno) se sube DESPUÉS de
+        // crear el pedido, porque el endpoint de subida necesita el id
+        // del pedido — pero sigue siendo "en paralelo" al WhatsApp: nada
+        // de esto se espera (await) antes de continuar.
+        if (receipt) uploadReceiptFile(order.id, receipt)
+      })
       .catch((err) => {
         console.warn('No se pudo registrar el pedido en el sistema (el envío por WhatsApp no se ve afectado):', err.message)
       })

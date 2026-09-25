@@ -73,3 +73,10 @@ export async function uploadModelToCloudinary(dataUrl) {
   return uploadToCloudinary({ dataUrl, resourceType: 'raw', folder: 'tecruta/products/models' })
 }
 
+// Comprobantes de pago (imagen o PDF) — carpeta separada, y resourceType
+// "auto" porque el archivo puede ser una imagen (jpg/png) o un PDF:
+// Cloudinary detecta cuál es y lo aloja de la forma correcta para que
+// después se pueda mostrar/enlazar directo desde el panel admin.
+export async function uploadReceiptToCloudinary(dataUrl) {
+  return uploadToCloudinary({ dataUrl, resourceType: 'auto', folder: 'tecruta/receipts' })
+}

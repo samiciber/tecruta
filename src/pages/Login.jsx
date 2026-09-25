@@ -1,22 +1,44 @@
-import React, { useContext, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useContext, useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AuthCard from '../components/auth/AuthCard.jsx'
 import PasswordInput from '../components/auth/PasswordInput.jsx'
 import FormBanner from '../components/auth/FormBanner.jsx'
+import GoogleButton from '../components/auth/GoogleButton.jsx'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+// Mensajes legibles para cada valor de ?googleError= con el que el
+// backend puede redirigir de vuelta aquí si algo falla en el flujo de
+// Google (ver GET /api/auth/google/callback).
+const GOOGLE_ERROR_MESSAGES = {
+  denied: 'Cancelaste el inicio de sesión con Google.',
+  invalid: 'No se pudo completar el inicio de sesión con Google. Inténtalo de nuevo.',
+  state: 'La sesión de Google expiró o no es válida. Inténtalo de nuevo.',
+  exchange: 'Hubo un problema al conectar con Google. Inténtalo de nuevo en unos segundos.',
+  'no-email': 'Tu cuenta de Google no tiene un correo disponible para continuar.',
+  config: 'El inicio de sesión con Google no está disponible en este momento.',
+}
+
 export default function Login() {
   const { login } = useAuth()
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [form, setForm] = useState({ email: '', password: '', remember: true })
   const [touched, setTouched] = useState({})
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    const googleError = searchParams.get('googleError')
+    if (!googleError) return
+    setFormError(GOOGLE_ERROR_MESSAGES[googleError] || 'No se pudo iniciar sesión con Google.')
+    setSearchParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const emailError = touched.email && !EMAIL_RE.test(form.email.trim()) ? 'Ingresa un correo válido.' : ''
   const passwordError = touched.password && !form.password ? 'Ingresa tu contraseña.' : ''
@@ -111,6 +133,14 @@ export default function Login() {
         <button type="submit" disabled={submitting} className="btn-primary mt-1 w-full">
           {submitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : 'Iniciar sesión'}
         </button>
+
+        <div className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-ink-soft/60 dark:text-paper/40">
+          <span className="h-px flex-1 bg-paper-line dark:bg-night-line" />
+          o
+          <span className="h-px flex-1 bg-paper-line dark:bg-night-line" />
+        </div>
+
+        <GoogleButton />
       </form>
     </AuthCard>
   )

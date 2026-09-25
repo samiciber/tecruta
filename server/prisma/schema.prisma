@@ -38,6 +38,15 @@ model User {
   verified          Boolean   @default(false)
   verificationCode  String?
   resetCode         String?
+  // Id de cuenta de Google (campo `sub` del perfil) para cuentas creadas o
+  // vinculadas vía "Continuar con Google". Null para cuentas que solo usan
+  // correo/contraseña. Ver server/src/lib/google.js y la ruta
+  // GET /api/auth/google/callback en auth.routes.js. passwordHash sigue
+  // siendo obligatorio incluso para cuentas de Google: se genera uno
+  // aleatorio e inutilizable en el momento de creación, para no tener que
+  // volver nullable esa columna — el usuario puede definir una contraseña
+  // real más adelante con el flujo existente de "olvidé mi contraseña".
+  googleId          String?   @unique
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -229,6 +238,14 @@ model Order {
 
   status            OrderStatus  @default(PENDING)
   whatsappSentAt    DateTime?
+
+  // URL en Cloudinary del comprobante de pago (imagen o PDF). Se llena
+  // vía POST /api/orders/:orderId/receipt (endpoint público, ver
+  // orders.routes.js) — el cliente lo sube en el paso 3 del checkout, en
+  // paralelo al envío por WhatsApp sin bloquearlo, y el admin puede
+  // subirlo o reemplazarlo manualmente desde el panel reutilizando el
+  // mismo endpoint. Null hasta que alguien lo suba.
+  receiptUrl        String?
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]

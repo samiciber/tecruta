@@ -77,6 +77,22 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Completa el login iniciado con "Continuar con Google": recibe el
+  // token de sesión de TecRuta que el backend ya emitió (ver
+  // GET /api/auth/google/callback) y lo adopta exactamente igual que
+  // `login` — mismo storage, mismo estado, mismo contrato { ok, error? }.
+  const loginWithGoogleToken = useCallback(async (googleToken) => {
+    try {
+      const { user: fresh } = await api.auth.me(googleToken)
+      setToken(googleToken)
+      writeStorage(TOKEN_KEY, googleToken)
+      setUser(fresh)
+      return { ok: true }
+    } catch (err) {
+      return { ok: false, error: err.message }
+    }
+  }, [])
+
   const logout = useCallback(() => {
     setUser(null)
     setToken(null)
@@ -120,6 +136,7 @@ export function AuthProvider({ children }) {
         resendCode,
         verifyEmail,
         login,
+        loginWithGoogleToken,
         logout,
         requestPasswordReset,
         resetPassword,
