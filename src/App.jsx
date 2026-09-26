@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/layout/Header.jsx'
 import Footer from './components/layout/Footer.jsx'
 import CartDrawer from './components/cart/CartDrawer.jsx'
@@ -36,10 +36,19 @@ function PageFallback() {
 }
 
 export default function App() {
+  const location = useLocation()
+  const isHome = location.pathname === '/'
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1">
+      {/* El header es `fixed` en escritorio (para poder ocultarse/mostrarse
+          al scrollear sin empujar el contenido) y por lo tanto ya no
+          reserva su propio espacio en el flujo normal — hay que
+          compensarlo con padding-top acá. En la Home NO se compensa a
+          propósito: el Hero debe ir a pantalla completa por debajo del
+          header transparente. */}
+      <main className={`flex-1 ${isHome ? '' : 'lg:pt-16'}`}>
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />

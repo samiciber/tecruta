@@ -13,8 +13,8 @@ import { useCart } from '../../hooks/useCart.js'
 // sólido (justo antes de terminar de pasar el hero, no exactamente al
 // milímetro final, para que la transición no se sienta tardía).
 const HEADER_REVEAL_OFFSET = 72
-// A partir de cuántos píxeles de scroll hacia abajo empieza a ocultarse
-// el header en páginas que no son la Home — evita que tiemble/parpadee
+// A partir de cuántos píxeles de scroll hacia abajo empieza a poder
+// ocultarse el header (en cualquier página) — evita que tiemble/parpadee
 // apenas se empieza a scrollear desde arriba del todo.
 const HIDE_SCROLL_THRESHOLD = 80
 
@@ -57,9 +57,11 @@ export default function Header() {
   // scrolledPastHero: solo importa en la Home (escritorio) — controla si
   // el header transparente ya debe volverse sólido/opaco.
   const [scrolledPastHero, setScrolledPastHero] = useState(false)
-  // hiddenByScroll: solo importa fuera de la Home (escritorio) — controla
-  // si el header sólido debe ocultarse (scroll hacia abajo) o reaparecer
-  // (scroll hacia arriba).
+  // hiddenByScroll: aplica en TODAS las páginas (escritorio) — controla si
+  // el header debe ocultarse hacia arriba (scroll hacia abajo) o
+  // reaparecer (scroll hacia arriba). Es independiente de
+  // scrolledPastHero: en la Home, el header puede estar transparente Y
+  // oculto/visible según se scrollee.
   const [hiddenByScroll, setHiddenByScroll] = useState(false)
   const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
 
@@ -76,18 +78,25 @@ export default function Header() {
     function handleScroll() {
       const currentY = window.scrollY
 
+      // Transparencia sobre el hero: solo aplica/se calcula en la Home,
+      // es independiente de si el header está oculto o visible.
       if (isHome) {
         const heroEl = document.getElementById('home-hero')
         const heroHeight = heroEl?.offsetHeight ?? 560
         setScrolledPastHero(currentY > heroHeight - HEADER_REVEAL_OFFSET)
-      } else {
-        if (currentY <= HIDE_SCROLL_THRESHOLD) {
-          setHiddenByScroll(false)
-        } else if (currentY > lastScrollY.current) {
-          setHiddenByScroll(true)
-        } else if (currentY < lastScrollY.current) {
-          setHiddenByScroll(false)
-        }
+      }
+
+      // Ocultar/mostrar según dirección de scroll: aplica en TODAS las
+      // páginas por igual, incluida la Home (arriba del todo, mientras el
+      // header está transparente sobre el hero, igual puede ocultarse al
+      // bajar y reaparecer al subir — son dos comportamientos
+      // independientes, no uno excluye al otro).
+      if (currentY <= HIDE_SCROLL_THRESHOLD) {
+        setHiddenByScroll(false)
+      } else if (currentY > lastScrollY.current) {
+        setHiddenByScroll(true)
+      } else if (currentY < lastScrollY.current) {
+        setHiddenByScroll(false)
       }
 
       lastScrollY.current = currentY
@@ -125,15 +134,11 @@ export default function Header() {
 
   return (
     <header
-      className={`z-50 border-b border-paper-line bg-paper/90 backdrop-blur-md transition-[background-color,border-color,transform,backdrop-filter] duration-300 dark:border-night-line dark:bg-night/90 sticky top-0 ${
+      className={`z-50 border-b border-paper-line bg-paper/90 backdrop-blur-md transition-[background-color,border-color,transform,backdrop-filter] duration-300 ease-out dark:border-night-line dark:bg-night/90 sticky top-0 lg:fixed lg:inset-x-0 lg:top-0 ${
         transparentDesktop
-          ? 'lg:fixed lg:inset-x-0 lg:top-0 lg:border-transparent lg:bg-transparent lg:backdrop-blur-none lg:shadow-none'
-          : isHome
-            ? 'lg:fixed lg:inset-x-0 lg:top-0 lg:bg-paper/95 lg:backdrop-blur-md lg:border-paper-line dark:lg:bg-night/95'
-            : hiddenByScroll
-              ? 'lg:-translate-y-full'
-              : 'lg:translate-y-0'
-      }`}
+          ? 'lg:border-transparent lg:bg-transparent lg:backdrop-blur-none lg:shadow-none'
+          : 'lg:bg-paper/95 lg:backdrop-blur-md lg:border-paper-line dark:lg:bg-night/95'
+      } ${hiddenByScroll ? 'lg:-translate-y-full' : 'lg:translate-y-0'}`}
     >
       {/* Velo oscuro sutil detrás del header cuando flota transparente
           sobre el hero, para garantizar contraste de texto/íconos sin
@@ -159,18 +164,16 @@ export default function Header() {
 
         <Logo transparent={transparentDesktop} />
 
-        {/* Navegación de categorías en la misma fila — solo en la Home,
-            solo en escritorio. Reemplaza a la fila inferior de categorías
-            (ver <nav> más abajo) que se usa en el resto de páginas. */}
-        {isHome && (
-          <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Categorías">
-            {categories.map((c) => (
-              <NavLink key={c.slug} to={`/catalogo?categoria=${c.slug}`} className={navLinkClasses}>
-                {c.name}
-              </NavLink>
-            ))}
-          </nav>
-        )}
+        {/* Navegación de categorías en la misma fila — en todas las
+            páginas, solo en escritorio (una sola fila compacta, como en
+            la Home; ya no hay una fila de categorías separada debajo). */}
+        <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Categorías">
+          {categories.map((c) => (
+            <NavLink key={c.slug} to={`/catalogo?categoria=${c.slug}`} className={navLinkClasses}>
+              {c.name}
+            </NavLink>
+          ))}
+        </nav>
 
         <form onSubmit={submitSearch} className="relative ml-auto hidden max-w-xs flex-1 md:block">
           <Search
@@ -221,31 +224,6 @@ export default function Header() {
           </button>
         </div>
       </div>
-
-      {/* Fila de categorías separada — se usa en todas las páginas menos
-          la Home (en la Home, la navegación de categorías ya va integrada
-          en la fila de arriba, ver <nav> anterior). */}
-      {!isHome && (
-        <nav className="hidden border-t border-paper-line/70 dark:border-night-line/70 lg:block" aria-label="Categorías">
-          <div className="container-tr flex items-center gap-1 overflow-x-auto py-1.5">
-            {categories.map((c) => (
-              <NavLink
-                key={c.slug}
-                to={`/catalogo?categoria=${c.slug}`}
-                className={({ isActive }) =>
-                  `shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-route-soft text-route dark:bg-route-softDark'
-                      : 'text-ink-soft hover:bg-ink/5 hover:text-ink dark:text-paper/70 dark:hover:bg-paper/10 dark:hover:text-paper'
-                  }`
-                }
-              >
-                {c.name}
-              </NavLink>
-            ))}
-          </div>
-        </nav>
-      )}
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </header>
