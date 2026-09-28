@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ChevronLeft, ChevronRight, PlugZap, Cable, Headphones, Cpu, Smartphone, Tablet, Laptop, BatteryCharging } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, PlugZap, Cable, Headphones, Cpu, Smartphone, Tablet, Laptop, BatteryCharging } from 'lucide-react'
 import { heroSlides } from '../../data/heroSlides.js'
 import { useCategories } from '../../hooks/useCategories.js'
 
@@ -23,7 +23,13 @@ const FALLBACK_GRADIENTS = {
 
 export default function HeroSlider() {
   const [active, setActive] = useState(0)
-  const [paused, setPaused] = useState(false)
+  // Tres motivos independientes de pausa (así uno no "pisa" a otro):
+  // hover sobre flechas/puntos, foco por TECLADO en ellos, y el botón
+  // visible de pausa/reproducir del usuario.
+  const [hoverPaused, setHoverPaused] = useState(false)
+  const [focusPaused, setFocusPaused] = useState(false)
+  const [userPaused, setUserPaused] = useState(false)
+  const paused = hoverPaused || focusPaused || userPaused
   const timerRef = useRef(null)
   const { categories } = useCategories()
 
@@ -41,22 +47,36 @@ export default function HeroSlider() {
     [categories],
   )
 
-  const prefersReducedMotion = useMemo(
-    () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
-    [],
-  )
-
+  // Nota: antes aquí se desactivaba el autoplay por completo si el sistema
+  // reportaba prefers-reduced-motion (en Windows basta con tener apagados
+  // los "Efectos de animación"), lo que en escritorio lo dejaba inerte. Ya
+  // no hace falta: bajo esa preferencia index.css fuerza transition-duration
+  // ~0, así que el cambio de slide es un corte instantáneo (sin movimiento),
+  // y el usuario siempre puede detener el carrusel con el botón de pausa.
   useEffect(() => {
-    if (paused || prefersReducedMotion || slides.length <= 1) return
+    if (paused || slides.length <= 1) return
     timerRef.current = window.setInterval(() => {
       setActive((i) => (i + 1) % slides.length)
     }, AUTOPLAY_MS)
     return () => window.clearInterval(timerRef.current)
-  }, [paused, prefersReducedMotion, slides.length])
+  }, [paused, slides.length])
 
   if (slides.length === 0) return null
 
   const goTo = (i) => setActive(((i % slides.length) + slides.length) % slides.length)
+
+  // Solo el foco por teclado pausa: tras un clic con el mouse el botón
+  // conserva el foco, pero ':focus-visible' es falso, así que no se queda
+  // "pegado" en pausa.
+  const handleFocus = (e) => {
+    if (e.target.matches?.(':focus-visible')) setFocusPaused(true)
+  }
+  const pauseHandlers = {
+    onMouseEnter: () => setHoverPaused(true),
+    onMouseLeave: () => setHoverPaused(false),
+    onFocus: handleFocus,
+    onBlur: () => setFocusPaused(false),
+  }
 
   return (
     <section
@@ -150,10 +170,7 @@ export default function HeroSlider() {
           <button
             type="button"
             onClick={() => goTo(active - 1)}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onFocus={() => setPaused(true)}
-            onBlur={() => setPaused(false)}
+            {...pauseHandlers}
             aria-label="Categoría anterior"
             className="absolute left-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:flex"
           >
@@ -162,10 +179,7 @@ export default function HeroSlider() {
           <button
             type="button"
             onClick={() => goTo(active + 1)}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onFocus={() => setPaused(true)}
-            onBlur={() => setPaused(false)}
+            {...pauseHandlers}
             aria-label="Siguiente categoría"
             className="absolute right-2 top-1/2 z-20 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:flex"
           >
@@ -176,10 +190,7 @@ export default function HeroSlider() {
             className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2"
             role="tablist"
             aria-label="Seleccionar categoría"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onFocus={() => setPaused(true)}
-            onBlur={() => setPaused(false)}
+            {...pauseHandlers}
           >
             {slides.map((slide, i) => (
               <button
@@ -193,6 +204,15 @@ export default function HeroSlider() {
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={() => setUserPaused((v) => !v)}
+            aria-label={userPaused ? 'Reanudar carrusel' : 'Pausar carrusel'}
+            className="absolute bottom-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            {userPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+          </button>
         </>
       )}
     </section>
