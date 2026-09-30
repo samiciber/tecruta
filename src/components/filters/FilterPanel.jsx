@@ -2,11 +2,14 @@ import React from 'react'
 import { useCategories } from '../../hooks/useCategories.js'
 import { formatCurrency } from '../../utils/formatCurrency.js'
 
-const CATEGORIAS_CON_STOCK = ['power-banks', 'cargadores', 'cables', 'audifonos', 'accesorios']
-
 export default function FilterPanel({ filters, onChange, onClear, brands, priceBounds }) {
+  // Antes había un whitelist manual (CATEGORIAS_CON_STOCK) que ocultaba
+  // categorías del filtro — se armó cuando Celulares/Tablets/Laptops
+  // estaban vacías y nunca se actualizó al agregarles productos reales.
+  // Ahora el filtro siempre refleja las categorías reales que devuelve
+  // useCategories() (API con respaldo estático incluido), sin lista
+  // aparte que mantener a mano.
   const { categories } = useCategories()
-  const activeCategories = categories.filter((c) => CATEGORIAS_CON_STOCK.includes(c.slug))
   const { category, brands: selectedBrands = [], minPrice, maxPrice, inStockOnly } = filters
 
   const toggleBrand = (brand) => {
@@ -48,7 +51,7 @@ export default function FilterPanel({ filters, onChange, onClear, brands, priceB
           >
             Todas las categorías
           </button>
-          {activeCategories.map((c) => (
+          {categories.map((c) => (
             <button
               key={c.slug}
               type="button"
