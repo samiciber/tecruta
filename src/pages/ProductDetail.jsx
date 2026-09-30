@@ -127,23 +127,21 @@ export default function ProductDetail() {
             </div>
           ) : (
             <>
-              <div className="relative aspect-square overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
-                {/* Truco Amazon/Apple para imágenes no cuadradas: en vez de
-                    dejar franjas de color liso a los costados, ponemos
-                    detrás una copia de la MISMA imagen ampliada + con blur
-                    fuerte (object-cover, llena todo el cuadro) y oscurecida
-                    un poco para que no compita. Encima va la imagen real,
-                    nítida y completa, con object-contain (sin recortar). */}
-                <img
-                  src={product.images[activeImage]}
-                  alt=""
-                  aria-hidden="true"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl"
-                />
+              <div className="overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
+                {/* Sin aspect-square: el contenedor ya no fuerza un cuadro
+                    fijo. La imagen se muestra a su ancho completo (w-full)
+                    y la altura se ajusta sola a la proporción REAL de la
+                    imagen (h-auto) — así el cuadro se adapta a la imagen
+                    en vez de al revés, sin sobrar espacio a los costados
+                    ni recortar nada. max-h evita que un banner extremo
+                    (muy alto) vuelva gigante la página; object-contain
+                    ahí adentro es solo una salvaguarda para ese caso
+                    límite (con w-full + h-auto normalmente ni entra a
+                    jugar, porque la imagen ya cabe entera). */}
                 <img
                   src={product.images[activeImage]}
                   alt={product.name}
-                  className="relative h-full w-full object-contain"
+                  className="max-h-[600px] w-full object-contain"
                 />
               </div>
               {product.images.length > 1 && (
@@ -154,14 +152,9 @@ export default function ProductDetail() {
                       type="button"
                       onClick={() => setActiveImage(i)}
                       aria-label={`Ver imagen ${i + 1} de ${product.name}`}
-                      className={`relative h-16 w-16 overflow-hidden rounded-lg border-2 bg-route-soft transition-colors dark:bg-route-softDark ${activeImage === i ? 'border-route' : 'border-transparent'}`}
+                      className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-route-soft transition-colors dark:bg-route-softDark ${activeImage === i ? 'border-route' : 'border-transparent'}`}
                     >
-                      {/* En las miniaturas el blur casi no se nota por lo
-                          chicas que son — alcanza con un fondo de la misma
-                          imagen ampliada (sin blur) para que no quede un
-                          color plano genérico en los costados. */}
-                      <img src={img} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-50" />
-                      <img src={img} alt="" className="relative h-full w-full object-contain" />
+                      <img src={img} alt="" className="h-full w-full object-contain" />
                     </button>
                   ))}
                 </div>
