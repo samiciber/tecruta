@@ -63,7 +63,11 @@ export default function Catalog() {
   }
 
   const handleFilterChange = (next) => {
-    updateParams({ categoria: next.category, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly })
+    // El param 'stock' se lee más arriba como `params.get('stock') === '1'`
+    // — hay que escribirlo siempre como el string '1' (o quitarlo si es
+    // false) para que coincida. Antes se pasaba el booleano tal cual, que
+    // updateParams serializaba como "true"/"false", y "true" !== '1'.
+    updateParams({ categoria: next.category, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly ? '1' : undefined })
   }
 
   const clearFilters = () => setParams(query ? { q: query } : {}, { replace: true })
