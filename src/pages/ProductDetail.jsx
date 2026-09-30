@@ -128,21 +128,17 @@ export default function ProductDetail() {
           ) : (
             <>
               <div className="overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
-                {/* Sin aspect-square: el contenedor ya no fuerza un cuadro
-                    fijo. La imagen se muestra a su ancho completo (w-full)
-                    y la altura se ajusta sola a la proporción REAL de la
-                    imagen (h-auto) — así el cuadro se adapta a la imagen
-                    en vez de al revés, sin sobrar espacio a los costados
-                    ni recortar nada. max-h evita que un banner extremo
-                    (muy alto) vuelva gigante la página; object-contain
-                    ahí adentro es solo una salvaguarda para ese caso
-                    límite (con w-full + h-auto normalmente ni entra a
-                    jugar, porque la imagen ya cabe entera). */}
-                <img
-                  src={product.images[activeImage]}
-                  alt={product.name}
-                  className="max-h-[600px] w-full object-contain"
-                />
+                {/* Sin aspect-square y SIN max-height en px: el contenedor
+                    no fuerza ningún cuadro fijo. w-full + h-auto (sin
+                    object-contain, no hace falta) deja que la altura se
+                    calcule 100% a partir de la proporción real de la
+                    imagen — así nunca se angosta ni sobra espacio a los
+                    costados. max-h-[85vh] es solo un techo de seguridad
+                    relativo al alto de PANTALLA (no un px fijo) para el
+                    caso extremo de un banner desproporcionadamente alto;
+                    si algún producto real lo llega a disparar, avisar
+                    antes de tocar esto de nuevo — ver conversación. */}
+                <img src={product.images[activeImage]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
               </div>
               {product.images.length > 1 && (
                 <div className="mt-3 flex gap-2">
