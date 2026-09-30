@@ -128,7 +128,14 @@ export default function ProductDetail() {
           ) : (
             <>
               <div className="aspect-square overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
-                <img src={product.images[activeImage]} alt={product.name} className="h-full w-full object-cover" />
+                {/* object-contain (no object-cover): muchas de nuestras imágenes
+                    de producto son gráficos publicitarios altos (banner
+                    vertical, con texto arriba y abajo), no cuadrados —
+                    con object-cover ese texto se recortaba. Con
+                    object-contain la imagen se ve completa, y el
+                    bg-route-soft/dark:bg-route-softDark del contenedor
+                    rellena el espacio sobrante como fondo neutro. */}
+                <img src={product.images[activeImage]} alt={product.name} className="h-full w-full object-contain" />
               </div>
               {product.images.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -138,9 +145,9 @@ export default function ProductDetail() {
                       type="button"
                       onClick={() => setActiveImage(i)}
                       aria-label={`Ver imagen ${i + 1} de ${product.name}`}
-                      className={`h-16 w-16 overflow-hidden rounded-lg border-2 transition-colors ${activeImage === i ? 'border-route' : 'border-transparent'}`}
+                      className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-route-soft transition-colors dark:bg-route-softDark ${activeImage === i ? 'border-route' : 'border-transparent'}`}
                     >
-                      <img src={img} alt="" className="h-full w-full object-cover" />
+                      <img src={img} alt="" className="h-full w-full object-contain" />
                     </button>
                   ))}
                 </div>
