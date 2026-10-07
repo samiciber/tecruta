@@ -13,7 +13,7 @@ export default function ThemeToggle({ className = '', onBlue = false }) {
       onClick={toggleTheme}
       aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
       aria-pressed={isDark}
-      className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
+      className={`flex items-center justify-center rounded-full border transition-colors ${onBlue ? 'h-8 w-8' : 'h-10 w-10'} ${
         onBlue
           ? 'border-white/40 text-white hover:bg-white/10'
           : 'border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'

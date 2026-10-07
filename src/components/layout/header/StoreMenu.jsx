@@ -25,9 +25,9 @@ export function StoreBlockLabel({ store }) {
   return (
     <>
       <Store className="h-6 w-6 shrink-0" aria-hidden="true" />
-      <span className="flex flex-col text-xs leading-tight">
-        <span>Tu tienda</span>
-        <span className="max-w-[9rem] truncate text-[13px] font-bold">{store?.name ?? 'Tienda online'}</span>
+      <span className="flex flex-col text-[15px] leading-tight">
+        <span className="font-normal">Tu tienda</span>
+        <span className="max-w-[10rem] truncate font-semibold">{store?.name ?? 'Tienda online'}</span>
       </span>
     </>
   )

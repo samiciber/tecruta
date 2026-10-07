@@ -30,9 +30,9 @@ export function AccountBlockLabel({ user, isAuthenticated }) {
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white">
         <User className="h-3.5 w-3.5" aria-hidden="true" />
       </span>
-      <span className="flex flex-col text-xs leading-tight">
-        <span>Cuenta</span>
-        <span className="max-w-[8rem] truncate text-[13px] font-bold">{isAuthenticated ? user.nombre || 'Mi cuenta' : 'Iniciar sesión'}</span>
+      <span className="flex flex-col text-[15px] leading-tight">
+        <span className="font-normal">Cuenta</span>
+        <span className="max-w-[9rem] truncate font-semibold">{isAuthenticated ? user.nombre || 'Mi cuenta' : 'Iniciar sesión'}</span>
       </span>
     </>
   )
