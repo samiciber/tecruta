@@ -5,17 +5,34 @@ import { asyncHandler } from '../middleware/errorHandler.js'
 
 export const productsRouter = Router()
 
-const includeRelations = { category: true, images: true }
+const includeRelations = { category: true, images: true, brandRef: true }
 
 // GET /api/products
-// Query params opcionales: ?category=power-banks  ?q=cargador  ?featured=true
+// Query params opcionales: ?category=power-banks  ?brand=ugreen  ?q=cargador  ?featured=true
 productsRouter.get(
   '/',
   asyncHandler(async (req, res) => {
-    const { category, q, featured } = req.query
+    const { category, brand, q, featured } = req.query
 
     const where = {}
-    if (category) where.category = { slug: category }
+    if (category) {
+      // Incluye los productos de las subcategorías (la página /categoria/:slug
+      // de un nodo con hijos muestra los de toda su rama).
+      const root = await prisma.category.findUnique({ where: { slug: String(category) }, select: { id: true } })
+      if (root) {
+        const ids = [root.id]
+        let frontier = [root.id]
+        for (let depth = 0; depth < 6 && frontier.length > 0; depth++) {
+          const kids = await prisma.category.findMany({ where: { parentId: { in: frontier } }, select: { id: true } })
+          frontier = kids.map((k) => k.id)
+          ids.push(...frontier)
+        }
+        where.categoryId = { in: ids }
+      } else {
+        where.category = { slug: String(category) }
+      }
+    }
+    if (brand) where.brandRef = { slug: String(brand) }
     if (featured === 'true') where.featured = true
     if (q) where.name = { contains: String(q), mode: 'insensitive' }
 

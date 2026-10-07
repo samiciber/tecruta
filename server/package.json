@@ -11,7 +11,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "node prisma/seed.js",
-    "make-admin": "node prisma/make-admin.js"
+    "make-admin": "node prisma/make-admin.js",
+    "seed:nav": "node prisma/seed-nav.js"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

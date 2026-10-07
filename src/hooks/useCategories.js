@@ -1,42 +1,42 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../services/api.js'
 import { categories as staticCategories } from '../data/categories.js'
+import { useCategoryTree } from './useSiteContent.js'
+import { flattenTree } from '../utils/categoryTree.js'
 
-// Categorías que usan el header, el menú móvil, los filtros del catálogo,
-// la Home y las fichas de producto.
-//
-// A diferencia de useProductIndex (que empieza vacío y muestra un estado
-// de carga), este hook se inicializa DE INMEDIATO con las categorías
-// estáticas ya empaquetadas en el frontend — así el menú y los filtros
-// nunca aparecen vacíos ni parpadean mientras carga. En paralelo, intenta
-// traer la versión actual desde la API y, si lo logra, la reemplaza; si
-// la API no responde, se queda tranquilamente con las estáticas.
-let cachePromise = null
-
-function cargarCategorias() {
-  if (!cachePromise) {
-    cachePromise = api.getCategories().catch((err) => {
-      console.warn('No se pudo obtener las categorías de la API, usando datos locales:', err.message)
+// Categorías del sitio.
+//   • `categories` / `tree`: SOLO las de primer nivel visibles del árbol
+//     nuevo (con `children`). Las 8 heredadas ya no aparecen en menús,
+//     filtros ni en la Home.
+//   • `getCategoryBySlug`: resuelve cualquier slug (árbol o heredado) para
+//     rotular fichas de producto y enlaces antiguos.
+let legacyPromise = null
+function loadLegacy() {
+  if (!legacyPromise) {
+    legacyPromise = api.getCategories().catch((err) => {
+      console.warn('No se pudo obtener las categorías heredadas de la API, usando datos locales:', err.message)
       return staticCategories
     })
   }
-  return cachePromise
+  return legacyPromise
 }
 
 export function useCategories() {
-  const [categories, setCategories] = useState(staticCategories)
+  const { tree, loading } = useCategoryTree()
+  const [legacy, setLegacy] = useState(staticCategories)
 
   useEffect(() => {
     let activo = true
-    cargarCategorias().then((data) => {
-      if (activo && Array.isArray(data) && data.length > 0) setCategories(data)
+    loadLegacy().then((data) => {
+      if (activo && Array.isArray(data) && data.length > 0) setLegacy(data)
     })
     return () => {
       activo = false
     }
   }, [])
 
-  const getCategoryBySlug = (slug) => categories.find((c) => c.slug === slug)
+  const flat = useMemo(() => flattenTree(tree), [tree])
+  const getCategoryBySlug = useCallback((slug) => flat.find((c) => c.slug === slug) ?? legacy.find((c) => c.slug === slug), [flat, legacy])
 
-  return { categories, getCategoryBySlug }
+  return { categories: tree, tree, loading, getCategoryBySlug }
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ShoppingCart } from 'lucide-react'
 import { formatCurrency, calculateDiscountPercent } from '../../utils/formatCurrency.js'
 import { useCart } from '../../hooks/useCart.js'
+import SaveButton from './SaveButton.jsx'
 
 function ProductCard({ product }) {
   const { addItem } = useCart()
@@ -11,7 +12,8 @@ function ProductCard({ product }) {
   const lowStock = !outOfStock && product.stock <= 5
 
   return (
-    <div className="group flex flex-col">
+    <div className="group relative flex flex-col">
+      <SaveButton product={product} />
       <Link
         to={`/producto/${product.slug}`}
         className="relative block aspect-square overflow-hidden rounded-xl2 bg-paper-surface transition-shadow duration-300 group-hover:shadow-card dark:bg-night-surface"

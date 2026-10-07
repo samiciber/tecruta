@@ -43,7 +43,7 @@ async function uploadReceiptFile(orderId, file) {
 }
 
 export default function Checkout() {
-  const { items, subtotal, itemCount, setIsOpen, clearCart } = useCart()
+  const { items, subtotal, itemCount, clearCart } = useCart()
   const { user, token } = useAuth()
   const { methods: paymentMethods, getMethodByKey } = usePaymentMethods()
 
@@ -398,14 +398,10 @@ export default function Checkout() {
               <h2 className="font-display text-sm font-semibold text-ink dark:text-paper">
                 Tienes {itemCount} producto{itemCount === 1 ? '' : 's'} en tu carrito
               </h2>
-              <button
-                type="button"
-                onClick={() => setIsOpen(true)}
-                className="flex shrink-0 items-center gap-1 text-sm font-medium text-route hover:underline"
-              >
+              <Link to="/carrito" className="flex shrink-0 items-center gap-1 text-sm font-medium text-route hover:underline">
                 <Pencil className="h-3.5 w-3.5" />
                 Editar
-              </button>
+              </Link>
             </div>
 
             <ul className="mb-4 flex flex-col gap-3">

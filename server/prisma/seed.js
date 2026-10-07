@@ -14,6 +14,7 @@ import { PrismaClient } from '@prisma/client'
 import { categories } from '../../src/data/categories.js'
 import { products } from '../../src/data/products.js'
 import { paymentConfig } from '../../src/config/paymentConfig.js'
+import { seedNav } from './seed-nav.js'
 
 const prisma = new PrismaClient()
 
@@ -99,6 +100,8 @@ async function main() {
   await seedCategories()
   await seedProducts()
   await seedPaymentMethods()
+  // Navegación (árbol, marcas, menús…): idempotente y sin pisar ediciones.
+  await seedNav(prisma)
   console.log('✔ Seed completo.')
 }
 

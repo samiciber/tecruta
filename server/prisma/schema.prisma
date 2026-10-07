@@ -53,6 +53,7 @@ model User {
   addresses Address[]
   orders    Order[]
   cart      Cart?
+  savedItems SavedItem[]
 
   @@map("users")
 }
@@ -87,7 +88,126 @@ model Category {
   icon        String?
   products    Product[]
 
+  // --- Árbol de navegación (estilo bestbuy.com) ---
+  // parentId = null → categoría de primer nivel (las 21 del "Menú").
+  parentId    String?
+  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children    Category[] @relation("CategoryTree")
+  position    Int        @default(0)
+  visible     Boolean    @default(true)
+  // legacy = true → las 8 categorías originales (power-banks, cargadores…).
+  // No se muestran en menús/filtros/Home; solo en el admin.
+  legacy      Boolean    @default(false)
+  image       String?
+  // Código de referencia de la taxonomía fuente (informativo, opcional).
+  sourceRef   String?
+  tiles       CategoryTile[]
+
+  @@index([parentId])
   @@map("categories")
+}
+
+// Imágenes referenciales de la página de categoría (imagen + título + enlace).
+model CategoryTile {
+  id         String   @id @default(cuid())
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  title      String
+  image      String?
+  href       String?
+  position   Int      @default(0)
+  visible    Boolean  @default(true)
+
+  @@index([categoryId])
+  @@map("category_tiles")
+}
+
+model Brand {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  name             String
+  logo             String?
+  featured         Boolean   @default(false)
+  featuredPosition Int       @default(0)
+  visible          Boolean   @default(true)
+  products         Product[]
+  createdAt        DateTime  @default(now())
+
+  @@map("brands")
+}
+
+enum NavItemType {
+  LINK
+  HEADING
+  DIVIDER
+  SUBMENU
+  PROMO
+}
+
+// Ítems de los menús Acuerdos / Soporte / Descubre / Más y de los enlaces
+// rápidos de la fila 2. menuKey: acuerdos | soporte | descubre | mas | quick
+// parentId solo se usa para ítems de un SUBMENU (subnivel de Descubre).
+// type PROMO: label/href se toman de SiteSetting "seasonalPromo".
+model NavItem {
+  id       String      @id @default(cuid())
+  menuKey  String
+  parentId String?
+  parent   NavItem?    @relation("NavItemTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavItem[]   @relation("NavItemTree")
+  type     NavItemType @default(LINK)
+  label    String
+  href     String?
+  position Int         @default(0)
+  visible  Boolean     @default(true)
+
+  @@index([menuKey, position])
+  @@index([parentId])
+  @@map("nav_items")
+}
+
+model PopularSearch {
+  id       String  @id @default(cuid())
+  text     String
+  position Int     @default(0)
+  active   Boolean @default(true)
+
+  @@map("popular_searches")
+}
+
+model Store {
+  id         String  @id @default(cuid())
+  name       String
+  address1   String
+  address2   String?
+  city       String
+  postalCode String?
+  opensAt    String? // "10:00"
+  active     Boolean @default(true)
+  isDefault  Boolean @default(false)
+  position   Int     @default(0)
+
+  @@map("stores")
+}
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// Elementos guardados (lista de deseos). Se implementa en el Bloque 4.
+model SavedItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@map("saved_items")
 }
 
 model Product {
@@ -119,10 +239,15 @@ model Product {
   images           ProductImage[]
   orderItems       OrderItem[]
   cartItems        CartItem[]
+  savedItems       SavedItem[]
+  // Marca normalizada (el campo `brand` de texto se conserva sin cambios).
+  brandId          String?
+  brandRef         Brand?         @relation(fields: [brandId], references: [id], onDelete: SetNull)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
   @@index([categoryId])
+  @@index([brandId])
   @@map("products")
 }
 

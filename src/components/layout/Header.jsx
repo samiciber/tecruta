@@ -1,229 +1,199 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Search, ShoppingCart } from 'lucide-react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { ChevronDown, ChevronUp, Menu as MenuIcon, ShoppingCart } from 'lucide-react'
 import ThemeToggle from '../ui/ThemeToggle.jsx'
 import AccountMenu from './AccountMenu.jsx'
 import MobileMenu from './MobileMenu.jsx'
-import { useCategories } from '../../hooks/useCategories.js'
-import { storeConfig } from '../../config/storeConfig.js'
+import HeaderSearch from './header/HeaderSearch.jsx'
+import StoreMenu from './header/StoreMenu.jsx'
+import MenuPanel from './header/MenuPanel.jsx'
+import NavPanel from './header/NavPanel.jsx'
+import { useNav } from '../../hooks/useSiteContent.js'
 import { useCart } from '../../hooks/useCart.js'
+import { storeConfig } from '../../config/storeConfig.js'
 
-// Altura aproximada del header (una fila) — se usa como margen de reserva
-// al calcular cuándo el header transparente de la Home debe volverse
-// sólido (justo antes de terminar de pasar el hero, no exactamente al
-// milímetro final, para que la transición no se sienta tardía).
-const HEADER_REVEAL_OFFSET = 72
-// A partir de cuántos píxeles de scroll hacia abajo empieza a poder
-// ocultarse el header (en cualquier página) — evita que tiemble/parpadee
-// apenas se empieza a scrollear desde arriba del todo.
-const HIDE_SCROLL_THRESHOLD = 80
+// Pasa a ocultarse al bajar (solo escritorio) después de estos píxeles.
+const HIDE_SCROLL_THRESHOLD = 120
 
-function Logo({ transparent }) {
+// Prioridad de los enlaces rápidos según el ancho (CSS, sin medir con JS):
+// lo que no cabe sigue disponible dentro de «Más ▾».
+const QUICK_VISIBILITY = [
+  'hidden xl:block',
+  '',
+  '',
+  '',
+  'hidden min-[1440px]:block',
+  'hidden min-[1536px]:block',
+  'hidden min-[1650px]:block',
+]
+
+function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2 shrink-0" aria-label={`${storeConfig.name} — inicio`}>
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <rect width="30" height="30" rx="8" className={transparent ? 'fill-white' : 'fill-route'} />
-        <path
-          d="M7 19 L13 11 L17 16 L23 8"
-          stroke={transparent ? '#14171F' : 'white'}
-          strokeWidth="2.3"
-          fill="none"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="23" cy="8" r="1.8" fill={transparent ? '#14171F' : 'white'} />
+    <Link to="/" className="flex shrink-0 items-center gap-2 rounded" aria-label={`${storeConfig.name} — inicio`}>
+      <svg width="32" height="32" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <rect width="30" height="30" rx="8" fill="#fff" />
+        <path d="M7 19 L13 11 L17 16 L23 8" stroke="#0046BE" strokeWidth="2.3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx="23" cy="8" r="1.8" fill="#0046BE" />
       </svg>
-      <span
-        className={`font-display text-lg font-bold tracking-tight ${
-          transparent ? 'text-white' : 'text-ink dark:text-paper'
-        }`}
-      >
-        Tec<span className={transparent ? 'text-white/80' : 'text-route'}>Ruta</span>
+      <span className="font-display text-xl font-bold tracking-tight text-white">
+        Tec<span className="text-cta">Ruta</span>
       </span>
     </Link>
   )
 }
 
+function Pill({ id, label, panel, onToggle, children }) {
+  const open = panel === id
+  const ref = useRef(null)
+  return (
+    <div className="relative">
+      <button
+        ref={ref}
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls={`panel-${id}`}
+        onClick={() => onToggle(id)}
+        className={`flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full border px-5 text-sm font-bold text-white transition-colors ${
+          open ? 'border-white bg-white/20' : 'border-white/40 hover:bg-white/10'
+        }`}
+      >
+        {label}
+        {open ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
+      </button>
+      {open && children(ref)}
+    </div>
+  )
+}
+
 export default function Header() {
+  const [panel, setPanel] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [searchValue, setSearchValue] = useState('')
-  const { itemCount, setIsOpen } = useCart()
-  const { categories } = useCategories()
-  const navigate = useNavigate()
+  const [hidden, setHidden] = useState(false)
+  const { itemCount } = useCart()
+  const { menus } = useNav()
   const location = useLocation()
+  const lastY = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
+  const panelRef = useRef(null)
+  panelRef.current = panel
 
-  const isHome = location.pathname === '/'
+  const close = useCallback(() => setPanel(null), [])
+  const toggle = useCallback((id) => setPanel((p) => (p === id ? null : id)), [])
+  const moreRef = useRef(null)
 
-  // scrolledPastHero: solo importa en la Home (escritorio) — controla si
-  // el header transparente ya debe volverse sólido/opaco.
-  const [scrolledPastHero, setScrolledPastHero] = useState(false)
-  // hiddenByScroll: aplica en TODAS las páginas (escritorio) — controla si
-  // el header debe ocultarse hacia arriba (scroll hacia abajo) o
-  // reaparecer (scroll hacia arriba). Es independiente de
-  // scrolledPastHero: en la Home, el header puede estar transparente Y
-  // oculto/visible según se scrollee.
-  const [hiddenByScroll, setHiddenByScroll] = useState(false)
-  const lastScrollY = useRef(typeof window !== 'undefined' ? window.scrollY : 0)
-
+  // Cierra paneles al navegar y muestra el header.
   useEffect(() => {
-    // Al cambiar de ruta, siempre arrancamos con el header visible y (si
-    // aplica) sólido — evita que quede oculto o transparente "pegado" de
-    // una página anterior.
-    setHiddenByScroll(false)
-    lastScrollY.current = window.scrollY
-    if (!isHome) setScrolledPastHero(false)
-  }, [location.pathname, isHome])
+    setPanel(null)
+    setMobileOpen(false)
+    setHidden(false)
+    lastY.current = window.scrollY
+  }, [location.pathname, location.search])
 
+  // Comportamiento aprobado: se oculta al bajar y reaparece al subir
+  // (solo escritorio; sticky ocupa su espacio, no hace falta compensar
+  // con padding). Nunca se oculta con un panel abierto.
   useEffect(() => {
-    function handleScroll() {
-      const currentY = window.scrollY
-
-      // Transparencia sobre el hero: solo aplica/se calcula en la Home,
-      // es independiente de si el header está oculto o visible.
-      if (isHome) {
-        const heroEl = document.getElementById('home-hero')
-        const heroHeight = heroEl?.offsetHeight ?? 560
-        setScrolledPastHero(currentY > heroHeight - HEADER_REVEAL_OFFSET)
+    const onScroll = () => {
+      const y = window.scrollY
+      if (panelRef.current) {
+        lastY.current = y
+        return
       }
-
-      // Ocultar/mostrar según dirección de scroll: aplica en TODAS las
-      // páginas por igual, incluida la Home (arriba del todo, mientras el
-      // header está transparente sobre el hero, igual puede ocultarse al
-      // bajar y reaparecer al subir — son dos comportamientos
-      // independientes, no uno excluye al otro).
-      if (currentY <= HIDE_SCROLL_THRESHOLD) {
-        setHiddenByScroll(false)
-      } else if (currentY > lastScrollY.current) {
-        setHiddenByScroll(true)
-      } else if (currentY < lastScrollY.current) {
-        setHiddenByScroll(false)
-      }
-
-      lastScrollY.current = currentY
+      if (y <= HIDE_SCROLL_THRESHOLD) setHidden(false)
+      else if (y > lastY.current) setHidden(true)
+      else if (y < lastY.current) setHidden(false)
+      lastY.current = y
     }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-    handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [isHome])
-
-  // Solo transparente en escritorio (lg:), en la Home, y mientras no se
-  // haya scrolleado más allá del hero. En móvil este valor no se usa (las
-  // clases que dependen de él van siempre prefijadas con lg:), así que el
-  // comportamiento móvil queda exactamente igual que antes.
-  const transparentDesktop = isHome && !scrolledPastHero
-
-  const submitSearch = (e) => {
-    e.preventDefault()
-    navigate(searchValue.trim() ? `/catalogo?q=${encodeURIComponent(searchValue.trim())}` : '/catalogo')
-    setSearchValue('')
-  }
-
-  const navLinkClasses = ({ isActive }) => {
-    if (transparentDesktop) {
-      return `shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-        isActive ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'
-      }`
-    }
-    return `shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-      isActive
-        ? 'bg-route-soft text-route dark:bg-route-softDark'
-        : 'text-ink-soft hover:bg-ink/5 hover:text-ink dark:text-paper/70 dark:hover:bg-paper/10 dark:hover:text-paper'
-    }`
-  }
+  const cartLabel = `Carrito de compras, ${itemCount} producto${itemCount === 1 ? '' : 's'}`
+  const cartIcon = (
+    <Link to="/carrito" aria-label={cartLabel} className="relative flex h-11 w-11 items-center justify-center rounded text-white hover:bg-white/10">
+      <ShoppingCart className="h-6 w-6" aria-hidden="true" />
+      {itemCount > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-cta px-1 text-[11px] font-bold text-ink">{itemCount}</span>
+      )}
+    </Link>
+  )
 
   return (
-    <header
-      className={`z-50 border-b border-paper-line bg-paper/90 backdrop-blur-md transition-[background-color,border-color,transform,backdrop-filter] duration-300 ease-out dark:border-night-line dark:bg-night/90 sticky top-0 lg:fixed lg:inset-x-0 lg:top-0 ${
-        transparentDesktop
-          ? 'lg:border-transparent lg:bg-transparent lg:backdrop-blur-none lg:shadow-none'
-          : 'lg:bg-paper/95 lg:backdrop-blur-md lg:border-paper-line dark:lg:bg-night/95'
-      } ${hiddenByScroll ? 'lg:-translate-y-full' : 'lg:translate-y-0'}`}
-    >
-      {/* Velo oscuro sutil detrás del header cuando flota transparente
-          sobre el hero, para garantizar contraste de texto/íconos sin
-          importar qué tan clara sea la imagen de fondo del slide activo. */}
-      {transparentDesktop && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 hidden h-32 bg-gradient-to-b from-black/45 to-transparent lg:block"
-        />
-      )}
+    <header className={`sticky top-0 z-50 text-white transition-transform duration-300 ${hidden ? 'lg:-translate-y-full' : ''}`}>
+      {/* Velo oscuro detrás de los paneles abiertos (queda bajo las filas azules) */}
+      {panel && <div aria-hidden="true" className="fixed inset-0 z-0 bg-black/50" onClick={close} />}
 
-      <div className="container-tr flex h-16 items-center gap-4">
-        <button
-          type="button"
-          className={`rounded-full p-2 lg:hidden ${
-            'text-ink-soft hover:bg-ink/5 dark:text-paper/70 dark:hover:bg-paper/10'
-          }`}
-          aria-label="Abrir menú"
-          onClick={() => setMobileOpen(true)}
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-
-        <Logo transparent={transparentDesktop} />
-
-        {/* Navegación de categorías en la misma fila — en todas las
-            páginas, solo en escritorio (una sola fila compacta, como en
-            la Home; ya no hay una fila de categorías separada debajo). */}
-        <nav className="ml-2 hidden items-center gap-1 lg:flex" aria-label="Categorías">
-          {categories.map((c) => (
-            <NavLink key={c.slug} to={`/catalogo?categoria=${c.slug}`} className={navLinkClasses}>
-              {c.name}
-            </NavLink>
-          ))}
-        </nav>
-
-        <form onSubmit={submitSearch} className="relative ml-auto hidden max-w-xs flex-1 md:block">
-          <Search
-            className={`pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 ${
-              transparentDesktop ? 'lg:text-white/70' : ''
-            } text-ink-soft/50 dark:text-paper/40`}
-          />
-          <input
-            type="search"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            placeholder="Buscar productos…"
-            aria-label="Buscar productos"
-            className={`input-tr pl-10 ${
-              transparentDesktop
-                ? 'lg:border-white/30 lg:bg-white/10 lg:text-white lg:placeholder:text-white/70 lg:backdrop-blur-sm lg:focus:border-white/60'
-                : ''
-            }`}
-          />
-        </form>
-
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <Link
-            to="/catalogo"
-            className="rounded-full p-2 text-ink-soft hover:bg-ink/5 dark:text-paper/70 dark:hover:bg-paper/10 md:hidden"
-            aria-label="Buscar"
-          >
-            <Search className="h-5 w-5" />
-          </Link>
-          <ThemeToggle transparent={transparentDesktop} />
-          <AccountMenu transparent={transparentDesktop} />
-          <button
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className={`relative flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
-              transparentDesktop
-                ? 'lg:border-white/30 lg:text-white lg:hover:border-white/60 lg:hover:text-white border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
-                : 'border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
-            }`}
-            aria-label={`Carrito de compras, ${itemCount} producto${itemCount === 1 ? '' : 's'}`}
-          >
-            <ShoppingCart className="h-[18px] w-[18px]" />
-            {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-route px-1 text-[11px] font-semibold text-white">
-                {itemCount}
-              </span>
-            )}
+      {/* Fila 1 */}
+      <div className="relative z-10 bg-header">
+        <div className="container-tr flex h-14 items-center gap-3 lg:h-20 lg:gap-6">
+          <button type="button" onClick={() => setMobileOpen(true)} aria-label="Abrir menú" aria-haspopup="dialog" className="-ml-2 rounded p-2 hover:bg-white/10 lg:hidden">
+            <MenuIcon className="h-6 w-6" />
           </button>
+          <Logo />
+
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <HeaderSearch open={panel === 'search'} onOpen={() => setPanel('search')} onClose={close} idPrefix="search-d" />
+          </div>
+
+          <div className="ml-auto hidden items-center gap-3 lg:flex">
+            <StoreMenu open={panel === 'store'} onToggle={() => toggle('store')} onClose={close} />
+            <ThemeToggle onBlue />
+            <AccountMenu open={panel === 'account'} onToggle={() => toggle('account')} onClose={close} />
+            <span aria-hidden="true" className="h-8 w-px bg-white/30" />
+            {cartIcon}
+          </div>
+          <div className="ml-auto lg:hidden">{cartIcon}</div>
+        </div>
+
+        {/* Buscador en móvil: segunda línea */}
+        <div className="container-tr pb-3 lg:hidden">
+          <div className="flex">
+            <HeaderSearch open={panel === 'search'} onOpen={() => setPanel('search')} onClose={close} idPrefix="search-m" />
+          </div>
         </div>
       </div>
+
+      {/* Fila 2 (solo escritorio) */}
+      <nav aria-label="Navegación principal" className="relative z-10 hidden border-t border-white/20 bg-header-band lg:block">
+        <div className="container-tr flex h-[68px] items-center gap-3">
+          <Pill id="menu" label="Menú" panel={panel} onToggle={toggle}>
+            {(ref) => <MenuPanel triggerRef={ref} onClose={close} />}
+          </Pill>
+          <Pill id="acuerdos" label="Acuerdos" panel={panel} onToggle={toggle}>
+            {(ref) => <NavPanel id="panel-acuerdos" title="Acuerdos" items={menus.acuerdos} width="w-[22rem]" triggerRef={ref} onClose={close} />}
+          </Pill>
+          <Pill id="soporte" label="Soporte y Servicios" panel={panel} onToggle={toggle}>
+            {(ref) => <NavPanel id="panel-soporte" title="Soporte y Servicios" items={menus.soporte} width="w-[26rem]" triggerRef={ref} onClose={close} />}
+          </Pill>
+          <Pill id="descubre" label="Descubre" panel={panel} onToggle={toggle}>
+            {(ref) => <NavPanel id="panel-descubre" title="Descubre" items={menus.descubre} width="w-[22rem]" triggerRef={ref} onClose={close} />}
+          </Pill>
+
+          <ul className="ml-auto flex items-center gap-6 text-sm">
+            {menus.quick.map((it, i) => (
+              <li key={it.id} className={QUICK_VISIBILITY[i] ?? 'hidden 2xl:block'}>
+                <Link to={it.href || '/proximamente'} className="whitespace-nowrap rounded px-1 py-1 hover:underline">
+                  {it.label}
+                </Link>
+              </li>
+            ))}
+            <li className="relative">
+              <button
+                ref={moreRef}
+                type="button"
+                aria-haspopup="true"
+                aria-expanded={panel === 'mas'}
+                aria-controls="panel-mas"
+                onClick={() => toggle('mas')}
+                className="flex items-center gap-1 rounded px-1 py-1 hover:underline"
+              >
+                Más {panel === 'mas' ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
+              </button>
+              {panel === 'mas' && <NavPanel id="panel-mas" title="Más" items={menus.mas} width="w-[20rem]" align="right" triggerRef={moreRef} onClose={close} />}
+            </li>
+          </ul>
+        </div>
+      </nav>
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} />
     </header>

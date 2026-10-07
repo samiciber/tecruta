@@ -1,8 +1,7 @@
 import React, { Suspense, lazy } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import Header from './components/layout/Header.jsx'
 import Footer from './components/layout/Footer.jsx'
-import CartDrawer from './components/cart/CartDrawer.jsx'
 import MobileCartBar from './components/cart/MobileCartBar.jsx'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
@@ -25,7 +24,25 @@ const AdminOrders = lazy(() => import('./pages/admin/AdminOrders.jsx'))
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories.jsx'))
 const AdminPaymentMethods = lazy(() => import('./pages/admin/AdminPaymentMethods.jsx'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers.jsx'))
+const AdminBrands = lazy(() => import('./pages/admin/AdminBrands.jsx'))
+const AdminPopularSearches = lazy(() => import('./pages/admin/AdminPopularSearches.jsx'))
+const AdminStores = lazy(() => import('./pages/admin/AdminStores.jsx'))
+const AdminSiteSettings = lazy(() => import('./pages/admin/AdminSiteSettings.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
+const Proximamente = lazy(() => import('./pages/Proximamente.jsx'))
+const Cart = lazy(() => import('./pages/Cart.jsx'))
+const Payments = lazy(() => import('./pages/account/Payments.jsx'))
+const MyCard = lazy(() => import('./pages/account/MyCard.jsx'))
+const Plans = lazy(() => import('./pages/account/Plans.jsx'))
+const SavedItems = lazy(() => import('./pages/account/SavedItems.jsx'))
+const BrandsPage = lazy(() => import('./pages/Brands.jsx'))
+const BrandPage = lazy(() => import('./pages/BrandPage.jsx'))
+const CategoryPage = lazy(() => import('./pages/CategoryPage.jsx'))
+const AdminCategoryTree = lazy(() => import('./pages/admin/AdminCategoryTree.jsx'))
+const AdminAssignProducts = lazy(() => import('./pages/admin/AdminAssignProducts.jsx'))
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.jsx'))
+const AdminBanners = lazy(() => import('./pages/admin/AdminBanners.jsx'))
+const AdminNavMenus = lazy(() => import('./pages/admin/AdminNavMenus.jsx'))
 
 function PageFallback() {
   return (
@@ -36,11 +53,12 @@ function PageFallback() {
 }
 
 export default function App() {
-  const location = useLocation()
-  const isHome = location.pathname === '/'
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a href="#contenido" className="sr-only z-[200] rounded bg-white px-4 py-2 text-sm font-bold text-ink shadow focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
+        Saltar al contenido
+      </a>
       <Header />
       {/* El header es `fixed` en escritorio (para poder ocultarse/mostrarse
           al scrollear sin empujar el contenido) y por lo tanto ya no
@@ -48,7 +66,8 @@ export default function App() {
           compensarlo con padding-top acá. En la Home NO se compensa a
           propósito: el Hero debe ir a pantalla completa por debajo del
           header transparente. */}
-      <main className={`flex-1 ${isHome ? '' : 'lg:pt-16'}`}>
+      {/* El header es sticky y ocupa su espacio: no se compensa con padding. */}
+      <main id="contenido" tabIndex={-1} className="flex-1 focus:outline-none">
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -56,6 +75,15 @@ export default function App() {
             <Route path="/producto/:slug" element={<ProductDetail />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/ayuda" element={<Help />} />
+            <Route path="/carrito" element={<Cart />} />
+            <Route path="/proximamente" element={<Proximamente />} />
+            <Route path="/marcas" element={<BrandsPage />} />
+            <Route path="/marca/:slug" element={<BrandPage />} />
+            <Route path="/categoria/:slug" element={<CategoryPage />} />
+            <Route path="/pagos" element={<Payments />} />
+            <Route path="/mi-tarjeta" element={<MyCard />} />
+            <Route path="/planes" element={<Plans />} />
+            <Route path="/elementos-guardados" element={<SavedItems />} />
             <Route path="/legal/:type" element={<Legal />} />
             <Route path="/iniciar-sesion" element={<Login />} />
             <Route path="/crear-cuenta" element={<Register />} />
@@ -66,18 +94,25 @@ export default function App() {
             <Route path="/mis-direcciones" element={<Addresses />} />
             <Route path="/mi-cuenta" element={<Account />} />
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminProducts />} />
+              <Route index element={<AdminDashboard />} />
+              <Route path="productos" element={<AdminProducts />} />
+              <Route path="banners" element={<AdminBanners />} />
               <Route path="pedidos" element={<AdminOrders />} />
-              <Route path="categorias" element={<AdminCategories />} />
+              <Route path="categorias" element={<AdminCategoryTree />} />
               <Route path="pagos" element={<AdminPaymentMethods />} />
               <Route path="clientes" element={<AdminUsers />} />
+              <Route path="marcas" element={<AdminBrands />} />
+              <Route path="busquedas" element={<AdminPopularSearches />} />
+              <Route path="tiendas" element={<AdminStores />} />
+              <Route path="ajustes" element={<AdminSiteSettings />} />
+              <Route path="menus" element={<AdminNavMenus />} />
+              <Route path="asignar" element={<AdminAssignProducts />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </main>
       <Footer />
-      <CartDrawer />
       <MobileCartBar />
     </div>
   )

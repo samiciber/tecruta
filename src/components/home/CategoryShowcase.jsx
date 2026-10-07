@@ -5,29 +5,12 @@ import { useCategories } from '../../hooks/useCategories.js'
 
 const ICONS = { Cpu, Smartphone, Tablet, Laptop }
 
-// Foto real por categoría (misma fuente que el carrusel principal, para
-// mantener consistencia visual). El degradado + ícono queda como respaldo
-// por si alguna imagen falla o se agrega una categoría nueva sin foto.
-const CATEGORY_IMAGES = {
-  'power-banks': 'https://res.cloudinary.com/u6oy2szr/image/upload/w_1200,q_auto,f_auto/0-513aAGv_GmL._AC_SL1500_-removebg-preview',
-  cargadores: 'https://res.cloudinary.com/u6oy2szr/image/upload/w_1200,q_auto,f_auto/nexode-car-charger-60w-with-retractable-usb-c-cable-5360591',
-  cables: 'https://res.cloudinary.com/u6oy2szr/image/upload/w_1200,q_auto,f_auto/0-UGREENUSBCto3.5mmHeadphoneJackAdapter-NCPGroup',
-  audifonos: 'https://res.cloudinary.com/u6oy2szr/image/upload/w_1200,q_auto,f_auto/0-45110',
-  accesorios: 'https://res.cloudinary.com/u6oy2szr/image/upload/v1787659271/9a98511d-deb4-465b-b225-f0bc220ca79c.png',
-  celulares: 'https://res.cloudinary.com/u6oy2szr/image/upload/v1787700529/hero_iphone_family__be5jkzxszb1e_large.jpg',
-  tablets: 'https://res.cloudinary.com/u6oy2szr/image/upload/v1787702079/TabA11-Plus-KV-PCD_KV_DT_1440x640.webp',
-  laptops: 'https://res.cloudinary.com/u6oy2szr/image/upload/v1787702080/fwebp.png',
-}
-
-const FALLBACK_GRADIENTS = {
-  accesorios: 'from-[#7C3AED] to-[#C4B0FA]',
-  celulares: 'from-[#0EA5B7] to-[#8FE1EA]',
-  tablets: 'from-signal-green to-[#7BD9A5]',
-  laptops: 'from-signal-amber to-[#F0B96B]',
-}
-
 export default function CategoryShowcase({ counts = {} }) {
-  const { categories } = useCategories()
+  // Solo categorías visibles del árbol que ya tienen productos (o imagen).
+  // Si todavía no hay ninguna, la sección no se muestra (sin tarjetas vacías).
+  const { categories: all } = useCategories()
+  const categories = all.filter((c) => (counts[c.slug] ?? 0) > 0)
+  if (categories.length === 0) return null
   return (
     <section id="categorias" className="container-tr py-16 sm:py-24">
       <div className="mb-8 flex flex-col gap-1.5 text-center sm:mb-10 sm:text-left">
@@ -40,12 +23,12 @@ export default function CategoryShowcase({ counts = {} }) {
           const Icon = ICONS[c.icon] || Cpu
           const count = counts[c.slug] ?? 0
           const comingSoon = count === 0
-          const image = CATEGORY_IMAGES[c.slug]
+          const image = c.image
 
           return (
             <Link
               key={c.slug}
-              to={`/catalogo?categoria=${c.slug}`}
+              to={`/categoria/${c.slug}`}
               className="group relative block h-[260px] w-full overflow-hidden sm:h-[300px] lg:h-[360px]"
             >
               {/* Fondo: foto real o degradado de marca + ícono */}
@@ -58,7 +41,7 @@ export default function CategoryShowcase({ counts = {} }) {
                 />
               ) : (
                 <div
-                  className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${FALLBACK_GRADIENTS[c.slug] || 'from-route to-route-dark'} transition-transform duration-500 ease-out group-hover:scale-105`}
+                  className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-header to-route-dark transition-transform duration-500 ease-out group-hover:scale-105`}
                 >
                   <Icon className="h-28 w-28 text-white/15 sm:h-36 sm:w-36" strokeWidth={1} />
                 </div>

@@ -25,6 +25,16 @@ export default {
           dark: '#5B7CFA',
           softDark: '#1B2036',
         },
+        // Header estilo tienda: UN solo lugar para cambiar el azul (variables
+        // CSS en index.css, con versión oscura). `cta` = botón amarillo.
+        header: {
+          DEFAULT: 'rgb(var(--tr-header) / <alpha-value>)',
+          band: 'rgb(var(--tr-header-band) / <alpha-value>)',
+        },
+        cta: {
+          DEFAULT: '#FFE000',
+          dark: '#E6C800',
+        },
         signal: {
           green: '#12A150',
           amber: '#C77D19',

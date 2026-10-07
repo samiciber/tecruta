@@ -1,112 +1,135 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { User, LogOut, Package, MapPin, UserCircle, ShieldCheck } from 'lucide-react'
+import {
+  CircleHelp, CreditCard, Heart, LogOut, Receipt, Settings, ShieldCheck, ShoppingBag, Sparkles, Truck, User, UserCircle, Wallet,
+} from 'lucide-react'
+import FloatingPanel from './header/FloatingPanel.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 
-export default function AccountMenu({ transparent = false }) {
-  const { user, isAuthenticated, logout } = useAuth()
-  const [open, setOpen] = useState(false)
-  const ref = useRef(null)
-  const navigate = useNavigate()
+export const ACCOUNT_LINKS = [
+  { to: '/mi-cuenta', label: 'Cuenta', Icon: UserCircle },
+  { to: '/mis-pedidos', label: 'Compras', Icon: Receipt },
+  { to: '/pagos', label: 'Pagos', Icon: CreditCard },
+  { to: '/mi-tarjeta', label: 'Mi tarjeta de crédito', Icon: Wallet },
+  { to: '/planes', label: 'Planes y suscripciones', Icon: ShieldCheck },
+  { to: '/elementos-guardados', label: 'Elementos guardados', Icon: Heart },
+  { to: '/mi-cuenta#configuracion', label: 'Configuración de la cuenta', Icon: Settings },
+  { to: '/ayuda', label: 'Apoyo', Icon: CircleHelp },
+]
 
-  useEffect(() => {
-    if (!open) return
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [open])
+const BENEFITS = [
+  { Icon: Truck, label: 'Envío gratuito' },
+  { Icon: CreditCard, label: 'Pago conveniente' },
+  { Icon: ShoppingBag, label: 'Seguimiento fácil de pedidos' },
+  { Icon: Sparkles, label: 'Compras personalizadas' },
+]
 
-  if (!isAuthenticated) {
-    return (
-      <Link
-        to="/iniciar-sesion"
-        className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
-          transparent
-            ? 'lg:border-white/30 lg:text-white lg:hover:border-white/60 lg:hover:text-white border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
-            : 'border-paper-line text-ink-soft hover:border-ink/30 hover:text-ink dark:border-night-line dark:text-paper/60 dark:hover:border-paper/30 dark:hover:text-paper'
-        }`}
-        aria-label="Iniciar sesión"
-      >
-        <User className="h-[18px] w-[18px]" />
-      </Link>
-    )
-  }
-
+export function AccountBlockLabel({ user, isAuthenticated }) {
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`flex h-10 w-10 items-center justify-center rounded-full border transition-colors ${
-          transparent
-            ? 'lg:border-white/50 lg:bg-white/15 lg:text-white lg:hover:border-white border-route/40 bg-route-soft text-route hover:border-route dark:bg-route-softDark'
-            : 'border-route/40 bg-route-soft text-route hover:border-route dark:bg-route-softDark'
-        }`}
-        aria-label="Cuenta"
-        aria-expanded={open}
-      >
-        <span className="text-sm font-semibold">{user.nombre?.[0]?.toUpperCase() || 'U'}</span>
-      </button>
+    <>
+      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white">
+        <User className="h-3.5 w-3.5" aria-hidden="true" />
+      </span>
+      <span className="flex flex-col text-xs leading-tight">
+        <span>Cuenta</span>
+        <span className="max-w-[8rem] truncate text-[13px] font-bold">{isAuthenticated ? user.nombre || 'Mi cuenta' : 'Iniciar sesión'}</span>
+      </span>
+    </>
+  )
+}
 
-      {open && (
-        <div className="absolute right-0 top-12 z-50 w-56 rounded-xl2 border border-paper-line bg-paper-surface p-2 shadow-card dark:border-night-line dark:bg-night-surface dark:shadow-card-dark">
-          <div className="px-3 py-2">
-            <p className="truncate text-sm font-semibold text-ink dark:text-paper">
-              {user.nombre} {user.apellido}
-            </p>
-            <p className="truncate text-xs text-ink-soft dark:text-paper/50">{user.email}</p>
+export function AccountPanelBody({ onNavigate }) {
+  const { user, isAuthenticated, logout } = useAuth()
+  const navigate = useNavigate()
+  return (
+    <div className="px-5 pb-5">
+      {isAuthenticated ? (
+        <div className="mb-3 flex items-center gap-3">
+          <UserCircle className="h-8 w-8 shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="truncate font-bold">Hola, {user.nombre} {user.apellido}</p>
+            <p className="truncate text-xs text-ink-soft dark:text-paper/60">{user.email}</p>
           </div>
-          <div className="my-1 h-px bg-paper-line dark:bg-night-line" />
-          <Link
-            to="/mi-cuenta"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink/5 dark:text-paper dark:hover:bg-paper/10"
-          >
-            <UserCircle className="h-4 w-4" />
-            Mi cuenta
-          </Link>
-          <Link
-            to="/mis-pedidos"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink/5 dark:text-paper dark:hover:bg-paper/10"
-          >
-            <Package className="h-4 w-4" />
-            Mis pedidos
-          </Link>
-          <Link
-            to="/mis-direcciones"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-ink/5 dark:text-paper dark:hover:bg-paper/10"
-          >
-            <MapPin className="h-4 w-4" />
-            Mis direcciones
-          </Link>
-          {user.role === 'ADMIN' && (
-            <Link
-              to="/admin"
-              onClick={() => setOpen(false)}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-route transition-colors hover:bg-route-soft dark:hover:bg-route-softDark"
-            >
-              <ShieldCheck className="h-4 w-4" />
+        </div>
+      ) : (
+        <>
+          <div className="mb-3 flex items-start gap-2">
+            <UserCircle className="mt-0.5 h-6 w-6 shrink-0" aria-hidden="true" />
+            <p className="text-[17px] font-bold leading-snug">Consigue más con una cuenta de TecRuta</p>
+          </div>
+          <ul className="mb-4 grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+            {BENEFITS.map(({ Icon, label }) => (
+              <li key={label} className="flex items-start gap-2">
+                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft dark:text-paper/60" aria-hidden="true" />
+                <span>{label}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="grid grid-cols-2 gap-3">
+            <Link to="/iniciar-sesion" onClick={onNavigate} className="rounded-md bg-header py-2.5 text-center text-sm font-bold text-white hover:bg-header-band">Iniciar sesión</Link>
+            <Link to="/crear-cuenta" onClick={onNavigate} className="rounded-md border border-header py-2.5 text-center text-sm font-bold text-header hover:bg-header/5 dark:border-sky-300 dark:text-sky-300">Crear cuenta</Link>
+          </div>
+          <p className="mt-2 text-xs text-ink-soft dark:text-paper/60">
+            *Se aplican exclusiones. <Link to="/ayuda" onClick={onNavigate} className="font-medium text-header underline dark:text-sky-300">Más información.</Link>
+          </p>
+        </>
+      )}
+      <div className="my-4 h-px bg-gray-200 dark:bg-night-line" />
+      <ul aria-label="Mi cuenta">
+        {ACCOUNT_LINKS.map(({ to, label, Icon }) => (
+          <li key={to}>
+            <Link to={to} onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 text-[15px] hover:bg-gray-100 dark:hover:bg-white/10">
+              <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+              {label}
+            </Link>
+          </li>
+        ))}
+        {isAuthenticated && user.role === 'ADMIN' && (
+          <li>
+            <Link to="/admin" onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 text-[15px] font-medium text-header hover:bg-gray-100 dark:text-sky-300 dark:hover:bg-white/10">
+              <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
               Panel de administración
             </Link>
-          )}
-          <div className="my-1 h-px bg-paper-line dark:bg-night-line" />
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              setOpen(false)
-              navigate('/')
-            }}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-signal-red transition-colors hover:bg-signal-red/10"
-          >
-            <LogOut className="h-4 w-4" />
-            Cerrar sesión
-          </button>
-        </div>
+          </li>
+        )}
+        {isAuthenticated && (
+          <li>
+            <button
+              type="button"
+              onClick={() => { logout(); onNavigate?.(); navigate('/') }}
+              className="flex w-full items-center gap-4 rounded-md px-2 py-3 text-left text-[15px] font-medium text-signal-red hover:bg-signal-red/10"
+            >
+              <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+              Cerrar sesión
+            </button>
+          </li>
+        )}
+      </ul>
+    </div>
+  )
+}
+
+// Bloque "Cuenta" del header de escritorio + popover (con y sin sesión).
+export default function AccountMenu({ open, onToggle, onClose }) {
+  const { user, isAuthenticated } = useAuth()
+  const ref = useRef(null)
+  return (
+    <div className="relative">
+      <button
+        ref={ref}
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-controls="panel-account"
+        onClick={onToggle}
+        className="flex items-center gap-2 rounded px-2 py-1 text-left text-white hover:bg-white/10"
+      >
+        <AccountBlockLabel user={user} isAuthenticated={isAuthenticated} />
+      </button>
+      {open && (
+        <FloatingPanel id="panel-account" title="Cuenta" width="w-[24rem]" align="right" arrow hideTitle triggerRef={ref} onClose={onClose}>
+          <AccountPanelBody onNavigate={onClose} />
+        </FloatingPanel>
       )}
     </div>
   )

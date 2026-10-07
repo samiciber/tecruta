@@ -2,13 +2,12 @@ import React from 'react'
 import { useCategories } from '../../hooks/useCategories.js'
 import { formatCurrency } from '../../utils/formatCurrency.js'
 
-export default function FilterPanel({ filters, onChange, onClear, brands, priceBounds }) {
+export default function FilterPanel({ filters, onChange, onClear, brands, priceBounds, hideCategories = false }) {
   // Antes había un whitelist manual (CATEGORIAS_CON_STOCK) que ocultaba
   // categorías del filtro — se armó cuando Celulares/Tablets/Laptops
   // estaban vacías y nunca se actualizó al agregarles productos reales.
-  // Ahora el filtro siempre refleja las categorías reales que devuelve
-  // useCategories() (API con respaldo estático incluido), sin lista
-  // aparte que mantener a mano.
+  // useCategories() devuelve solo las categorías VISIBLES del árbol (las
+  // heredadas no aparecen). Filtrar por una categoría incluye su rama.
   const { categories } = useCategories()
   const { category, brands: selectedBrands = [], minPrice, maxPrice, inStockOnly } = filters
 
@@ -20,7 +19,7 @@ export default function FilterPanel({ filters, onChange, onClear, brands, priceB
   }
 
   const hasActiveFilters =
-    Boolean(category) ||
+    (!hideCategories && Boolean(category)) ||
     selectedBrands.length > 0 ||
     typeof minPrice === 'number' ||
     typeof maxPrice === 'number' ||
@@ -37,6 +36,7 @@ export default function FilterPanel({ filters, onChange, onClear, brands, priceB
         )}
       </div>
 
+      {!hideCategories && categories.length > 0 && (
       <fieldset>
         <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft/70 dark:text-paper/50">
           Categoría
@@ -65,6 +65,7 @@ export default function FilterPanel({ filters, onChange, onClear, brands, priceB
           ))}
         </div>
       </fieldset>
+      )}
 
       <fieldset>
         <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-soft/70 dark:text-paper/50">

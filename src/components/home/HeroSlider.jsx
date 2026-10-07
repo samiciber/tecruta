@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play, PlugZap, Cable, Headphones, Cpu, Smartphone, Tablet, Laptop, BatteryCharging } from 'lucide-react'
-import { heroSlides } from '../../data/heroSlides.js'
+import { storeConfig } from '../../config/storeConfig.js'
 import { useCategories } from '../../hooks/useCategories.js'
+import { useSiteSettings } from '../../hooks/useSiteContent.js'
 
 const AUTOPLAY_MS = 6000
 
@@ -21,6 +22,19 @@ const FALLBACK_GRADIENTS = {
   laptops: 'from-signal-amber to-[#F0B96B]',
 }
 
+const DEFAULT_SLIDE = {
+  id: 'default',
+  category: null,
+  eyebrow: storeConfig.name,
+  title: storeConfig.tagline,
+  subtitle: storeConfig.description,
+  ctaLabel: 'Ver catálogo',
+  media: null,
+  textPosition: 'center',
+  href: '/catalogo',
+  categoryData: { name: 'catálogo', icon: 'Cpu' },
+}
+
 export default function HeroSlider() {
   const [active, setActive] = useState(0)
   // Tres motivos independientes de pausa (así uno no "pisa" a otro):
@@ -32,20 +46,43 @@ export default function HeroSlider() {
   const paused = hoverPaused || focusPaused || userPaused
   const timerRef = useRef(null)
   const { categories } = useCategories()
+  const { settings } = useSiteSettings()
 
-  // Enriquecemos cada slide con los datos reales de su categoría (nombre,
-  // slug) — el destino del enlace siempre se resuelve contra la lista de
-  // categorías actual (API con respaldo estático, vía useCategories).
-  const slides = useMemo(
-    () =>
-      heroSlides
-        .map((slide) => {
-          const categoryData = categories.find((c) => c.slug === slide.category)
-          return categoryData ? { ...slide, categoryData } : null
-        })
-        .filter(Boolean),
-    [categories],
-  )
+  // Slides = categorías VISIBLES del árbol que tengan imagen (se carga desde
+  // Admin → Categorías). Las categorías heredadas ya no aparecen. Si ninguna
+  // tiene imagen todavía, se muestra un slide genérico de marca para que la
+  // Home no quede sin hero (Bloque 5: banners editables del Home).
+  const slides = useMemo(() => {
+    // 1) Banners del Home (Admin → Banners del Home); la API solo envía los activos.
+    const fromBanners = (settings.homeBanners || []).map((b) => ({
+      id: b.id,
+      category: null,
+      eyebrow: b.eyebrow,
+      title: b.title,
+      subtitle: b.subtitle,
+      ctaLabel: b.ctaLabel || 'Ver más',
+      media: b.image ? { type: 'image', src: b.image } : null,
+      textPosition: 'center',
+      href: b.href,
+      categoryData: { name: b.title, icon: 'Cpu' },
+    }))
+    if (fromBanners.length > 0) return fromBanners
+    const fromCategories = categories
+      .filter((c) => c.image)
+      .map((c) => ({
+        id: c.slug,
+        category: c.slug,
+        eyebrow: 'Categoría',
+        title: c.name,
+        subtitle: c.description || '',
+        ctaLabel: `Ver ${c.name}`,
+        media: { type: 'image', src: c.image },
+        textPosition: 'center',
+        href: `/categoria/${c.slug}`,
+        categoryData: c,
+      }))
+    return fromCategories.length > 0 ? fromCategories : [DEFAULT_SLIDE]
+  }, [categories, settings.homeBanners])
 
   // Nota: antes aquí se desactivaba el autoplay por completo si el sistema
   // reportaba prefers-reduced-motion (en Windows basta con tener apagados
@@ -89,7 +126,7 @@ export default function HeroSlider() {
         {slides.map((slide, i) => {
           const Icon = ICONS[slide.categoryData.icon] || Cpu
           const isActive = i === active
-          const href = `/catalogo?categoria=${slide.category}`
+          const href = slide.href
 
           return (
             <div

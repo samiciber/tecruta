@@ -9,6 +9,7 @@ import Modal from '../components/ui/Modal.jsx'
 import { useProducts } from '../hooks/useProducts.js'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { useCategories } from '../hooks/useCategories.js'
+import { descendantSlugs, findNode } from '../utils/categoryTree.js'
 
 const PAGE_SIZE = 24
 
@@ -16,22 +17,30 @@ export default function Catalog() {
   const [params, setParams] = useSearchParams()
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const { index, loading } = useProductIndex()
-  const { getCategoryBySlug } = useCategories()
+  const { tree, getCategoryBySlug } = useCategories()
 
   const query = params.get('q') || ''
   const sort = params.get('ordenar') || 'relevance'
   const categorySlug = params.get('categoria') || undefined
   const pagina = Math.max(1, Number(params.get('pagina') || 1))
 
+  // Una categoría del árbol incluye los productos de toda su rama; un slug
+  // heredado (enlaces antiguos) filtra solo por sí mismo.
+  const categorySlugs = useMemo(() => {
+    const node = categorySlug ? findNode(tree, categorySlug) : null
+    return node ? descendantSlugs(node) : undefined
+  }, [tree, categorySlug])
+
   const filters = useMemo(
     () => ({
       category: categorySlug,
+      categorySlugs,
       brands: params.get('marcas') ? params.get('marcas').split(',') : [],
       minPrice: params.get('min') ? Number(params.get('min')) : undefined,
       maxPrice: params.get('max') ? Number(params.get('max')) : undefined,
       inStockOnly: params.get('stock') === '1',
     }),
-    [params, categorySlug],
+    [params, categorySlug, categorySlugs],
   )
 
   const results = useProducts(index, { query, filters, sort })

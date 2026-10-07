@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/product/ProductCard.jsx'
 import HeroSlider from '../components/home/HeroSlider.jsx'
+import GuestStrip from '../components/home/GuestStrip.jsx'
 import CategoryShowcase from '../components/home/CategoryShowcase.jsx'
 import PromoBanner from '../components/home/PromoBanner.jsx'
 import BestSellers from '../components/home/BestSellers.jsx'
@@ -11,6 +12,8 @@ import TrustSection from '../components/home/TrustSection.jsx'
 import Testimonials from '../components/home/Testimonials.jsx'
 import Reveal from '../components/animations/Reveal.jsx'
 import { useProductIndex } from '../hooks/useProductIndex.js'
+import { useCategories } from '../hooks/useCategories.js'
+import { countProducts } from '../utils/categoryTree.js'
 
 // Producto real usado en el banner promocional — cámbialo por el id de
 // cualquier otro producto real de src/data/products.js si quieres rotar
@@ -22,14 +25,14 @@ export default function Home() {
   const featured = index.filter((p) => p.featured)
   const bestSellers = index.filter((p) => p.bestSeller)
   const promoProduct = index.find((p) => p.id === PROMO_PRODUCT_ID)
-  const conteos = index.reduce((acc, p) => {
-    acc[p.category] = (acc[p.category] || 0) + 1
-    return acc
-  }, {})
+  // Conteo de productos por categoría de primer nivel (incluye su rama).
+  const { categories } = useCategories()
+  const conteos = Object.fromEntries(categories.map((c) => [c.slug, countProducts(c, index)]))
 
   return (
     <div>
       <HeroSlider />
+      <GuestStrip />
 
       <Reveal>
         <CategoryShowcase counts={conteos} />
@@ -81,7 +84,7 @@ export default function Home() {
       </Reveal>
 
       <Reveal>
-        <ExploreCategories />
+        <ExploreCategories counts={conteos} />
       </Reveal>
 
       <Reveal>

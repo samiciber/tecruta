@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { readStorage, writeStorage } from '../utils/storage.js'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
@@ -35,8 +36,8 @@ function withAddedQuantity(prevEntries, product, quantity) {
 
 export function CartProvider({ children }) {
   const [entries, setEntries] = useState(() => sanitizeStoredCart(readStorage(STORAGE_KEY, [])))
-  const [isOpen, setIsOpen] = useState(false)
   const toast = useContext(ToastContext)
+  const navigate = useNavigate()
   const { index: products } = useProductIndex()
 
   // Se usa useContext(AuthContext) directamente (no el hook useAuth) para
@@ -104,7 +105,8 @@ export function CartProvider({ children }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  function addItem(product, quantity = 1) {
+  // opts.silent: no muestra la confirmación (p. ej. «Comprar ahora»).
+  function addItem(product, quantity = 1, opts = {}) {
     if (product.stock <= 0) return
 
     setEntries((prev) => withAddedQuantity(prev, product, quantity))
@@ -116,8 +118,12 @@ export function CartProvider({ children }) {
         .catch((err) => console.warn('No se pudo sincronizar el carrito con el servidor:', err.message))
     }
 
-    toast?.showToast(`${product.name} se agregó al carrito`, 'success')
-    setIsOpen(true)
+    if (!opts.silent) {
+      toast?.showToast(`${product.name} se agregó al carrito`, 'success', {
+        actionLabel: 'Ir al carrito',
+        onAction: () => navigate('/carrito'),
+      })
+    }
   }
 
   function removeItem(productId) {
@@ -166,8 +172,6 @@ export function CartProvider({ children }) {
         items,
         itemCount,
         subtotal,
-        isOpen,
-        setIsOpen,
         addItem,
         removeItem,
         updateQuantity,

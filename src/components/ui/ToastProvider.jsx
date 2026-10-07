@@ -20,12 +20,14 @@ let idCounter = 0
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
 
-  const showToast = useCallback((message, tone = 'info') => {
+  // options: { actionLabel, onAction } agrega un botón de acción (p. ej.
+  // «Ir al carrito»); los toasts con acción duran más para poder pulsarla.
+  const showToast = useCallback((message, tone = 'info', options = {}) => {
     const id = ++idCounter
-    setToasts((prev) => [...prev, { id, message, tone }])
+    setToasts((prev) => [...prev, { id, message, tone, actionLabel: options.actionLabel, onAction: options.onAction }])
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id))
-    }, 3200)
+    }, options.actionLabel ? 6000 : 3200)
   }, [])
 
   const dismissToast = useCallback((id) => {
@@ -46,6 +48,18 @@ export function ToastProvider({ children }) {
             >
               <Icon className="h-4 w-4 shrink-0" />
               <span className="flex-1 text-ink dark:text-paper">{t.message}</span>
+              {t.actionLabel && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    t.onAction?.()
+                    dismissToast(t.id)
+                  }}
+                  className="shrink-0 rounded-full bg-header px-3 py-1 text-xs font-bold text-white hover:bg-header-band"
+                >
+                  {t.actionLabel}
+                </button>
+              )}
               <button
                 type="button"
                 aria-label="Cerrar notificación"

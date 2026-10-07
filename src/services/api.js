@@ -45,6 +45,15 @@ export const api = {
   getCategories: () => request('/api/categories'),
   getPaymentMethods: () => request('/api/payment-methods'),
 
+  // --- Contenido de navegación (Bloque 1) ---
+  getNav: () => request('/api/nav'),
+  getBrands: () => request('/api/brands'),
+  getPopularSearches: () => request('/api/popular-searches'),
+  getStores: () => request('/api/stores'),
+  getSiteSettings: () => request('/api/site-settings'),
+  getCategoryTree: () => request('/api/categories/tree'),
+  getCategoryDetail: (slug) => request(`/api/categories/${encodeURIComponent(slug)}`),
+
   auth: {
     register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
     resendCode: (email) => request('/api/auth/resend-code', { method: 'POST', body: { email } }),
@@ -84,6 +93,14 @@ export const api = {
       request(`/api/cart/items/${encodeURIComponent(productId)}`, { method: 'DELETE', token }),
     clear: (token) => request('/api/cart', { method: 'DELETE', token }),
     merge: (items, token) => request('/api/cart/merge', { method: 'POST', body: { items }, token }),
+  },
+
+  // Elementos guardados (lista de deseos) — solo clientes con sesión.
+  saved: {
+    get: (token) => request('/api/saved', { token }),
+    add: (productId, token) => request('/api/saved/items', { method: 'POST', body: { productId }, token }),
+    remove: (productId, token) => request(`/api/saved/items/${encodeURIComponent(productId)}`, { method: 'DELETE', token }),
+    merge: (productIds, token) => request('/api/saved/merge', { method: 'POST', body: { productIds }, token }),
   },
 
   // Direcciones guardadas — también solo para clientes con sesión.
@@ -127,5 +144,52 @@ export const api = {
       request(`/api/admin/orders/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: payload, token }),
 
     getUsers: (token) => request('/api/admin/users', { token }),
+
+    // --- Contenido de navegación (Bloque 1). DELETE responde 204 → null. ---
+    getDashboard: (token) => request('/api/admin/dashboard', { token }),
+    getBrands: (token) => request('/api/admin/brands', { token }),
+    createBrand: (payload, token) => request('/api/admin/brands', { method: 'POST', body: payload, token }),
+    updateBrand: (id, payload, token) =>
+      request(`/api/admin/brands/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
+    deleteBrand: (id, token) => request(`/api/admin/brands/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+
+    getPopularSearches: (token) => request('/api/admin/popular-searches', { token }),
+    createPopularSearch: (payload, token) => request('/api/admin/popular-searches', { method: 'POST', body: payload, token }),
+    updatePopularSearch: (id, payload, token) =>
+      request(`/api/admin/popular-searches/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
+    deletePopularSearch: (id, token) =>
+      request(`/api/admin/popular-searches/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+
+    getStores: (token) => request('/api/admin/stores', { token }),
+    createStore: (payload, token) => request('/api/admin/stores', { method: 'POST', body: payload, token }),
+    updateStore: (id, payload, token) =>
+      request(`/api/admin/stores/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
+    deleteStore: (id, token) => request(`/api/admin/stores/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+
+    getSiteSettings: (token) => request('/api/admin/site-settings', { token }),
+    saveSiteSetting: (key, value, token) =>
+      request(`/api/admin/site-settings/${encodeURIComponent(key)}`, { method: 'PUT', body: value, token }),
+
+    // Usados desde los Bloques 2 y 3 (editor de menús, categorías en árbol, asignación).
+    getNavItems: (menu, token) => request(`/api/admin/nav-items${menu ? `?menu=${encodeURIComponent(menu)}` : ''}`, { token }),
+    createNavItem: (payload, token) => request('/api/admin/nav-items', { method: 'POST', body: payload, token }),
+    updateNavItem: (id, payload, token) =>
+      request(`/api/admin/nav-items/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
+    deleteNavItem: (id, token) => request(`/api/admin/nav-items/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+    reorderNavItems: (items, token) => request('/api/admin/nav-items/reorder', { method: 'PUT', body: { items }, token }),
+
+    getCategoryTree: (token) => request('/api/admin/category-tree', { token }),
+    createCategoryNode: (payload, token) => request('/api/admin/category-tree', { method: 'POST', body: payload, token }),
+    updateCategoryNode: (id, payload, token) =>
+      request(`/api/admin/category-tree/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
+    deleteCategoryNode: (id, token) => request(`/api/admin/category-tree/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+    getCategoryTiles: (id, token) => request(`/api/admin/category-tree/${encodeURIComponent(id)}/tiles`, { token }),
+    createCategoryTile: (id, payload, token) =>
+      request(`/api/admin/category-tree/${encodeURIComponent(id)}/tiles`, { method: 'POST', body: payload, token }),
+    updateCategoryTile: (tileId, payload, token) =>
+      request(`/api/admin/category-tiles/${encodeURIComponent(tileId)}`, { method: 'PATCH', body: payload, token }),
+    deleteCategoryTile: (tileId, token) =>
+      request(`/api/admin/category-tiles/${encodeURIComponent(tileId)}`, { method: 'DELETE', token }),
+    assignProducts: (payload, token) => request('/api/admin/products/assign', { method: 'POST', body: payload, token }),
   },
 }

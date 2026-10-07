@@ -6,6 +6,9 @@ import { productsRouter } from './routes/products.routes.js'
 import { authRouter } from './routes/auth.routes.js'
 import { ordersRouter } from './routes/orders.routes.js'
 import { adminRouter } from './routes/admin.routes.js'
+import { adminContentRouter } from './routes/adminContent.routes.js'
+import { contentRouter } from './routes/content.routes.js'
+import { savedRouter } from './routes/saved.routes.js'
 import { paymentMethodsRouter } from './routes/paymentMethods.routes.js'
 import { cartRouter } from './routes/cart.routes.js'
 import { addressesRouter } from './routes/addresses.routes.js'
@@ -31,8 +34,13 @@ app.use('/api/payment-methods', paymentMethodsRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/orders', ordersRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/admin', adminContentRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/addresses', addressesRouter)
+app.use('/api/saved', savedRouter)
+// Contenido público: /api/nav, /api/brands, /api/popular-searches,
+// /api/stores, /api/site-settings
+app.use('/api', contentRouter)
 
 app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada.' }))
 app.use(errorHandler)

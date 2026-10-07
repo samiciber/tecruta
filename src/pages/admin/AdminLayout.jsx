@@ -3,11 +3,19 @@ import { NavLink, Outlet } from 'react-router-dom'
 import RequireAdmin from '../../components/admin/RequireAdmin.jsx'
 
 const TABS = [
-  { to: '/admin', label: 'Productos', end: true },
+  { to: '/admin', label: 'Resumen', end: true },
+  { to: '/admin/productos', label: 'Productos' },
   { to: '/admin/pedidos', label: 'Pedidos' },
   { to: '/admin/categorias', label: 'Categorías' },
+  { to: '/admin/asignar', label: 'Asignar productos' },
   { to: '/admin/pagos', label: 'Métodos de pago' },
   { to: '/admin/clientes', label: 'Clientes' },
+  { to: '/admin/menus', label: 'Menús de navegación' },
+  { to: '/admin/marcas', label: 'Marcas' },
+  { to: '/admin/busquedas', label: 'Búsquedas populares' },
+  { to: '/admin/tiendas', label: 'Tiendas' },
+  { to: '/admin/banners', label: 'Banners del Home' },
+  { to: '/admin/ajustes', label: 'Ajustes del sitio' },
 ]
 
 export default function AdminLayout() {

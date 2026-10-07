@@ -185,7 +185,14 @@ export default function AdminProducts() {
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    Promise.all([api.getProducts(), api.getCategories()])
+    // Categorías: TODO el árbol (nuevas + heredadas) con la ruta completa en la
+    // etiqueta, para poder reasignar sin perder la categoría actual.
+    const withPaths = (rows) => {
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      const label = (r) => (r.parentId && byId.get(r.parentId) ? `${label(byId.get(r.parentId))} › ${r.name}` : r.name)
+      return rows.map((r) => ({ slug: r.slug, name: r.legacy ? `${r.name} (heredada)` : label(r) })).sort((a, b) => a.name.localeCompare(b.name))
+    }
+    Promise.all([api.getProducts(), api.admin.getCategoryTree(token).then(withPaths)])
       .then(([p, c]) => {
         setProducts(p)
         setCategories(c)

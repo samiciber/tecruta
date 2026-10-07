@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useParams, Navigate } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Truck, ShieldCheck, MessageCircle, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
+import SaveButton from '../components/product/SaveButton.jsx'
 import QuantitySelector from '../components/product/QuantitySelector.jsx'
 import ProductCard from '../components/product/ProductCard.jsx'
 import Product3DViewer from '../components/3d/Product3DViewer.jsx'
@@ -199,13 +200,14 @@ export default function ProductDetail() {
             </button>
             <Link
               to="/checkout"
-              onClick={() => !outOfStock && addItem(product, quantity)}
+              onClick={() => !outOfStock && addItem(product, quantity, { silent: true })}
               className={`btn-secondary flex-1 ${outOfStock ? 'pointer-events-none opacity-40' : ''}`}
               aria-disabled={outOfStock}
             >
               <Zap className="h-4 w-4" />
               Comprar ahora
             </Link>
+            <SaveButton product={product} variant="button" className="flex-1" />
           </div>
 
           <div className="mt-2 rounded-xl2 border border-paper-line p-4 dark:border-night-line">

@@ -1,17 +1,13 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, PlugZap, Cable, Headphones, Cpu, BatteryCharging } from 'lucide-react'
+import { ArrowRight, Cpu } from 'lucide-react'
 import { useCategories } from '../../hooks/useCategories.js'
 
-const ICONS = { PlugZap, Cable, Headphones, Cpu, BatteryCharging }
-
-// Solo se muestran las categorías que ya tienen productos reales —
-// las de "Próximamente" no aportan a esta sección de navegación rápida.
-const SLUGS_ACTIVOS = ['power-banks', 'cargadores', 'cables', 'audifonos']
-
-export default function ExploreCategories() {
+// Solo categorías visibles del árbol con productos; `counts` lo arma la Home.
+export default function ExploreCategories({ counts = {} }) {
   const { categories } = useCategories()
-  const activas = categories.filter((c) => SLUGS_ACTIVOS.includes(c.slug))
+  const activas = categories.filter((c) => (counts[c.slug] ?? 0) > 0).slice(0, 8)
+  if (activas.length === 0) return null
 
   return (
     <section className="border-t border-paper-line bg-paper-surface py-16 dark:border-night-line dark:bg-night-surface sm:py-24">
@@ -20,11 +16,11 @@ export default function ExploreCategories() {
         <h2 className="mb-8 font-display text-3xl font-bold tracking-tight text-ink dark:text-paper sm:mb-10 sm:text-4xl">Explora TecRuta</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {activas.map((c) => {
-            const Icon = ICONS[c.icon] || Cpu
+            const Icon = Cpu
             return (
               <Link
                 key={c.slug}
-                to={`/catalogo?categoria=${c.slug}`}
+                to={`/categoria/${c.slug}`}
                 className="group flex items-center justify-between gap-3 rounded-xl2 border border-paper-line bg-paper p-5 transition-colors hover:border-route dark:border-night-line dark:bg-night"
               >
                 <span className="flex items-center gap-3">
