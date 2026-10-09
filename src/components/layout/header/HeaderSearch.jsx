@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { usePanelBehavior } from '../../../hooks/usePanel.js'
 import { usePopularSearches, useBrands, useCategoryTree } from '../../../hooks/useSiteContent.js'
@@ -59,6 +59,23 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
     inputRef.current?.blur()
     navigate(to)
   }
+  // Chip de búsqueda popular: es un enlace real (clic medio, «abrir en pestaña
+  // nueva» y teclado funcionan solos). En un clic normal: pone el texto en el
+  // input, cierra el panel y deja que <Link> navegue a /catalogo?q=…
+  const onChipClick = (e, text) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return // el navegador abre otra pestaña
+    setValue(text)
+    onClose()
+    inputRef.current?.blur()
+  }
+  // Los enlaces no se activan con Espacio; los chips sí (además de Enter).
+  const onChipKeyDown = (e) => {
+    if (e.key === ' ') {
+      e.preventDefault()
+      e.currentTarget.click()
+    }
+  }
+
   const submit = (e) => {
     e.preventDefault()
     if (active >= 0 && suggestions[active]) return go(suggestions[active].to)
@@ -134,9 +151,14 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
                 <ul className="flex gap-2 overflow-x-auto pb-2">
                   {chips.map((c) => (
                     <li key={c.id} className="shrink-0">
-                      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => go(`/catalogo?q=${encodeURIComponent(c.text)}`)} className="whitespace-nowrap rounded-full border border-gray-400 px-4 py-2 text-sm hover:bg-gray-100 dark:border-night-line dark:hover:bg-white/10">
+                      <Link
+                        to={`/catalogo?q=${encodeURIComponent(c.text)}`}
+                        onClick={(e) => onChipClick(e, c.text)}
+                        onKeyDown={onChipKeyDown}
+                        className="block whitespace-nowrap rounded-full border border-gray-400 px-4 py-2 text-sm hover:bg-gray-100 dark:border-night-line dark:hover:bg-white/10"
+                      >
                         {c.text}
-                      </button>
+                      </Link>
                     </li>
                   ))}
                 </ul>

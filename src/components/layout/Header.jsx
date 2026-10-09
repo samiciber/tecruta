@@ -133,7 +133,7 @@ export default function Header() {
           - Buscador abierto: el velo sube a z-[15], entre la fila 2 (z-10) y la
             fila 1 (z-20): oscurece la página Y la fila 2; el campo y su panel
             (hijos de la fila 1) quedan por encima, completos. */}
-      {panel && <div aria-hidden="true" className={`fixed inset-0 bg-black/50 ${panel === 'search' ? 'z-[15]' : 'z-0'}`} onClick={close} />}
+      {panel && <div aria-hidden="true" className={`fixed inset-0 bg-black/50 ${panel?.startsWith('search') ? 'z-[15]' : 'z-0'}`} onClick={close} />}
 
       {/* Fila 1 */}
       <div className="relative z-20 bg-header">
@@ -144,7 +144,10 @@ export default function Header() {
           <Logo />
 
           <div className="hidden min-w-0 flex-1 lg:flex">
-            <HeaderSearch open={panel === 'search'} onOpen={() => setPanel('search')} onClose={close} idPrefix="search-d" />
+            {/* Cada buscador (escritorio / móvil) tiene su PROPIO id de panel: si
+                compartieran uno, el instancia oculta vería los clics del visible como
+                "clic fuera" y cerraría el panel en mousedown, antes del click. */}
+            <HeaderSearch open={panel === 'search-d'} onOpen={() => setPanel('search-d')} onClose={close} idPrefix="search-d" />
           </div>
 
           <div className="hidden shrink-0 items-center gap-3 lg:flex xl:gap-4">
@@ -160,7 +163,7 @@ export default function Header() {
         {/* Buscador en móvil: segunda línea */}
         <div className={`${WRAP} pb-3 lg:hidden`}>
           <div className="flex">
-            <HeaderSearch open={panel === 'search'} onOpen={() => setPanel('search')} onClose={close} idPrefix="search-m" />
+            <HeaderSearch open={panel === 'search-m'} onOpen={() => setPanel('search-m')} onClose={close} idPrefix="search-m" />
           </div>
         </div>
       </div>
