@@ -53,8 +53,11 @@ export function useSiteSettings() {
   const { data, loading } = useCachedResource('site-settings', api.getSiteSettings, {
     fallback: { seasonalPromo: DEFAULT_PROMO },
   })
-  // homeBanners: [] y cartFooterLinks: null → la UI usa sus valores por defecto.
-  return { settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], cartFooterLinks: null, ...data }, loading }
+  // homeBanners: [], heroCarousel y cartFooterLinks → la UI usa sus valores por defecto.
+  return {
+    settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], heroCarousel: { intervalSeconds: 6, autoplay: true }, cartFooterLinks: null, ...data },
+    loading,
+  }
 }
 
 // Árbol de categorías visibles (sin heredadas): [{ id, slug, name, children }]

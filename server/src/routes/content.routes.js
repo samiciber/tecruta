@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { serializeBrand, serializeStore, serializeNavItem, buildTree, pruneUnreachable } from '../lib/serializers.js'
+import { normalizeHomeBanners, isBannerLive } from '../lib/navSchemas.js'
 
 // Endpoints PÚBLICOS de contenido de la tienda. Se monta en /api, así que
 // define: /nav, /brands, /popular-searches, /stores, /site-settings.
@@ -87,8 +88,12 @@ contentRouter.get(
   '/site-settings',
   asyncHandler(async (req, res) => {
     const settings = await loadSettings()
-    // Al público solo llegan los banners activos.
-    if (Array.isArray(settings.homeBanners)) settings.homeBanners = settings.homeBanners.filter((b) => b.active)
+    // Al público solo llegan los banners VIGENTES (activos y dentro de su ventana
+    // de fechas), ya normalizados a la forma nueva (acepta datos guardados antes).
+    if (settings.homeBanners !== undefined) {
+      const now = new Date()
+      settings.homeBanners = normalizeHomeBanners(settings.homeBanners).filter((b) => isBannerLive(b, now))
+    }
     cacheShort(res)
     res.json(settings)
   }),

@@ -27,6 +27,10 @@ export default function AdminSiteSettings() {
   const [footerSaved, setFooterSaved] = useState(DEFAULT_CART_FOOTER)
   const [footer, setFooter] = useState(DEFAULT_CART_FOOTER)
   const [savingFooter, setSavingFooter] = useState(false)
+  const DEFAULT_CAROUSEL = { intervalSeconds: 6, autoplay: true }
+  const [carouselSaved, setCarouselSaved] = useState(DEFAULT_CAROUSEL)
+  const [carousel, setCarousel] = useState(DEFAULT_CAROUSEL)
+  const [savingCarousel, setSavingCarousel] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -39,6 +43,9 @@ export default function AdminSiteSettings() {
       const f = Array.isArray(settings.cartFooterLinks) && settings.cartFooterLinks.length === 5 ? settings.cartFooterLinks : DEFAULT_CART_FOOTER
       setFooterSaved(f)
       setFooter(f)
+      const c = settings.heroCarousel && typeof settings.heroCarousel === 'object' ? { intervalSeconds: 6, autoplay: true, ...settings.heroCarousel } : { intervalSeconds: 6, autoplay: true }
+      setCarouselSaved(c)
+      setCarousel(c)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -67,6 +74,24 @@ export default function AdminSiteSettings() {
       toast?.showToast(err.message, 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const secondsOk = Number.isInteger(carousel.intervalSeconds) && carousel.intervalSeconds >= 3 && carousel.intervalSeconds <= 30
+  const carouselDirty = JSON.stringify(carouselSaved) !== JSON.stringify(carousel)
+  const saveCarousel = async (e) => {
+    e.preventDefault()
+    setSavingCarousel(true)
+    try {
+      const res = await api.admin.saveSiteSetting('heroCarousel', { intervalSeconds: carousel.intervalSeconds, autoplay: carousel.autoplay }, token)
+      setCarouselSaved(res.heroCarousel)
+      setCarousel(res.heroCarousel)
+      invalidate('site-settings')
+      toast?.showToast('Ajustes del carrusel guardados.', 'success')
+    } catch (err) {
+      toast?.showToast(err.message, 'error')
+    } finally {
+      setSavingCarousel(false)
     }
   }
 
@@ -116,6 +141,21 @@ export default function AdminSiteSettings() {
           <button type="submit" className="btn-primary mt-4" disabled={!dirty || saving || !promo.label.trim() || !hrefOk}>
             {saving ? 'Guardando…' : 'Guardar'}
           </button>
+        </form>
+      )}
+      {!loading && !error && (
+        <form onSubmit={saveCarousel} className="mt-6 max-w-xl rounded-xl2 border border-paper-line p-4 dark:border-night-line">
+          <h3 className="mb-1 font-semibold text-ink dark:text-paper">Carrusel del Home</h3>
+          <p className="mb-3 text-xs text-ink-soft dark:text-paper/60">Ajustes globales del hero. Los slides se editan en «Banners del Home». Con «reducir movimiento» activado en el dispositivo del visitante, nunca rota solo.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Segundos entre slides (3 a 30)">
+              <input type="number" min="3" max="30" step="1" className="input-tr h-9 py-0" value={carousel.intervalSeconds} aria-invalid={!secondsOk}
+                onChange={(e) => setCarousel({ ...carousel, intervalSeconds: e.target.value === '' ? NaN : Number(e.target.value) })} />
+              {!secondsOk && <span className="text-signal-red">Debe ser un número entero entre 3 y 30.</span>}
+            </Field>
+            <div className="flex items-end pb-2"><Check label="Rotación automática (autoplay)" checked={carousel.autoplay} onChange={(v) => setCarousel({ ...carousel, autoplay: v })} /></div>
+          </div>
+          <button type="submit" className="btn-primary mt-4" disabled={!carouselDirty || !secondsOk || savingCarousel}>{savingCarousel ? 'Guardando…' : 'Guardar carrusel'}</button>
         </form>
       )}
       {!loading && !error && (

@@ -28,6 +28,7 @@ import {
   tileUpdateSchema,
   assignProductsSchema,
   NAV_MENU_KEYS,
+  normalizeHomeBanners,
 } from '../lib/navSchemas.js'
 
 // Endpoints de administración de contenido (marcas, navegación, categorías
@@ -202,7 +203,10 @@ adminContentRouter.get(
   '/site-settings',
   asyncHandler(async (req, res) => {
     const rows = await prisma.siteSetting.findMany()
-    res.json(Object.fromEntries(rows.map((r) => [r.key, r.value])))
+    const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+    // El editor siempre recibe la forma nueva de los banners (incluso si se guardaron antes).
+    if (settings.homeBanners !== undefined) settings.homeBanners = normalizeHomeBanners(settings.homeBanners)
+    res.json(settings)
   }),
 )
 

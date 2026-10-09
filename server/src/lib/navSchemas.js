@@ -72,21 +72,105 @@ export const seasonalPromoSchema = z.object({
 
 const linkHref = z.string().trim().regex(/^(\/|https?:\/\/)/, 'El enlace debe empezar con "/" o "https://".').max(500)
 
-// Banners del Home (el hero). Se guarda la lista completa, ordenada.
-export const homeBannersSchema = z
-  .array(
-    z.object({
-      id: z.string().min(1).max(60),
-      eyebrow: z.string().trim().max(60).optional().default(''),
-      title: text('El título', 80),
-      subtitle: z.string().trim().max(200).optional().default(''),
-      ctaLabel: z.string().trim().max(40).optional().default('Ver más'),
-      href: linkHref,
-      image: z.string().trim().max(1000).nullable().optional(),
-      active: z.boolean(),
-    }),
-  )
-  .max(10, 'Máximo 10 banners.')
+// ---------------------------------------------------------------------------
+// Banners del Home. UN solo modelo para el hero (Cambio 2) y para los banners
+// intercalados del compositor de la Home (Cambio 5): placement/width/slot ya
+// existen desde ahora para no hacer una segunda migración.
+// Se guardan en site_settings["homeBanners"] como lista ordenada.
+// ---------------------------------------------------------------------------
+export const BANNER_POSITIONS = [
+  'top-left', 'top-center', 'top-right',
+  'middle-left', 'middle-center', 'middle-right',
+  'bottom-left', 'bottom-center', 'bottom-right',
+]
+export const BANNER_ALIGNS = ['left', 'center', 'right', 'justify']
+
+const bannerButtonSchema = z.object({
+  label: text('El texto del botón', 40),
+  href: linkHref,
+  style: z.enum(['primary', 'secondary'], { error: 'El estilo debe ser primary o secondary.' }).default('primary'),
+})
+
+const optionalUrl = z.string().trim().max(1000).nullable().optional().transform((v) => v || null)
+const isoDate = z.iso.datetime({ offset: true, error: 'Fecha inválida.' }).nullable().optional().transform((v) => v || null)
+
+export const bannerSchema = z
+  .object({
+    id: z.string().min(1).max(60),
+    eyebrow: z.string().trim().max(60).optional().default(''),
+    title: z.string().trim().max(80, 'El título es demasiado largo.').optional().default(''),
+    description: z.string().trim().max(240, 'La descripción es demasiado larga.').optional().default(''),
+    buttons: z.array(bannerButtonSchema).max(2, 'Máximo 2 botones.').optional().default([]),
+    imageDesktop: optionalUrl,
+    imageMobile: optionalUrl,
+    imageAlt: z.string().trim().max(160).optional().default(''),
+    position: z.enum(BANNER_POSITIONS, { error: 'Posición inválida.' }).optional().default('bottom-left'),
+    textAlign: z.enum(BANNER_ALIGNS, { error: 'Alineación inválida.' }).optional().default('left'),
+    textColor: z.enum(['light', 'dark'], { error: 'El color del texto debe ser light o dark.' }).optional().default('light'),
+    overlay: z.number({ error: 'La opacidad debe ser un número.' }).int().min(0).max(80).optional().default(35),
+    active: z.boolean().optional().default(true),
+    startsAt: isoDate,
+    endsAt: isoDate,
+    placement: z.enum(['hero', 'inline'], { error: 'placement debe ser hero o inline.' }).optional().default('hero'),
+    width: z.enum(['full', 'half'], { error: 'width debe ser full o half.' }).optional().default('full'),
+    slot: z.string().trim().max(40).optional().default(''),
+  })
+  .refine((b) => b.title || b.imageDesktop, { error: 'El banner necesita al menos un título o una imagen.', path: ['title'] })
+  .refine((b) => !b.startsAt || !b.endsAt || new Date(b.endsAt) > new Date(b.startsAt), {
+    error: 'La fecha de fin debe ser posterior a la de inicio.',
+    path: ['endsAt'],
+  })
+
+export const homeBannersSchema = z.array(bannerSchema).max(30, 'Máximo 30 banners.')
+
+// Migración de la forma ANTERIOR (eyebrow/title/subtitle/ctaLabel/href/image/active)
+// a la nueva, con los valores por defecto acordados: hero, abajo-izquierda,
+// texto a la izquierda. Es idempotente: lo que ya tiene la forma nueva no se toca.
+export function legacyBannerToNew(b) {
+  if (!b || typeof b !== 'object') return b
+  if ('buttons' in b || 'imageDesktop' in b || 'description' in b) return b
+  return {
+    id: b.id,
+    eyebrow: b.eyebrow ?? '',
+    title: b.title ?? '',
+    description: b.subtitle ?? '',
+    buttons: b.href ? [{ label: b.ctaLabel || 'Ver más', href: b.href, style: 'primary' }] : [],
+    imageDesktop: b.image ?? null,
+    imageMobile: null,
+    position: 'bottom-left',
+    textAlign: 'left',
+    textColor: 'light',
+    overlay: 35,
+    active: b.active !== false,
+    placement: 'hero',
+    width: 'full',
+    slot: '',
+  }
+}
+
+// Lee lo guardado (forma antigua o nueva) y devuelve SIEMPRE la forma nueva.
+// Los elementos que no validan se omiten para que un dato dañado no rompa el Home.
+export function normalizeHomeBanners(value) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((b) => bannerSchema.safeParse(legacyBannerToNew(b)))
+    .filter((r) => r.success)
+    .map((r) => r.data)
+}
+
+// ¿Está vigente? (activo y dentro de su ventana de fechas)
+export function isBannerLive(b, now = new Date()) {
+  if (!b.active) return false
+  if (b.startsAt && new Date(b.startsAt) > now) return false
+  if (b.endsAt && new Date(b.endsAt) <= now) return false
+  return true
+}
+
+// Ajustes globales del carrusel del hero.
+export const heroCarouselSchema = z.object({
+  intervalSeconds: z.number({ error: 'Los segundos deben ser un número.' }).int().min(3, 'Mínimo 3 segundos.').max(30, 'Máximo 30 segundos.'),
+  autoplay: z.boolean({ error: 'autoplay debe ser verdadero o falso.' }),
+})
 
 // Enlaces del pie de /carrito (5, con el mismo orden que sus íconos).
 export const cartFooterLinksSchema = z
@@ -96,6 +180,7 @@ export const cartFooterLinksSchema = z
 export const SITE_SETTING_SCHEMAS = {
   seasonalPromo: seasonalPromoSchema,
   homeBanners: homeBannersSchema,
+  heroCarousel: heroCarouselSchema,
   cartFooterLinks: cartFooterLinksSchema,
 }
 
