@@ -10,6 +10,7 @@ const TABS = [
   { to: '/admin/asignar', label: 'Asignar productos' },
   { to: '/admin/pagos', label: 'Métodos de pago' },
   { to: '/admin/clientes', label: 'Clientes' },
+  { to: '/admin/menu', label: 'Menú' },
   { to: '/admin/menus', label: 'Menús de navegación' },
   { to: '/admin/marcas', label: 'Marcas' },
   { to: '/admin/busquedas', label: 'Búsquedas populares' },

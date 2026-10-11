@@ -177,10 +177,56 @@ export const cartFooterLinksSchema = z
   .array(z.object({ label: text('El texto', 80), href: linkHref }))
   .length(5, 'Deben ser exactamente 5 enlaces.')
 
+// ---------------------------------------------------------------------------
+// Menú principal (panel flotante del botón «Menú»).
+//   menuLayout: filas del PRIMER nivel, en orden. Tres tipos:
+//     brands   → la fila «Comprar por marca» (abre las marcas destacadas)
+//     category → una categoría raíz del árbol (los niveles inferiores se editan en
+//                Categorías); admite etiqueta/destino propios y ocultarla SOLO del Menú
+//     custom   → fila personalizada (texto + enlace)
+//   Si no existe, el Menú se arma como siempre: «Comprar por marca» + categorías
+//   en el orden del árbol. Las categorías raíz sin fila se agregan al final.
+//   menuTexts: textos fijos del panel («Explora {name}», «Todas las marcas»).
+// ---------------------------------------------------------------------------
+const rowId = z.string().min(1).max(60)
+const rowLabel = z.string().trim().max(60, 'El texto es demasiado largo.').optional().default('')
+const rowVisible = z.boolean().optional().default(true)
+const optionalHref = z
+  .string()
+  .trim()
+  .max(500)
+  .nullable()
+  .optional()
+  .transform((v) => v || null)
+  .refine((v) => v === null || /^(\/|https?:\/\/)/.test(v), { error: 'El enlace debe empezar con "/" o "https://".' })
+
+export const menuLayoutSchema = z
+  .array(
+    z.discriminatedUnion('type', [
+      z.object({ id: rowId, type: z.literal('brands'), label: rowLabel, visible: rowVisible }),
+      z.object({ id: rowId, type: z.literal('category'), categoryId: z.string().min(1).max(60), label: rowLabel, href: optionalHref, visible: rowVisible }),
+      z.object({ id: rowId, type: z.literal('custom'), label: text('El texto', 60), href: z.string({ error: 'El enlace es obligatorio.' }).pipe(linkHref), visible: rowVisible }),
+    ]),
+  )
+  .max(80, 'Máximo 80 filas.')
+  .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, { error: 'Hay filas con el mismo id.' })
+  .refine((rows) => rows.filter((r) => r.type === 'brands').length <= 1, { error: 'Solo puede haber una fila «Comprar por marca».' })
+  .refine((rows) => {
+    const ids = rows.filter((r) => r.type === 'category').map((r) => r.categoryId)
+    return new Set(ids).size === ids.length
+  }, { error: 'Una categoría no puede estar dos veces en el Menú.' })
+
+export const menuTextsSchema = z.object({
+  exploreTemplate: z.string({ error: 'El texto es obligatorio.' }).trim().min(1, 'El texto es obligatorio.').max(60, 'Máximo 60 caracteres.'),
+  allBrandsLabel: z.string({ error: 'El texto es obligatorio.' }).trim().min(1, 'El texto es obligatorio.').max(40, 'Máximo 40 caracteres.'),
+})
+
 export const SITE_SETTING_SCHEMAS = {
   seasonalPromo: seasonalPromoSchema,
   homeBanners: homeBannersSchema,
   heroCarousel: heroCarouselSchema,
+  menuLayout: menuLayoutSchema,
+  menuTexts: menuTextsSchema,
   cartFooterLinks: cartFooterLinksSchema,
 }
 

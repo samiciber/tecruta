@@ -18,7 +18,7 @@ export default function NavPanel({ id, title, items, width, align, triggerRef, o
       align={align}
       triggerRef={triggerRef}
       onClose={onClose}
-      side={sub && <SubPanel node={sub} onClose={() => setSub(null)} onNavigate={onClose} />}
+      side={sub && <SubPanel key={sub.title} node={sub} onClose={() => setSub(null)} onNavigate={onClose} />}
     >
       {entries.length === 0 ? (
         <p className="px-5 pb-6 text-sm text-ink-soft dark:text-paper/60">Pronto habrá contenido aquí.</p>

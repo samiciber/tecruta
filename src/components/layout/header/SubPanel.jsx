@@ -6,6 +6,8 @@ import EntryList from './EntryList.jsx'
 // del Menú, o el subnivel de Descubre). Recursivo: una fila con subnivel
 // abre otro SubPanel a su derecha. Se renderiza FUERA del área con scroll
 // del padre (prop `side` de FloatingPanel / dentro de otro SubPanel).
+// IMPORTANTE: quien lo renderiza debe pasarle `key={node.title}`; si no, al pasar de una
+// fila a otra se conservaría el submenú anidado de la fila anterior.
 export default function SubPanel({ node, onClose, onNavigate }) {
   const [next, setNext] = useState(null)
   const ref = useRef(null)
@@ -30,7 +32,7 @@ export default function SubPanel({ node, onClose, onNavigate }) {
           <EntryList entries={node.entries} onNavigate={onNavigate} onNext={(e) => setNext(e.next)} activeKey={next?.title} label={node.title} />
         )}
       </div>
-      {next && <SubPanel node={next} onClose={() => setNext(null)} onNavigate={onNavigate} />}
+      {next && <SubPanel key={next.title} node={next} onClose={() => setNext(null)} onNavigate={onNavigate} />}
     </div>
   )
 }

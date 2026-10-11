@@ -211,7 +211,7 @@ export default function AdminCategoryTree() {
 
   return (
     <section aria-labelledby="cats-title">
-      <SectionHeader id="cats-title" title="Categorías" description="Árbol del menú. Ocultar una categoría oculta toda su rama. Las «Heredadas» (las 8 originales) no se muestran en la tienda; reasigna sus productos en «Asignar productos»." />
+      <SectionHeader id="cats-title" title="Categorías" description="Árbol del menú. Ocultar una categoría oculta toda su rama. Con el Menú ya configurado, el orden y el nombre de las filas del PRIMER nivel se definen en «Menú»; los niveles inferiores se ordenan aquí. Las «Heredadas» (las 8 originales) no se muestran en la tienda; reasigna sus productos en «Asignar productos»." />
       <form onSubmit={add} className="mb-5 flex flex-wrap items-end gap-3 rounded-xl2 border border-dashed border-paper-line p-3 dark:border-night-line">
         <Field label={parent ? `Nueva subcategoría de «${parent.name}»` : 'Nueva categoría de primer nivel'} className="min-w-[220px] flex-1">
           <input className="input-tr h-9 py-0" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} maxLength={160} />

@@ -55,7 +55,7 @@ export function useSiteSettings() {
   })
   // homeBanners: [], heroCarousel y cartFooterLinks → la UI usa sus valores por defecto.
   return {
-    settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], heroCarousel: { intervalSeconds: 6, autoplay: true }, cartFooterLinks: null, ...data },
+    settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], heroCarousel: { intervalSeconds: 6, autoplay: true }, cartFooterLinks: null, menuLayout: null, menuTexts: null, ...data },
     loading,
   }
 }

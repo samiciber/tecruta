@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Moon, Store, Sun, User, X } from 'lucide-react'
 import EntryList from './header/EntryList.jsx'
-import { brandsToEntries, categoriesToEntries, navToEntries } from './header/entries.js'
-import { useBrands, useCategoryTree, useNav } from '../../hooks/useSiteContent.js'
+import { buildMenuEntries, navToEntries } from './header/entries.js'
+import { useBrands, useCategoryTree, useNav, useSiteSettings } from '../../hooks/useSiteContent.js'
 import { useSelectedStore, StoreDetails } from './header/StoreMenu.jsx'
 import { usePanelBehavior } from '../../hooks/usePanel.js'
 import { useTheme } from '../../hooks/useTheme.js'
@@ -16,6 +16,7 @@ export default function MobileMenu({ open, onClose }) {
   const { menus } = useNav()
   const { tree } = useCategoryTree()
   const { featured } = useBrands()
+  const { settings } = useSiteSettings()
   const { store, stores, select } = useSelectedStore()
   const { theme, toggleTheme } = useTheme()
   const { user, isAuthenticated } = useAuth()
@@ -31,11 +32,10 @@ export default function MobileMenu({ open, onClose }) {
   }, [open])
 
   const root = useMemo(() => {
-    const cats = categoriesToEntries(tree)
+    const cats = buildMenuEntries({ tree, featured, layout: settings.menuLayout, texts: settings.menuTexts })
     const nav = (title, items) => ({ kind: 'next', label: title, next: { title, entries: navToEntries(items) } })
     return [
       { kind: 'heading', label: 'Comprar' },
-      { kind: 'next', label: 'Comprar por marca', next: { title: 'Comprar por marca', entries: brandsToEntries(featured) } },
       ...cats,
       ...(cats.length === 0 ? [{ kind: 'link', label: 'Todos los productos', to: '/catalogo' }] : []),
       { kind: 'heading', label: 'Más en TecRuta' },
@@ -44,7 +44,7 @@ export default function MobileMenu({ open, onClose }) {
       nav('Descubre', menus.descubre),
       nav('Más', menus.mas),
     ]
-  }, [tree, featured, menus])
+  }, [tree, featured, menus, settings.menuLayout, settings.menuTexts])
 
   if (!open) return null
   const level = stack[stack.length - 1] || { title: 'Menú', entries: root }

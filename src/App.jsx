@@ -42,6 +42,7 @@ const AdminCategoryTree = lazy(() => import('./pages/admin/AdminCategoryTree.jsx
 const AdminAssignProducts = lazy(() => import('./pages/admin/AdminAssignProducts.jsx'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.jsx'))
 const AdminBanners = lazy(() => import('./pages/admin/AdminBanners.jsx'))
+const AdminMenu = lazy(() => import('./pages/admin/AdminMenu.jsx'))
 const AdminNavMenus = lazy(() => import('./pages/admin/AdminNavMenus.jsx'))
 
 function PageFallback() {
@@ -105,6 +106,7 @@ export default function App() {
               <Route path="busquedas" element={<AdminPopularSearches />} />
               <Route path="tiendas" element={<AdminStores />} />
               <Route path="ajustes" element={<AdminSiteSettings />} />
+              <Route path="menu" element={<AdminMenu />} />
               <Route path="menus" element={<AdminNavMenus />} />
               <Route path="asignar" element={<AdminAssignProducts />} />
             </Route>

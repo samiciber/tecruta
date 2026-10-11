@@ -49,7 +49,7 @@ function Logo() {
   )
 }
 
-function Pill({ id, label, panel, onToggle, children }) {
+function Pill({ id, label, icon: Icon, panel, onToggle, children }) {
   const open = panel === id
   const ref = useRef(null)
   return (
@@ -65,6 +65,7 @@ function Pill({ id, label, panel, onToggle, children }) {
           open ? 'border-white bg-white/20' : 'border-white/40 hover:bg-white/10'
         }`}
       >
+        {Icon && <Icon className="mr-0.5 h-[18px] w-[18px] shrink-0" aria-hidden="true" />}
         {label}
         {open ? <ChevronUp className="h-4 w-4" aria-hidden="true" /> : <ChevronDown className="h-4 w-4" aria-hidden="true" />}
       </button>
@@ -171,7 +172,7 @@ export default function Header() {
       {/* Fila 2 (solo escritorio) */}
       <nav aria-label="Navegación principal" className="relative z-10 hidden border-t border-white/20 bg-header-band lg:block">
         <div className={`${WRAP} flex h-[54px] items-center gap-2.5`}>
-          <Pill id="menu" label="Menú" panel={panel} onToggle={toggle}>
+          <Pill id="menu" label="Menú" icon={MenuIcon} panel={panel} onToggle={toggle}>
             {(ref) => <MenuPanel triggerRef={ref} onClose={close} />}
           </Pill>
           <Pill id="acuerdos" label="Acuerdos" panel={panel} onToggle={toggle}>
