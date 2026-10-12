@@ -61,11 +61,11 @@ export default function ProductBrowser({ products, loading = false, hideCategori
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex min-w-0 flex-wrap items-center gap-3">
         <p className="text-sm text-ink-soft dark:text-paper/50" aria-live="polite">
           {loading ? 'Cargando productos…' : `${results.length} producto${results.length === 1 ? '' : 's'}`}
         </p>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 sm:ml-auto">
           <button type="button" onClick={() => setMobileOpen(true)} className="btn-secondary lg:hidden">
             <SlidersHorizontal className="h-4 w-4" /> Filtros
           </button>
@@ -73,11 +73,11 @@ export default function ProductBrowser({ products, loading = false, hideCategori
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
           <div className="sticky top-40">{panel}</div>
         </aside>
-        <div>
+        <div className="min-w-0">
           <ProductGrid
             products={pageItems}
             loading={loading}

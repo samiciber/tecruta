@@ -59,7 +59,7 @@ export function MiniProductCard({ product, onRemove }) {
 export function Card({ title, icon: Icon, children, collapsible = false, id }) {
   const [open, setOpen] = useState(true)
   return (
-    <section aria-labelledby={id} className="rounded border border-gray-200 bg-white p-5 dark:border-night-line dark:bg-night-surface sm:p-6">
+    <section aria-labelledby={id} className="min-w-0 rounded border border-gray-200 bg-white p-5 dark:border-night-line dark:bg-night-surface sm:p-6">
       <div className="flex items-center justify-between">
         <h2 id={id} className="flex items-center gap-2 text-lg font-bold text-ink dark:text-paper">
           {Icon && <Icon className="h-5 w-5" aria-hidden="true" />} {title}
@@ -88,7 +88,7 @@ export function SavedItemsCard() {
         </div>
       ) : (
         <>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex min-w-0 max-w-full gap-3 overflow-x-auto pb-2">
             {items.slice(0, 8).map((p) => <MiniProductCard key={p.id} product={p} onRemove={() => remove(p.id)} />)}
           </div>
           <Link to="/elementos-guardados" className="mt-2 inline-block text-sm font-bold text-header hover:underline dark:text-sky-300">Ver todos ({items.length})</Link>
@@ -103,10 +103,10 @@ export function BestSellersCard({ products }) {
   const scroll = (dir) => ref.current?.scrollBy({ left: dir * 440, behavior: 'smooth' })
   if (products.length === 0) return null
   return (
-    <div id="superventas" className="scroll-mt-40">
+    <div id="superventas" className="min-w-0 scroll-mt-40">
       <Card id="best-title" title="TecRuta superventas">
-        <div className="relative">
-          <div ref={ref} role="region" aria-label="Carrusel de productos superventas" tabIndex={0} className="flex snap-x gap-3 overflow-x-auto scroll-smooth pb-2">
+        <div className="relative min-w-0">
+          <div ref={ref} role="region" aria-label="Carrusel de productos superventas" tabIndex={0} className="flex min-w-0 max-w-full snap-x gap-3 overflow-x-auto scroll-smooth pb-2">
             {products.map((p) => <MiniProductCard key={p.id} product={p} />)}
           </div>
           <button type="button" aria-label="Anterior" onClick={() => scroll(-1)} className="absolute -left-3 top-1/3 hidden h-9 w-9 items-center justify-center rounded-full border border-gray-300 bg-white shadow hover:bg-gray-50 dark:border-night-line dark:bg-night dark:text-paper sm:flex"><ChevronLeft className="h-5 w-5" /></button>
@@ -123,11 +123,11 @@ export function CartPageItem({ item }) {
   const { save } = useSaved()
   const saving = item.compareAtPrice > item.price ? (item.compareAtPrice - item.price) * item.quantity : 0
   return (
-    <li className="flex gap-4 py-5">
+    <li className="flex min-w-0 flex-wrap gap-4 py-5 sm:flex-nowrap">
       <Link to={`/producto/${item.slug}`} className="h-24 w-24 shrink-0 overflow-hidden rounded bg-white">
         <img src={item.image} alt="" className="h-full w-full object-contain" />
       </Link>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 basis-36 flex-col gap-1 sm:basis-0">
         <Link to={`/producto/${item.slug}`} className="line-clamp-2 text-sm font-medium text-ink hover:underline dark:text-paper"><strong>{item.brand}</strong> - {item.name}</Link>
         <p className="text-xs text-ink-soft dark:text-paper/60">{item.stock <= 5 ? `Solo quedan ${item.stock}` : 'Disponible'}</p>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -136,7 +136,7 @@ export function CartPageItem({ item }) {
           <button type="button" onClick={() => { save(item); removeItem(item.id) }} className="text-sm text-header underline dark:text-sky-300">Guardar para después</button>
         </div>
       </div>
-      <div className="text-right">
+      <div className="ml-auto shrink-0 text-right">
         <BigPrice value={item.price * item.quantity} />
         {saving > 0 && <p className="text-xs font-medium text-signal-green">Ahorras {formatCurrency(saving)}</p>}
       </div>

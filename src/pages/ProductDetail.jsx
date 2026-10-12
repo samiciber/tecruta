@@ -1,6 +1,6 @@
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
 import React, { useEffect, useState } from 'react'
-import { Link, useParams, Navigate } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Truck, ShieldCheck, MessageCircle, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
 import SaveButton from '../components/product/SaveButton.jsx'
@@ -11,6 +11,7 @@ import Reveal from '../components/animations/Reveal.jsx'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { useCategories } from '../hooks/useCategories.js'
 import { api } from '../services/api.js'
+import { loadProductDetail } from '../services/productDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
 
@@ -33,45 +34,55 @@ export default function ProductDetail() {
   // '3d' | 'photos' — solo relevante si el producto trae modelo 3D; si no,
   // siempre se usa la galería de fotos normal.
   const [viewMode, setViewMode] = useState('photos')
-  const [product, setProduct] = useState(null)
-  const [related, setRelated] = useState([])
-  const [loadingProducto, setLoadingProducto] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const [detail, setDetail] = useState({ slug, status: 'loading' })
+  const [retry, setRetry] = useState(0)
 
   useEffect(() => {
     if (loadingIndex) return
+    let active = true
     const entrada = index.find((p) => p.slug === slug)
-    if (!entrada) {
-      setNotFound(true)
-      setLoadingProducto(false)
-      return
-    }
-    setLoadingProducto(true)
-
-    // Los "relacionados" ya se pueden armar con el índice liviano que
-    // llegó de useProductIndex (misma fuente que usa el catálogo) — no
-    // hace falta esperar el detalle completo del producto para esto.
-    const relacionados = index.filter((p) => p.category === entrada.category && p.id !== entrada.id).slice(0, 4)
-
-    api
-      .getProductBySlug(slug)
-      .catch(async (err) => {
-        console.warn('No se pudo obtener el producto de la API, usando datos locales:', err.message)
-        const mod = await import(`../data/products/${entrada.category}.js`)
-        return mod.productos.find((p) => p.slug === slug)
-      })
-      .then((completo) => {
-        setProduct(completo || null)
-        setRelated(relacionados)
+    setDetail({ slug, status: 'loading' })
+    loadProductDetail({
+      slug,
+      entry: entrada,
+      fetchProduct: api.getProductBySlug,
+      loadFallback: (category) => import(`../data/products/${category}.js`).then((mod) => mod.productos),
+    }).then((result) => {
+      if (!active) return
+      setDetail({ slug, ...result })
+      if (result.status === 'ready') {
+        setQuantity(1)
         setActiveImage(0)
-        setViewMode(completo?.enable3D && completo?.model3DUrl ? '3d' : 'photos')
-        setLoadingProducto(false)
-      })
-  }, [slug, index, loadingIndex])
+        setViewMode(result.product.enable3D && result.product.model3DUrl ? '3d' : 'photos')
+      }
+    })
+    return () => { active = false }
+  }, [slug, index, loadingIndex, retry])
 
-  if (loadingIndex || loadingProducto || !product) {
-    return <div className="container-tr py-24 text-center text-sm text-ink-soft dark:text-paper/60">Cargando producto…</div>
+  const current = detail.slug === slug ? detail : { status: 'loading' }
+  if (loadingIndex || current.status === 'loading') {
+    return <div role="status" className="container-tr py-24 text-center text-sm text-ink-soft dark:text-paper/60">Cargando producto…</div>
   }
+  if (current.status !== 'ready') {
+    const missing = current.status === 'not-found'
+    return (
+      <div className="container-tr py-16 text-center" role={missing ? 'status' : 'alert'}>
+        <h1 className="font-display text-2xl font-bold text-ink dark:text-paper">
+          {missing ? 'Producto no encontrado' : 'No pudimos cargar el producto'}
+        </h1>
+        <p className="mt-3 text-sm text-ink-soft dark:text-paper/70">
+          {missing ? 'El producto no existe o ya no está disponible.' : 'La información no está disponible en este momento. Intenta de nuevo.'}
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          {!missing && <button type="button" className="btn-primary" onClick={() => setRetry((n) => n + 1)}>Reintentar</button>}
+          <Link to="/catalogo" className="btn-secondary">Ver catálogo</Link>
+        </div>
+      </div>
+    )
+  }
+
+  const product = current.product
+  const related = index.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
 
   const category = getCategoryBySlug(product.category)
   const discount = calculateDiscountPercent(product.price, product.compareAtPrice)
