@@ -83,7 +83,7 @@ Capturas y resultados completos se entregaron fuera del repositorio en /workspac
 
 ## Revertir
 
-No requiere reversión de BD. Si se integra el PR, crear una rama fix/revert-lote-1 desde main actualizado y revertir el commit squash o los tres commits de este lote en orden inverso; abrir otro PR. No revertir cambios ajenos ni reescribir historial. Si hay un merge commit, revisar git revert -m 1 del SHA de ese merge en la rama de reversión.
+No requiere reversión de BD. Si se integra el PR, crear una rama fix/revert-lote-1 desde main actualizado y revertir el commit squash o los commits de este lote en orden inverso; abrir otro PR. No revertir cambios ajenos ni reescribir historial. Si hay un merge commit, revisar git revert -m 1 del SHA de ese merge en la rama de reversión.
 
 ## No probado
 
@@ -92,4 +92,3 @@ No se certifican Safari/Firefox, lector de pantalla, todos los colores/elementos
 No se crearon registros de producción ni se usaron cuentas/variables de pruebas autenticadas.
 
 Lote 1 listo. Escribe continuar para el Lote 2.
-
