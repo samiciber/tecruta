@@ -6,7 +6,6 @@ export function errorHandler(err, req, res, _next) {
   const status = err.status || 500
   // Never log request bodies, uploaded files or capabilities.
   if (status >= 500) console.error('Error del servidor:', err.name, err.code || 'unknown')
-  if (res.headersSent) return _next(err)
   res.status(status).json({
     error: status === 500 ? 'Error interno del servidor.' : err.message,
   })

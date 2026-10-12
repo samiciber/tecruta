@@ -25,7 +25,7 @@ escrito, como se solicitó. La cookie de **flujo OAuth** sí forma parte de H03.
 | `server/src/lib/mailer.js` | Timeouts, mensaje de caducidad y errores sin detalle del proveedor. |
 | `server/src/lib/token.js` | JWT HS256 con versión de sesión y fallo claro si falta secreto. |
 | `server/src/middleware/auth.js` | Compara versión; errores de JWT 401, errores de base 5xx; no degrada token inválido a invitado. |
-| `server/src/middleware/errorHandler.js` | Logs acotados sin cuerpos/credenciales y protección ante headers ya enviados. |
+| `server/src/middleware/errorHandler.js` | Logs acotados sin cuerpos/credenciales; errores de infraestructura siguen 5xx. |
 | `server/src/routes/auth.routes.js` | Contratos uniformes, consumo transaccional, Google, cambio de contraseña y logout-all; adapters de pruebas. |
 | `src/services/sessionStorage.js` | Almacén elegido, limpieza, almacenamiento bloqueado y clasificación de 401. |
 | `src/services/googleFlow.js` | Prueba aleatoria por pestaña para el canje; recuerda preferencia de persistencia. |
