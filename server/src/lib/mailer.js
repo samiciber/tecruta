@@ -15,6 +15,7 @@ async function sendEmail({ to, subject, html }) {
 
   const response = await fetch(RESEND_API_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10000),
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
@@ -23,8 +24,7 @@ async function sendEmail({ to, subject, html }) {
   })
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    throw new Error(`Resend respondió con estado ${response.status}: ${detail}`)
+    throw new Error(`El proveedor de correo respondió ${response.status}.`)
   }
 
   return response.json()
@@ -54,7 +54,7 @@ export async function sendVerificationEmail({ to, code }) {
     subject: 'Verifica tu correo — TecRuta',
     html: codeEmailHtml({
       heading: 'Confirma tu cuenta',
-      intro: 'Usa este código de 6 dígitos para verificar tu correo y activar tu cuenta en TecRuta.',
+      intro: 'Usa este código de 6 dígitos para verificar tu correo y activar tu cuenta en TecRuta. Caduca en 15 minutos.',
       code,
     }),
   })
@@ -66,7 +66,7 @@ export async function sendPasswordResetEmail({ to, code }) {
     subject: 'Restablece tu contraseña — TecRuta',
     html: codeEmailHtml({
       heading: 'Restablece tu contraseña',
-      intro: 'Usa este código de 6 dígitos para crear una nueva contraseña en TecRuta.',
+      intro: 'Usa este código de 6 dígitos para crear una nueva contraseña en TecRuta. Caduca en 15 minutos.',
       code,
     }),
   })
