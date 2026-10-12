@@ -13,12 +13,13 @@
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, headers = {} } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
@@ -29,6 +30,8 @@ async function request(path, { method = 'GET', body, token } = {}) {
     const error = new Error(data?.error || `API respondió ${res.status} en ${path}`)
     error.status = res.status
     error.needsVerification = data?.needsVerification
+    error.code = data?.code
+    error.productId = data?.productId
     throw error
   }
 
@@ -68,16 +71,18 @@ export const api = {
   },
 
   orders: {
-    // Se llama en paralelo al envío por WhatsApp — nunca debe bloquear
-    // esa acción. Quien la llama (Checkout.jsx) debe atrapar el error.
-    create: (payload, token) => request('/api/orders', { method: 'POST', body: payload, token }),
+    // Await confirmation; reuse the same key and payload when retrying.
+    create: (payload, token, idempotencyKey) => request('/api/orders', {
+      method: 'POST', body: payload, token, headers: { 'Idempotency-Key': idempotencyKey },
+    }),
     mine: (token) => request('/api/orders/me', { token }),
     // Sube el comprobante de pago (imagen o PDF, como data URL en base64)
-    // y lo guarda en el pedido. Endpoint público — no lleva token: lo usa
-    // tanto el checkout de invitado como el panel admin para reemplazar
-    // el comprobante manualmente.
-    uploadReceipt: (orderId, fileDataUrl) =>
-      request(`/api/orders/${encodeURIComponent(orderId)}/receipt`, { method: 'POST', body: { file: fileDataUrl } }),
+    // Owner/admin session or a guest capability, never placed in a URL.
+    uploadReceipt: (orderId, fileDataUrl, { token, receiptToken } = {}) =>
+      request(`/api/orders/${encodeURIComponent(orderId)}/receipt`, {
+        method: 'POST', body: { file: fileDataUrl }, token,
+        headers: receiptToken ? { 'X-Receipt-Token': receiptToken } : {},
+      }),
   },
 
   // Carrito persistente en servidor — solo para clientes con sesión
