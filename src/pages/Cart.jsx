@@ -37,8 +37,8 @@ export default function Cart() {
 
   return (
     <div className="bg-gray-100 dark:bg-night">
-      <div className="container-tr grid gap-6 py-6 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-5">
+      <div className="container-tr grid grid-cols-[minmax(0,1fr)] gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-5">
           <div>
             <h1 className="text-xl font-bold text-ink dark:text-paper">{empty ? 'Tu carrito está vacío' : `Tu carrito (${itemCount})`}</h1>
             {!isAuthenticated && (
@@ -60,7 +60,7 @@ export default function Cart() {
           <BestSellersCard products={bestSellers} />
         </div>
 
-        <aside aria-label="Resumen del orden" className="h-fit rounded bg-white p-5 dark:bg-night-surface lg:sticky lg:top-40">
+        <aside aria-label="Resumen del orden" className="h-fit min-w-0 rounded bg-white p-5 dark:bg-night-surface lg:sticky lg:top-40">
           <h2 className="text-center text-lg font-bold text-ink dark:text-paper">Resumen del orden</h2>
           <dl className="mt-5 space-y-2 text-sm text-ink dark:text-paper">
             {!empty && (
