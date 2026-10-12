@@ -41,12 +41,6 @@ Los endpoints de contenido llevan `Cache-Control: public, max-age=30`.
 - Legado: productos, categorías, métodos de pago, pedidos, usuarios, subidas.
 - Nuevo (todo con zod; slugs duplicados → **409**): `brands`, `popular-searches`, `stores` (una sola predeterminada), `site-settings/:key` (`seasonalPromo`, `homeBanners`, `cartFooterLinks`), `nav-items` (+ `PUT /nav-items/reorder`), `category-tree` (+ tiles), `POST /products/assign` (asignación masiva), `GET /dashboard`.
 
-## Notas de diseño
-
-- `Product.brand` (texto) se conserva; `brandId` es la marca normalizada (`brandSlug` en la respuesta).
-- Los endpoints admin **legados** aún no usan zod y devuelven 500 en slugs duplicados: pendiente de endurecer.
-- Seguridad: validar siempre con zod, no confiar en precios del cliente (el pedido recalcula en servidor).
-
 ## Pedidos y comprobantes (Lote 3)
 
 - `POST /api/orders` requiere `Idempotency-Key` (UUID v4). Reintenta con la
@@ -84,3 +78,10 @@ La suite de integración crea/elimina su propio PostgreSQL, usa cuentas y pedido
 ficticios y reemplaza Cloudinary; nunca usa la base configurada en `.env`.
 Detalles de contratos, pruebas, despliegue coordinado y reversión:
 [docs/lotes/lote-3.md](../docs/lotes/lote-3.md).
+
+
+## Notas de diseño
+
+- `Product.brand` (texto) se conserva; `brandId` es la marca normalizada (`brandSlug` en la respuesta).
+- Los endpoints admin **legados** aún no usan zod y devuelven 500 en slugs duplicados: pendiente de endurecer.
+- Seguridad: validar siempre con zod, no confiar en precios del cliente (el pedido recalcula en servidor).
