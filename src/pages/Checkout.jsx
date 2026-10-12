@@ -391,7 +391,7 @@ export default function Checkout() {
         </div>
 
         <aside className="flex h-fit flex-col gap-4 lg:sticky lg:top-24">
-          <FreeShippingBar subtotal={subtotal} />
+          <FreeShippingBar />
 
           <div className="rounded-xl2 border border-paper-line p-5 dark:border-night-line">
             <div className="mb-4 flex items-center justify-between">
@@ -423,8 +423,8 @@ export default function Checkout() {
               </div>
               {savings > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-signal-green">Ahorro total</span>
-                  <span className="font-mono text-signal-green">-{formatCurrency(savings)}</span>
+                  <span className="text-signal-green">Ahorro incluido en los precios</span>
+                  <span className="font-mono text-signal-green">{formatCurrency(savings)}</span>
                 </div>
               )}
               <div className="mt-1 flex items-center justify-between border-t border-paper-line pt-3 dark:border-night-line">
@@ -432,9 +432,6 @@ export default function Checkout() {
                 <span className="font-mono text-lg font-semibold text-ink dark:text-paper">{formatCurrency(subtotal)}</span>
               </div>
             </div>
-            <p className="mt-2 text-xs text-ink-soft/60 dark:text-paper/40">
-              El costo de envío se coordina según tu ubicación antes de confirmar el pago.
-            </p>
           </div>
 
           <div className="rounded-xl2 border border-paper-line p-4 dark:border-night-line">

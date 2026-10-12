@@ -6,10 +6,24 @@
 :root {
   --tr-header: 0 70 190;
   --tr-header-band: 0 58 160;
+  --tr-signal-green-text: 7 114 58;
+  --tr-signal-red-text: 181 49 49;
 }
 html.dark {
   --tr-header: 10 38 100;
   --tr-header-band: 7 28 78;
+  --tr-signal-green-text: 74 222 128;
+  --tr-signal-red-text: 252 165 165;
+}
+
+/* Texto semántico adaptable; los fondos sólidos conservan contraste con blanco. */
+@layer utilities {
+  .text-signal-green {
+    color: rgb(var(--tr-signal-green-text) / var(--tw-text-opacity, 1));
+  }
+  .text-signal-red {
+    color: rgb(var(--tr-signal-red-text) / var(--tw-text-opacity, 1));
+  }
 }
 
 @layer base {
