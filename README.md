@@ -1,6 +1,6 @@
 # TecRuta — Tienda online
 
-Tienda de tecnología para Perú. **Frontend** React 18 + Vite 5 + Tailwind 3 (`src/`, se despliega en Vercel) y **backend** Node + Express + Prisma + PostgreSQL (`server/`). El diseño sigue la estructura de una tienda tipo bestbuy.com (header de dos filas, menú multinivel, marcas, cuenta, carrito) con la identidad de TecRuta.
+Tienda de tecnología para Perú. **Frontend** React 18 + Vite 6 + React Router 7 + Tailwind 3 (`src/`, se despliega en Vercel) y **backend** Node + Express + Prisma + PostgreSQL (`server/`). El diseño sigue la estructura de una tienda tipo bestbuy.com (header de dos filas, menú multinivel, marcas, cuenta, carrito) con la identidad de TecRuta.
 
 ## Arquitectura
 
@@ -24,12 +24,14 @@ src/
 
 ## Desarrollo
 
+Node >= 20.19; usa una versión LTS vigente. Instala desde ambos lockfiles con `npm ci`. Para configuración de producción, proxy, CSP y verificaciones, consulta [Lote 5](docs/lotes/lote-5.md).
+
 ```bash
-npm install && npm run dev            # frontend → http://localhost:5173
-cd server && npm install && npm run dev   # API → http://localhost:4000
+npm ci && npm run dev                 # frontend → http://localhost:5173
+cd server && npm ci && npm run dev     # API → http://localhost:4000
 ```
 
-Variables: ver `.env.example` (raíz, solo `VITE_API_URL`) y `server/.env.example`. **Nunca subas `.env`**.
+Variables: ver `.env.example` para el frontend y `server/.env.example` para la API. **Nunca subas `.env`** ni pongas secretos en variables `VITE_*`, que se publican en el bundle.
 
 ## Base de datos
 
