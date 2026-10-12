@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+// Los mensajes por defecto (tipo, entero, enum, etc.) también van en español.
+z.config(z.locales.es())
+
 // -----------------------------------------------------------------------
 // Auth
 // -----------------------------------------------------------------------
@@ -83,7 +86,7 @@ export const createOrderSchema = z.object({
     .array(
       z.object({
         productId: z.string().trim().min(1, 'Falta el id del producto.'),
-        quantity: z.number({ invalid_type_error: 'La cantidad debe ser un número.' }).int().positive(),
+        quantity: z.number({ error: 'La cantidad debe ser un número.' }).int('La cantidad debe ser un entero.').positive('La cantidad debe ser mayor que cero.'),
       }),
     )
     .min(1, 'El pedido debe tener al menos un producto.'),
@@ -95,12 +98,12 @@ export const createOrderSchema = z.object({
 
 export const addCartItemSchema = z.object({
   productId: z.string().trim().min(1, 'Falta el id del producto.'),
-  quantity: z.number({ invalid_type_error: 'La cantidad debe ser un número.' }).int().positive(),
+  quantity: z.number({ error: 'La cantidad debe ser un número.' }).int('La cantidad debe ser un entero.').positive('La cantidad debe ser mayor que cero.'),
 })
 
 export const setCartItemQuantitySchema = z.object({
   // Puede ser <= 0: el endpoint lo interpreta como "eliminar este item".
-  quantity: z.number({ invalid_type_error: 'La cantidad debe ser un número.' }).int(),
+  quantity: z.number({ error: 'La cantidad debe ser un número.' }).int('La cantidad debe ser un entero.'),
 })
 
 export const mergeCartSchema = z.object({
