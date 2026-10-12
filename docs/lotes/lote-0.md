@@ -119,4 +119,3 @@ No cambia comportamiento de aplicación ni activa el SQL. Reversión: revertir l
 No probado: estado de la máquina del propietario, estado real de migraciones en producción, vigencia/rotación de claves y limpieza de GitHub. Ningún H## queda corregido en este lote: H12 confirmado; H01 acotado y con rotaciones pendientes.
 
 Lote 0 listo. Escribe continuar para el Lote 1.
-
