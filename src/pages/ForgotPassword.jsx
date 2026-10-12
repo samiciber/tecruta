@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CheckCircle2, MailCheck } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import AuthCard from '../components/auth/AuthCard.jsx'
 import PasswordInput from '../components/auth/PasswordInput.jsx'
 import FormBanner from '../components/auth/FormBanner.jsx'
@@ -16,7 +16,7 @@ export default function ForgotPassword() {
 
   const [step, setStep] = useState('email') // 'email' | 'reset' | 'done'
   const [email, setEmail] = useState('')
-  const [emailFailed, setEmailFailed] = useState(false)
+  const [requestMessage, setRequestMessage] = useState('')
   const [code, setCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -38,13 +38,9 @@ export default function ForgotPassword() {
       toast?.showToast(result.error, 'error')
       return
     }
-    setEmailFailed(result.emailSent === false)
+    setRequestMessage(result.message || 'Si corresponde, recibirás instrucciones por correo.')
     setStep('reset')
-    if (result.emailSent === false) {
-      toast?.showToast('No pudimos enviarte el correo. Intenta de nuevo en unos minutos.', 'error')
-    } else {
-      toast?.showToast('Enviamos un código para restablecer tu contraseña.', 'success')
-    }
+    toast?.showToast(result.message || 'Si corresponde, recibirás instrucciones por correo.', 'success')
   }
 
   const handleReset = async (e) => {
@@ -95,7 +91,7 @@ export default function ForgotPassword() {
         title="Restablece tu contraseña"
         subtitle={
           <>
-            Ingresa el código que enviamos a <span className="font-medium text-ink dark:text-paper">{email}</span> y tu nueva contraseña.
+            Ingresa el código que recibas en <span className="font-medium text-ink dark:text-paper">{email}</span> y tu nueva contraseña.
           </>
         }
         footer={
@@ -104,12 +100,7 @@ export default function ForgotPassword() {
           </button>
         }
       >
-        {emailFailed && (
-          <div className="mb-4 flex items-start gap-2 rounded-xl border border-signal-red/30 bg-signal-red/10 px-3 py-2.5 text-sm text-signal-red">
-            <MailCheck className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>No pudimos enviarte el correo con el código. Vuelve a "Recupera tu contraseña" para reintentarlo.</span>
-          </div>
-        )}
+        <p role="status" className="mb-4 text-sm text-ink dark:text-paper">{requestMessage}</p>
 
         <form onSubmit={handleReset} noValidate className="flex flex-col gap-4">
           <FormBanner tone="error">{formError}</FormBanner>

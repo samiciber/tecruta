@@ -4,6 +4,7 @@ import AuthCard from '../components/auth/AuthCard.jsx'
 import PasswordInput from '../components/auth/PasswordInput.jsx'
 import FormBanner from '../components/auth/FormBanner.jsx'
 import GoogleButton from '../components/auth/GoogleButton.jsx'
+import { clearGoogleFlow } from '../services/googleFlow.js'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
@@ -19,6 +20,8 @@ const GOOGLE_ERROR_MESSAGES = {
   exchange: 'Hubo un problema al conectar con Google. Inténtalo de nuevo en unos segundos.',
   'no-email': 'Tu cuenta de Google no tiene un correo disponible para continuar.',
   config: 'El inicio de sesión con Google no está disponible en este momento.',
+  linking: 'Verifica o recupera primero tu cuenta local antes de continuar con Google. Si ya vinculaste otra cuenta de Google, usa esa cuenta.',
+  unavailable: 'No pudimos completar el acceso. Inténtalo nuevamente en unos minutos.',
 }
 
 export default function Login() {
@@ -35,6 +38,7 @@ export default function Login() {
   useEffect(() => {
     const googleError = searchParams.get('googleError')
     if (!googleError) return
+    clearGoogleFlow(window.sessionStorage)
     setFormError(GOOGLE_ERROR_MESSAGES[googleError] || 'No se pudo iniciar sesión con Google.')
     setSearchParams({}, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,7 +144,7 @@ export default function Login() {
           <span className="h-px flex-1 bg-paper-line dark:bg-night-line" />
         </div>
 
-        <GoogleButton />
+        <GoogleButton remember={form.remember} />
       </form>
     </AuthCard>
   )

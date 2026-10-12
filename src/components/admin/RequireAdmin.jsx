@@ -1,9 +1,12 @@
 import React from 'react'
 import { Navigate } from 'react-router-dom'
+import SessionUnavailable from '../auth/SessionUnavailable.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 
 export default function RequireAdmin({ children }) {
-  const { user, authLoading } = useAuth()
+  const { user, authLoading, authError, retrySession } = useAuth()
+
+  if (authError) return <SessionUnavailable onRetry={retrySession} />
 
   if (authLoading) {
     return (

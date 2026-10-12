@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Package } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
+import SessionUnavailable from '../components/auth/SessionUnavailable.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { api } from '../services/api.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
@@ -25,7 +26,7 @@ const STATUS_STYLES = {
 }
 
 export default function OrderHistory() {
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, authError, retrySession, authLoading } = useAuth()
   const [orders, setOrders] = useState(null)
   const [error, setError] = useState('')
 
@@ -36,6 +37,9 @@ export default function OrderHistory() {
       .then(setOrders)
       .catch((err) => setError(err.message))
   }, [token])
+
+  if (authError) return <SessionUnavailable onRetry={retrySession} />
+  if (authLoading) return <div role="status" className="container-tr py-16 text-ink dark:text-paper">Comprobando sesión…</div>
 
   if (!isAuthenticated) {
     return (
