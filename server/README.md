@@ -79,7 +79,6 @@ ficticios y reemplaza Cloudinary; nunca usa la base configurada en `.env`.
 Detalles de contratos, pruebas, despliegue coordinado y reversión:
 [docs/lotes/lote-3.md](../docs/lotes/lote-3.md).
 
-
 ## Notas de diseño
 
 - `Product.brand` (texto) se conserva; `brandId` es la marca normalizada (`brandSlug` en la respuesta).
