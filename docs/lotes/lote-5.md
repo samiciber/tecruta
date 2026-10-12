@@ -69,7 +69,7 @@ Los avisos corregidos de Vite/esbuild y herramientas CSS también afectan desarr
 
 Los PR previos están abiertos, sin integrar. Hay un conflicto anticipado en `server/src/index.js` porque ambos lotes convierten el arranque en factory. La resolución preparada añade a la versión del Lote 3 los imports de `validateRuntimeEnv` y `apiSecurityHeaders`, la validación al entrar en `createApp`, `app.disable('x-powered-by')` y Helmet después del proxy. **Conservar `defaultJson` del Lote 3 y sus parsers por ruta: no restaurar el parser global de 20 MB al combinarlos.**
 
-El parche `lote-5-integracion-con-lote-3.patch` aplica exactamente sobre el index del PR del Lote 3. Es una guía revisable de resolución, no una migración ni un script de despliegue. En una rama de integración, resolver el archivo con esos cambios y ejecutar las pruebas de ambos lotes antes de integrar. La combinación se probó fuera del checkout en una copia temporal: 10/10 pruebas de pedidos y 8/8 de seguridad sobre dependencias actualizadas, todo en PostgreSQL desechable.
+El parche `lote-5-integracion-con-lote-3.patch` aplica exactamente sobre el index del PR del Lote 3. Es un diff sin contexto (`git apply --unidiff-zero`), una guía revisable de resolución, no una migración ni un script de despliegue. En una rama de integración, resolver el archivo con esos cambios y ejecutar las pruebas de ambos lotes antes de integrar. La combinación se probó fuera del checkout en una copia temporal: 10/10 pruebas de pedidos y 8/8 de seguridad sobre dependencias actualizadas, todo en PostgreSQL desechable.
 
 ## Riesgos y reversión
 
