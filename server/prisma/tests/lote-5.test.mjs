@@ -90,6 +90,11 @@ test('login and profile work, customer admin access is forbidden, private collec
   assert.equal((await request('admin/products', { authenticated: true })).status, 403)
   for (const path of ['cart', 'saved', 'addresses', 'orders/me']) assert.equal((await request(path)).status, 401, path)
   for (const path of ['cart', 'saved', 'addresses', 'orders/me']) assert.equal((await request(path, { authenticated: true })).status, 200, path)
+  // Only this disposable fixture changes role; no production user is involved.
+  await db.user.update({ where: { id: 'qa-customer' }, data: { role: 'ADMIN' } })
+  const admin = await request('admin/dashboard', { authenticated: true })
+  assert.equal(admin.status, 200)
+  assert.equal(admin.data.stock.low, 1)
 })
 test('login rate limiting uses separate forwarded client IPs behind one proxy', async () => {
   const attempt = ip => fetch(base + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip }, body: JSON.stringify({ email: 'qa-absent@example.invalid', password }) })
