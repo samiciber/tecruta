@@ -1,5 +1,12 @@
 // Framework-independent shared cache. Only successful API data is purchasable.
 const resources = new Map()
+export function invalidatedResourcesFor(method, path) {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return []
+  const keys = []
+  if (/^\/api\/admin\/(products|brands|categories|category-tree)(\/|$)/.test(path) || path === '/api/orders' || /^\/api\/admin\/orders\/[^/]+\/status$/.test(path)) keys.push('products')
+  if (/^\/api\/admin\/payment-methods(\/|$)/.test(path)) keys.push('payment-methods')
+  return keys
+}
 export function invalidateLiveResources(prefix) {
   for (const [key, resource] of resources) if (key.startsWith(prefix)) resource.invalidate()
 }
@@ -30,7 +37,7 @@ export function createLiveResource({ key, fetcher, fallback, ttl = 60_000, retry
     if (pending) return pending
     if (!force && isFresh()) { arm(); return state }
     const started = generation
-    publish({ refreshing: true, stale: state.stale || !isFresh() })
+    const stale = state.stale || !isFresh()
     pending = bounded(fetcher).then(data => {
       if (started === generation) publish({ data, source: 'api', loading: false, error: null, checkedAt: now(), stale: false, version: state.version + 1 })
     }).catch(async error => {
@@ -45,6 +52,7 @@ export function createLiveResource({ key, fetcher, fallback, ttl = 60_000, retry
       if (started !== generation) return load(true)
       publish({ refreshing: false }); arm(); return state
     })
+    publish({ refreshing: true, stale })
     return pending
   }
   const visible = () => { if (typeof document === 'undefined' || document.visibilityState === 'visible') void load(true) }

@@ -14,11 +14,15 @@ export function CatalogAvailability() {
   </div></div>
 }
 export function CartReviewNotice() {
-  const { reviewItems, removeReviewItems, entries } = useCart()
-  const { ready, loading } = useProductIndex()
+  const { reviewItems, removeReviewItems, entries, updateQuantity } = useCart()
+  const { ready, loading, index } = useProductIndex()
   if (loading || !entries.length || !reviewItems.length) return null
   return <div role="status" className={box}>
     <p>{ready ? 'Algunos productos ya no están disponibles o tienen menos unidades. Revisa las cantidades antes de comprar.' : 'Tu carrito sigue guardado. Reintenta el catálogo para comprobar todos sus productos.'}</p>
+    {ready && reviewItems.map(entry => {
+      const product = index.find(p => p.id === entry.productId)
+      return product?.stock > 0 ? <button key={entry.productId} type="button" onClick={() => updateQuantity(entry.productId, product.stock)} className="mt-2 block font-semibold underline">Usar {product.stock} unidades de {product.name}</button> : null
+    })}
     {ready && <button type="button" onClick={removeReviewItems} className="mt-2 font-semibold underline">Quitar productos que requieren revisión</button>}
   </div>
 }

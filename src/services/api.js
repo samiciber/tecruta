@@ -11,7 +11,7 @@
 // responde, el error simplemente se propaga y AuthContext lo muestra
 // como mensaje de error al usuario.
 
-import { invalidateLiveResources } from './liveResource.js'
+import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
@@ -35,10 +35,7 @@ async function request(path, { method = 'GET', body, token, signal } = {}) {
     throw error
   }
 
-  if (method !== 'GET') {
-    if (/^\/api\/admin\/(products|brands)(\/|$)/.test(path) || path === '/api/orders') invalidateLiveResources('products')
-    if (/^\/api\/admin\/payment-methods(\/|$)/.test(path)) invalidateLiveResources('payment-methods')
-  }
+  for (const key of invalidatedResourcesFor(method, path)) invalidateLiveResources(key)
   return data
 }
 
