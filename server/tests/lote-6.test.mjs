@@ -43,5 +43,11 @@ test('Prisma errors map to 409/404 without logging or exposing database/request 
       assert.deepEqual(Object.keys(body), ['error'])
     }
     assert.deepEqual(logs, [])
+    let status, body
+    const res = { status(value) { status = value; return this }, json(value) { body = value } }
+    errorHandler(Object.assign(new Error('QA-private-request-detail'), { code: 'constructor' }), {}, res)
+    assert.equal(status, 500)
+    assert.deepEqual(body, { error: 'Error interno del servidor.' })
+    assert.ok(!JSON.stringify(logs).includes('QA-private-request-detail'))
   } finally { console.error = original }
 })

@@ -9,7 +9,7 @@ export function errorHandler(err, req, res, _next) {
     P2025: [404, 'El registro ya no existe.'],
     P2003: [409, 'El registro tiene relaciones que impiden esta operación.'],
   }
-  const mapped = databaseErrors[err.code]
+  const mapped = Object.hasOwn(databaseErrors, err.code) ? databaseErrors[err.code] : null
   if (mapped) return res.status(mapped[0]).json({ error: mapped[1] })
   const status = err.status || 500
   // Never log request bodies, uploaded files or capabilities.
