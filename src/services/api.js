@@ -3,8 +3,8 @@
 // Para el catálogo (getProducts/getProductBySlug/getCategories): si la
 // API no responde, quien llame debe atrapar el error — los hooks que las
 // usan (useProductIndex, ProductDetail) ya caen de vuelta a los datos
-// estáticos empaquetados en el frontend, así la tienda nunca deja de
-// funcionar por esto.
+// estáticos empaquetados en el frontend para consulta. Las compras
+// requieren datos vigentes de la API; nunca usan ese respaldo.
 //
 // Para auth (login/registro/etc.): no hay datos estáticos de respaldo
 // posibles (es información real de cuentas), así que si la API no

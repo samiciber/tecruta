@@ -1,6 +1,6 @@
 // The public product index already contains the API's complete product DTO.
 export async function resolveCatalogDetail({ entry, source, loadFallback }) {
-  if (!entry) return { status: 'not-found' }
+  if (!entry) return { status: source === 'api' ? 'not-found' : 'error' }
   if (source === 'api') return { status: 'ready', product: entry }
   try {
     const products = await loadFallback(entry.category)

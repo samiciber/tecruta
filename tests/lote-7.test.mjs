@@ -4,7 +4,7 @@ import { createLiveResource, invalidateLiveResources, invalidatedResourcesFor } 
 import { canAddProduct, reviewCart, validateProducts, validatePayments, normalizeCart } from '../src/utils/purchasePolicy.js'
 import { resolveCatalogDetail } from '../src/services/catalogDetail.js'
 
-const product = { id: 'qa-api-id', slug: 'qa', name: 'QA', price: 10, stock: 3 }
+const product = { id: 'qa-api-id', slug: 'qa', name: 'QA', price: 10, stock: 3, images: [] }
 const deferred = () => { let resolve; const promise = new Promise(r => resolve = r); return { promise, resolve } }
 const flush = async () => { for (let i = 0; i < 15; i++) await Promise.resolve() }
 test('successful mutation routes identify affected catalog/payment resources, including stock restored by cancellation', () => {
@@ -70,6 +70,7 @@ test('timeout aborts an unresponsive API and clears loading, allowing a later re
 })
 test('invalid API lists are rejected and empty products/payment lists remain valid', () => {
   assert.deepEqual(validateProducts([]), []); assert.deepEqual(validatePayments([]), [])
+  assert.deepEqual(validateProducts([product]), [product])
   for (const value of [null, {}, [{ ...product, price: '10' }], [product, product], [{ ...product, stock: -1 }]]) assert.throws(() => validateProducts(value))
   const payment = { key: 'qa', label: 'QA', config: {} }
   assert.deepEqual(validatePayments([payment, { ...payment, key: 'inactive', active: false }]), [payment])
@@ -86,5 +87,6 @@ test('raw cart IDs and quantities require review instead of being silently purch
 test('detail uses the complete API DTO, handles missing products and catches absent fallback modules', async () => {
   assert.deepEqual(await resolveCatalogDetail({ entry: product, source: 'api', loadFallback: () => { throw new Error('must not run') } }), { status: 'ready', product })
   assert.deepEqual(await resolveCatalogDetail({ source: 'api' }), { status: 'not-found' })
+  assert.deepEqual(await resolveCatalogDetail({ source: 'fallback' }), { status: 'error' })
   assert.deepEqual(await resolveCatalogDetail({ entry: product, source: 'fallback', loadFallback: () => Promise.reject(new Error('missing module')) }), { status: 'error' })
 })
