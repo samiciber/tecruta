@@ -1,0 +1,79 @@
+--- a/src/services/api.js
++++ b/src/services/api.js
+@@ -13,0 +14,2 @@
++import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
++
+@@ -16 +18 @@
+-async function request(path, { method = 'GET', body, token, headers = {} } = {}) {
++async function request(path, { method = 'GET', body, token, headers = {}, signal, cache } = {}) {
+@@ -18,0 +21,2 @@
++    signal,
++    cache,
+@@ -37,0 +42 @@
++  for (const key of invalidatedResourcesFor(method, path)) invalidateLiveResources(key)
+@@ -42 +47 @@
+-  getProducts: (params = {}) => {
++  getProducts: (params = {}, options = {}) => {
+@@ -45 +50 @@
+-    return request(`/api/products${query ? `?${query}` : ''}`)
++    return request(`/api/products${query ? `?${query}` : ''}`, options)
+@@ -49 +54 @@
+-  getPaymentMethods: () => request('/api/payment-methods'),
++  getPaymentMethods: (options = {}) => request('/api/payment-methods', options),
+--- a/src/pages/Checkout.jsx
++++ b/src/pages/Checkout.jsx
+@@ -20,0 +21,3 @@
++import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
++import { productResource, paymentResource } from '../services/purchaseResources.js'
++import { reviewCart } from '../utils/purchasePolicy.js'
+@@ -34 +37 @@
+-  const { items, subtotal, itemCount, clearCart } = useCart()
++  const { items, subtotal, itemCount, clearCart, canCheckout, entries } = useCart()
+@@ -36 +39,2 @@
+-  const { methods: paymentMethods, getMethodByKey } = usePaymentMethods()
++  const { methods: paymentMethods, getMethodByKey, ready: paymentsReady, refresh: refreshPayments, refreshing: refreshingPayments } = usePaymentMethods()
++  const selectedPayment = useRef(null)
+@@ -77,0 +82,11 @@
++  function choosePayment(key) {
++    selectedPayment.current = JSON.stringify(getMethodByKey(key))
++    setPaymentMethod(key)
++  }
++  useEffect(() => {
++    if (!attempt && paymentsReady && paymentMethod && selectedPayment.current !== JSON.stringify(getMethodByKey(paymentMethod))) {
++      setPaymentMethod(null)
++      setOrderError('Los métodos de pago cambiaron. Revisa y vuelve a elegir uno.')
++    }
++  }, [paymentMethods, paymentsReady, paymentMethod, attempt])
++
+@@ -188,0 +204,9 @@
++
++    if (!attempt) {
++      const selected = paymentResource.getSnapshot().data.find(method => method.key === paymentMethod)
++      if (!canCheckout || !productResource.isFresh() || !paymentResource.isFresh() || reviewCart(entries, productResource.getSnapshot().data).length || !selected || selectedPayment.current !== JSON.stringify(selected)) {
++        setOrderError('Necesitamos actualizar los productos y el pago antes de comprar. Revisa el carrito y vuelve a intentarlo.')
++        void productResource.load(true); void paymentResource.load(true)
++        return
++      }
++    }
+@@ -259,2 +283,2 @@
+-          title="Tu carrito está vacío"
+-          description="Agrega productos al carrito antes de continuar con el checkout."
++          title={entries.length ? 'Tu carrito sigue guardado' : 'Tu carrito está vacío'}
++          description={entries.length ? 'Vuelve al carrito para comprobar los productos antes de comprar.' : 'Agrega productos al carrito antes de continuar con el checkout.'}
+@@ -262,2 +286,2 @@
+-            <Link to="/catalogo" className="btn-primary mt-2">
+-              Ver catálogo
++            <Link to={entries.length ? '/carrito' : '/catalogo'} className="btn-primary mt-2">
++              {entries.length ? 'Revisar carrito' : 'Ver catálogo'}
+@@ -281 +305 @@
+-  const step3Valid = Boolean(paymentMethod)
++  const step3Valid = Boolean(paymentsReady && getMethodByKey(paymentMethod))
+@@ -297,0 +322 @@
++      {!attempt && <CartReviewNotice />}
+@@ -420 +445,2 @@
+-            <PaymentMethodSelector methods={paymentMethods} value={paymentMethod} onChange={setPaymentMethod} />
++            {(!paymentsReady || !paymentMethods.length) && <p role="status" className="mb-3 text-sm text-ink dark:text-paper">No hay métodos de pago verificados disponibles. <button type="button" disabled={refreshingPayments} onClick={() => void refreshPayments().catch(() => {})} className="font-semibold underline">Reintentar pagos</button></p>}
++            <PaymentMethodSelector methods={paymentMethods} value={paymentMethod} onChange={choosePayment} />
+@@ -437 +463 @@
+-                disabled={authLoading || (!attempt && (!step1Valid || !step2Valid || !step3Valid))} />
++                disabled={authLoading || (!attempt && (!canCheckout || !step1Valid || !step2Valid || !step3Valid))} />
