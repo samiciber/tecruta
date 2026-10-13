@@ -12,7 +12,7 @@ export default function WhatsAppButton({ items, paymentMethodDetails, customer, 
     }
     // Efecto en paralelo (no bloqueante): NO se llama con await ni se
     // frena la navegación por él. Si falla, WhatsApp se abre igual.
-    onBeforeSend?.()
+    if (onBeforeSend?.() === false) e.preventDefault()
   }
 
   return (

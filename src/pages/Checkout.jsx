@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Truck, Pencil } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
@@ -16,6 +16,9 @@ import { usePaymentMethods } from '../hooks/usePaymentMethods.js'
 import { api } from '../services/api.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
 import { storeConfig } from '../config/storeConfig.js'
+import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
+import { productResource, paymentResource } from '../services/purchaseResources.js'
+import { reviewCart } from '../utils/purchasePolicy.js'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -43,9 +46,11 @@ async function uploadReceiptFile(orderId, file) {
 }
 
 export default function Checkout() {
-  const { items, subtotal, itemCount, clearCart } = useCart()
+  const { items, subtotal, itemCount, clearCart, canCheckout, entries } = useCart()
   const { user, token } = useAuth()
-  const { methods: paymentMethods, getMethodByKey } = usePaymentMethods()
+  const { methods: paymentMethods, getMethodByKey, ready: paymentsReady, refresh: refreshPayments, refreshing: refreshingPayments } = usePaymentMethods()
+  const selectedPayment = useRef(null)
+  const [availabilityError, setAvailabilityError] = useState('')
 
   const [activeStep, setActiveStep] = useState(1)
   const [customer, setCustomer] = useState({
@@ -75,6 +80,16 @@ export default function Checkout() {
   const [selectedAddressId, setSelectedAddressId] = useState(null)
   const [saveNewAddress, setSaveNewAddress] = useState(false)
   const [receipt, setReceipt] = useState(null)
+  function choosePayment(key) {
+    selectedPayment.current = JSON.stringify(getMethodByKey(key))
+    setPaymentMethod(key)
+  }
+  useEffect(() => {
+    if (paymentsReady && paymentMethod && selectedPayment.current !== JSON.stringify(getMethodByKey(paymentMethod))) {
+      setPaymentMethod(null)
+      setAvailabilityError('Los métodos de pago cambiaron. Revisa y vuelve a elegir uno.')
+    }
+  }, [paymentMethods, paymentsReady, paymentMethod])
 
   // La sesión ahora se restaura de forma asíncrona (contra la API), así
   // que "user" puede llegar después del primer render (por ejemplo, si el
@@ -172,11 +187,11 @@ export default function Checkout() {
       <div className="container-tr py-16">
         <EmptyState
           icon={ShoppingBag}
-          title="Tu carrito está vacío"
-          description="Agrega productos al carrito antes de continuar con el checkout."
+          title={entries.length ? 'Tu carrito sigue guardado' : 'Tu carrito está vacío'}
+          description={entries.length ? 'Vuelve al carrito para comprobar los productos antes de comprar.' : 'Agrega productos al carrito antes de continuar con el checkout.'}
           action={
-            <Link to="/catalogo" className="btn-primary mt-2">
-              Ver catálogo
+            <Link to={entries.length ? '/carrito' : '/catalogo'} className="btn-primary mt-2">
+              {entries.length ? 'Revisar carrito' : 'Ver catálogo'}
             </Link>
           }
         />
@@ -194,7 +209,7 @@ export default function Checkout() {
       (delivery.tipoEntrega === 'recojo' || (delivery.direccion.trim() && delivery.numero.trim())) &&
       delivery.aceptaTerminos,
   )
-  const step3Valid = Boolean(paymentMethod)
+  const step3Valid = Boolean(paymentsReady && getMethodByKey(paymentMethod))
 
   const statusFor = (step, valid) => {
     if (activeStep === step) return 'active'
@@ -214,6 +229,14 @@ export default function Checkout() {
   // esto solo deja el registro en la base de datos para el historial de
   // compras del cliente.
   const handleBeforeSend = () => {
+    const currentMethods = paymentResource.getSnapshot().data
+    const selected = currentMethods.find(method => method.key === paymentMethod)
+    if (!canCheckout || !productResource.isFresh() || !paymentResource.isFresh() || reviewCart(entries, productResource.getSnapshot().data).length || !selected || selectedPayment.current !== JSON.stringify(selected)) {
+      setAvailabilityError('Necesitamos actualizar los productos y el pago antes de comprar. Revisa el carrito y vuelve a intentarlo.')
+      void productResource.load(true)
+      void paymentResource.load(true)
+      return false
+    }
     const orderPromise = api.orders.create(
       {
         customer,
@@ -245,6 +268,8 @@ export default function Checkout() {
   return (
     <div className="container-tr py-8">
       <h1 className="mb-8 font-display text-2xl font-bold text-ink dark:text-paper sm:text-3xl">Checkout</h1>
+      <CartReviewNotice />
+      {availabilityError && <p role="alert" className="mb-4 text-sm text-ink dark:text-paper">{availabilityError}</p>}
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
@@ -360,7 +385,8 @@ export default function Checkout() {
             summary={<p className="text-sm font-medium text-ink dark:text-paper">{paymentMethodLabel}</p>}
           >
             <p className="mb-3 text-sm font-medium text-ink-soft dark:text-paper/60">Pago único</p>
-            <PaymentMethodSelector methods={paymentMethods} value={paymentMethod} onChange={setPaymentMethod} />
+            {(!paymentsReady || !paymentMethods.length) && <p role="status" className="mb-3 text-sm text-ink dark:text-paper">No hay métodos de pago verificados disponibles. <button type="button" disabled={refreshingPayments} onClick={() => void refreshPayments().catch(() => {})} className="font-semibold underline">Reintentar pagos</button></p>}
+            <PaymentMethodSelector methods={paymentMethods} value={paymentMethod} onChange={choosePayment} />
 
             {paymentMethod && paymentMethod !== 'cashOnDelivery' && (
               <div className="mt-4">
@@ -381,7 +407,7 @@ export default function Checkout() {
                 customer={customer}
                 delivery={delivery}
                 onBeforeSend={handleBeforeSend}
-                disabled={!step3Valid}
+                disabled={!canCheckout || !step3Valid}
               />
               <div className="mt-4">
                 <TrustBadges />

@@ -5,6 +5,8 @@ import { useProductIndex } from '../hooks/useProductIndex.js'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 import { AuthContext } from './AuthContext.jsx'
 import { api } from '../services/api.js'
+import { productResource } from '../services/purchaseResources.js'
+import { canAddProduct, reviewCart, normalizeCart as sanitizeStoredCart } from '../utils/purchasePolicy.js'
 
 export const CartContext = createContext(null)
 
@@ -14,13 +16,6 @@ const STORAGE_KEY = 'tecruta:cart'
 // producto (precio, stock, nombre) siempre se resuelven en vivo contra
 // el catálogo (useProductIndex), así nunca se confía en precios ni stock
 // cacheados en localStorage ni en lo último que devolvió el servidor.
-function sanitizeStoredCart(stored) {
-  if (!Array.isArray(stored)) return []
-  return stored
-    .filter((entry) => entry && typeof entry.productId === 'string' && Number.isFinite(entry.quantity))
-    .map((entry) => ({ productId: entry.productId, quantity: Math.max(1, Math.floor(entry.quantity)) }))
-}
-
 // Calcula el siguiente conjunto de entries al sumar `quantity` unidades
 // de un producto (usado tanto para invitados como, de forma optimista,
 // para clientes con sesión mientras se confirma con el servidor).
@@ -38,7 +33,7 @@ export function CartProvider({ children }) {
   const [entries, setEntries] = useState(() => sanitizeStoredCart(readStorage(STORAGE_KEY, [])))
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
-  const { index: products } = useProductIndex()
+  const { index: products, ready: catalogReady } = useProductIndex()
 
   // Se usa useContext(AuthContext) directamente (no el hook useAuth) para
   // no atar CartProvider a que siempre exista un <AuthProvider> más
@@ -71,7 +66,10 @@ export function CartProvider({ children }) {
     const justLoggedOut = previousUserId && !currentUserId
 
     if (justLoggedIn) {
-      const guestEntries = sanitizeStoredCart(readStorage(STORAGE_KEY, []))
+      if (!catalogReady) return
+      const guestEntries = sanitizeStoredCart(entries)
+      // Do not send old static IDs to the server or silently delete them.
+      if (guestEntries.some(e => !products.some(p => p.id === e.productId))) return
       const loadCart = guestEntries.length > 0 ? api.cart.merge(guestEntries, token) : api.cart.get(token)
 
       loadCart
@@ -89,7 +87,7 @@ export function CartProvider({ children }) {
     }
 
     prevUserId.current = currentUserId
-  }, [user, authLoading, token])
+  }, [user, authLoading, token, catalogReady, entries, products])
 
   const items = useMemo(() => {
     return entries
@@ -104,10 +102,26 @@ export function CartProvider({ children }) {
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const reviewItems = reviewCart(entries, products)
+  const canCheckout = catalogReady && entries.length > 0 && reviewItems.length === 0
+  const canAdd = product => canAddProduct(productResource, product)
+
+  function removeReviewItems() {
+    if (!productResource.isFresh()) return
+    const ids = new Set(reviewItems.map(item => item.productId))
+    const next = entries.filter(entry => !ids.has(entry.productId))
+    setEntries(next)
+    if (!user || prevUserId.current !== user.id) writeStorage(STORAGE_KEY, next)
+    else for (const id of ids) void api.cart.removeItem(id, token).catch(() => {})
+  }
 
   // opts.silent: no muestra la confirmación (p. ej. «Comprar ahora»).
   function addItem(product, quantity = 1, opts = {}) {
-    if (product.stock <= 0) return
+    if (!canAdd(product) || !Number.isInteger(quantity) || quantity <= 0) {
+      toast?.showToast('Necesitamos verificar el precio y la disponibilidad antes de agregarlo.', 'error')
+      return false
+    }
+    product = products.find(p => p.id === product.id)
 
     setEntries((prev) => withAddedQuantity(prev, product, quantity))
 
@@ -124,12 +138,13 @@ export function CartProvider({ children }) {
         onAction: () => navigate('/carrito'),
       })
     }
+    return true
   }
 
   function removeItem(productId) {
     setEntries((prev) => prev.filter((e) => e.productId !== productId))
 
-    if (user) {
+    if (user && products.some(p => p.id === productId)) {
       api.cart
         .removeItem(productId, token)
         .then((data) => setEntries(sanitizeStoredCart(data.items)))
@@ -138,12 +153,10 @@ export function CartProvider({ children }) {
   }
 
   function updateQuantity(productId, quantity) {
+    if (quantity <= 0) { removeItem(productId); return }
+    if (!productResource.isFresh() || !Number.isInteger(quantity)) return
     const product = products.find((p) => p.id === productId)
     if (!product) return
-    if (quantity <= 0) {
-      removeItem(productId)
-      return
-    }
     const clamped = Math.min(quantity, Math.max(product.stock, 0))
 
     setEntries((prev) => prev.map((e) => (e.productId === productId ? { ...e, quantity: clamped } : e)))
@@ -176,6 +189,11 @@ export function CartProvider({ children }) {
         removeItem,
         updateQuantity,
         clearCart,
+        canAdd,
+        canCheckout,
+        reviewItems,
+        removeReviewItems,
+        entries,
       }}
     >
       {children}

@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useSiteSettings } from '../hooks/useSiteContent.js'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
+import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
 
 // Íconos fijos por posición; texto y destino son editables (Admin → Ajustes).
 const FOOTER_ICONS = [CircleHelp, Package, Truck, ArrowLeftRight, CircleDollarSign]
@@ -20,7 +21,7 @@ const FOOTER_DEFAULT = [
 ]
 
 export default function Cart() {
-  const { items, itemCount, subtotal } = useCart()
+  const { items, itemCount, subtotal, canCheckout } = useCart()
   const { isAuthenticated } = useAuth()
   const { index } = useProductIndex()
   const { settings } = useSiteSettings()
@@ -37,8 +38,8 @@ export default function Cart() {
 
   return (
     <div className="bg-gray-100 dark:bg-night">
-      <div className="container-tr grid gap-6 py-6 lg:grid-cols-[1fr_22rem]">
-        <div className="space-y-5">
+      <div className="container-tr grid grid-cols-[minmax(0,1fr)] gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="min-w-0 space-y-5">
           <div>
             <h1 className="text-xl font-bold text-ink dark:text-paper">{empty ? 'Tu carrito está vacío' : `Tu carrito (${itemCount})`}</h1>
             {!isAuthenticated && (
@@ -56,11 +57,13 @@ export default function Cart() {
             </section>
           )}
 
+          <CartReviewNotice />
+
           <SavedItemsCard />
           <BestSellersCard products={bestSellers} />
         </div>
 
-        <aside aria-label="Resumen del orden" className="h-fit rounded bg-white p-5 dark:bg-night-surface lg:sticky lg:top-40">
+        <aside aria-label="Resumen del orden" className="h-fit min-w-0 rounded bg-white p-5 dark:bg-night-surface lg:sticky lg:top-40">
           <h2 className="text-center text-lg font-bold text-ink dark:text-paper">Resumen del orden</h2>
           <dl className="mt-5 space-y-2 text-sm text-ink dark:text-paper">
             {!empty && (
@@ -69,7 +72,7 @@ export default function Cart() {
             {savings > 0 && <div className="flex justify-between font-medium text-signal-green"><dt>Ahorro</dt><dd>-{formatCurrency(savings)}</dd></div>}
             <div className="flex justify-between text-base font-bold"><dt>Total</dt><dd>{formatCurrency(subtotal)}</dd></div>
           </dl>
-          <Link to={empty ? '/catalogo' : '/checkout'} className="mt-5 block rounded bg-header py-3 text-center text-sm font-bold text-white hover:bg-header-band focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header focus-visible:ring-offset-2">
+          <Link to={empty ? '/catalogo' : '/checkout'} aria-disabled={!empty && !canCheckout} onClick={event => { if (!empty && !canCheckout) event.preventDefault() }} className={`mt-5 block rounded bg-header py-3 text-center text-sm font-bold text-white hover:bg-header-band focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header focus-visible:ring-offset-2 ${!empty && !canCheckout ? 'opacity-50' : ''}`}>
             {empty ? 'Sigue comprando' : 'Ir a pagar'}
           </Link>
           {!empty && <p className="mt-3 text-center text-xs text-ink-soft dark:text-paper/60">El pago se coordina por WhatsApp al finalizar.</p>}

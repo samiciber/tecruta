@@ -6,7 +6,7 @@ import { useCart } from '../../hooks/useCart.js'
 import SaveButton from './SaveButton.jsx'
 
 function ProductCard({ product }) {
-  const { addItem } = useCart()
+  const { addItem, canAdd } = useCart()
   const discount = calculateDiscountPercent(product.price, product.compareAtPrice)
   const outOfStock = product.stock <= 0
   const lowStock = !outOfStock && product.stock <= 5
@@ -64,12 +64,12 @@ function ProductCard({ product }) {
 
         <button
           type="button"
-          disabled={outOfStock}
+          disabled={outOfStock || !canAdd(product)}
           onClick={() => addItem(product, 1)}
           className="btn-secondary mt-2.5 w-full py-2 text-xs transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ShoppingCart className="h-3.5 w-3.5" />
-          {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
+          {outOfStock ? 'Sin stock' : !canAdd(product) ? 'Compra no disponible' : 'Agregar al carrito'}
         </button>
       </div>
     </div>
