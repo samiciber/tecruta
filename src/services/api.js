@@ -3,19 +3,23 @@
 // Para el catálogo (getProducts/getProductBySlug/getCategories): si la
 // API no responde, quien llame debe atrapar el error — los hooks que las
 // usan (useProductIndex, ProductDetail) ya caen de vuelta a los datos
-// estáticos empaquetados en el frontend, así la tienda nunca deja de
-// funcionar por esto.
+// estáticos empaquetados en el frontend para consulta. Las compras
+// requieren datos vigentes de la API; nunca usan ese respaldo.
 //
 // Para auth (login/registro/etc.): no hay datos estáticos de respaldo
 // posibles (es información real de cuentas), así que si la API no
 // responde, el error simplemente se propaga y AuthContext lo muestra
 // como mensaje de error al usuario.
 
+import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, signal, cache } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
+    signal,
+    cache,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -32,18 +36,19 @@ async function request(path, { method = 'GET', body, token } = {}) {
     throw error
   }
 
+  for (const key of invalidatedResourcesFor(method, path)) invalidateLiveResources(key)
   return data
 }
 
 export const api = {
-  getProducts: (params = {}) => {
+  getProducts: (params = {}, options = {}) => {
     const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
     const query = new URLSearchParams(entries).toString()
-    return request(`/api/products${query ? `?${query}` : ''}`)
+    return request(`/api/products${query ? `?${query}` : ''}`, options)
   },
   getProductBySlug: (slug) => request(`/api/products/${encodeURIComponent(slug)}`),
   getCategories: () => request('/api/categories'),
-  getPaymentMethods: () => request('/api/payment-methods'),
+  getPaymentMethods: (options = {}) => request('/api/payment-methods', options),
 
   // --- Contenido de navegación (Bloque 1) ---
   getNav: () => request('/api/nav'),

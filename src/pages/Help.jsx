@@ -18,7 +18,7 @@ const faqs = [
 ]
 
 export default function Help() {
-  const { methods: paymentMethods } = usePaymentMethods()
+  const { methods: paymentMethods, ready, refresh, refreshing } = usePaymentMethods()
 
   return (
     <div className="container-tr py-12">
@@ -41,6 +41,7 @@ export default function Help() {
 
           <section id="pagos">
             <h2 className="mb-3 font-display text-lg font-semibold text-ink dark:text-paper">Métodos de pago</h2>
+            {(!ready || !paymentMethods.length) && <p role="status" className="mb-3 text-sm text-ink dark:text-paper">No hay métodos de pago verificados disponibles. <button type="button" disabled={refreshing} onClick={() => void refresh().catch(() => {})} className="font-semibold underline">Reintentar pagos</button></p>}
             <ul className="space-y-2 text-sm text-ink-soft dark:text-paper/60">
               {paymentMethods.map(({ key, label, config }) => (
                 <li key={key} className="rounded-xl2 border border-paper-line p-4 dark:border-night-line">

@@ -18,7 +18,9 @@ src/
 └── services/api.js    Cliente de la API (VITE_API_URL, por defecto http://localhost:4000)
 ```
 
-**Contenido editable desde el admin** (nada hardcodeado salvo un respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home y enlaces del pie del carrito. Los cambios se ven en menos de 60 s (o al volver a la pestaña) gracias a `useCachedResource`.
+**Contenido editable desde el admin** (con respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home y enlaces del pie del carrito. `useCachedResource` comprueba su TTL al montar, volver a la pestaña o invalidar; no promete actualización automática de todo el contenido en menos de 60 s.
+
+**Catálogo y pagos:** recursos compartidos con TTL activo de 60 s en pestañas visibles, actualización al recuperar foco/visibilidad y después de mutaciones relacionadas. El respaldo de productos permite consultar; para agregar al carrito o crear un pedido se exige información vigente de la API. No se muestran datos de transferencia estáticos si los pagos no se pueden verificar. Ver [Lote 7](docs/lotes/lote-7.md).
 
 **Categorías heredadas:** las 8 originales (power-banks, cargadores…) quedan marcadas `legacy`: no aparecen en menús, filtros ni Home, pero siguen en la BD y en el admin hasta reasignar sus productos (Admin → Asignar productos).
 

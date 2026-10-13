@@ -1,6 +1,6 @@
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
-import React, { useEffect, useState } from 'react'
-import { Link, useParams, Navigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Truck, ShieldCheck, MessageCircle, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
 import SaveButton from '../components/product/SaveButton.jsx'
@@ -10,7 +10,7 @@ import Product3DViewer from '../components/3d/Product3DViewer.jsx'
 import Reveal from '../components/animations/Reveal.jsx'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { useCategories } from '../hooks/useCategories.js'
-import { api } from '../services/api.js'
+import { resolveCatalogDetail } from '../services/catalogDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
 
@@ -25,57 +25,54 @@ const BENEFITS = [
 
 export default function ProductDetail() {
   const { slug } = useParams()
-  const { index, loading: loadingIndex } = useProductIndex()
+  const { index, loading: loadingIndex, source } = useProductIndex()
   const { getCategoryBySlug } = useCategories()
-  const { addItem } = useCart()
+  const { addItem, canAdd } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   // '3d' | 'photos' — solo relevante si el producto trae modelo 3D; si no,
   // siempre se usa la galería de fotos normal.
   const [viewMode, setViewMode] = useState('photos')
-  const [product, setProduct] = useState(null)
-  const [related, setRelated] = useState([])
-  const [loadingProducto, setLoadingProducto] = useState(true)
-  const [notFound, setNotFound] = useState(false)
+  const [detail, setDetail] = useState({ slug, status: 'loading' })
+  const viewedProduct = useRef(null)
 
   useEffect(() => {
     if (loadingIndex) return
-    const entrada = index.find((p) => p.slug === slug)
-    if (!entrada) {
-      setNotFound(true)
-      setLoadingProducto(false)
-      return
-    }
-    setLoadingProducto(true)
-
-    // Los "relacionados" ya se pueden armar con el índice liviano que
-    // llegó de useProductIndex (misma fuente que usa el catálogo) — no
-    // hace falta esperar el detalle completo del producto para esto.
-    const relacionados = index.filter((p) => p.category === entrada.category && p.id !== entrada.id).slice(0, 4)
-
-    api
-      .getProductBySlug(slug)
-      .catch(async (err) => {
-        console.warn('No se pudo obtener el producto de la API, usando datos locales:', err.message)
-        const mod = await import(`../data/products/${entrada.category}.js`)
-        return mod.productos.find((p) => p.slug === slug)
+    let active = true
+    const entry = index.find(p => p.slug === slug)
+    resolveCatalogDetail({ entry, source, loadFallback: category => import(`../data/products/${category}.js`).then(mod => mod.productos) })
+      .then(result => {
+        if (!active) return
+        const identity = result.status === 'ready' ? `${slug}:${result.product.id}` : null
+        if (identity && viewedProduct.current !== identity) {
+          viewedProduct.current = identity
+          setQuantity(1); setActiveImage(0)
+          setViewMode(result.product.enable3D && result.product.model3DUrl ? '3d' : 'photos')
+        }
+        setDetail({ slug, ...result })
       })
-      .then((completo) => {
-        setProduct(completo || null)
-        setRelated(relacionados)
-        setActiveImage(0)
-        setViewMode(completo?.enable3D && completo?.model3DUrl ? '3d' : 'photos')
-        setLoadingProducto(false)
-      })
-  }, [slug, index, loadingIndex])
+    return () => { active = false }
+  }, [slug, index, loadingIndex, source])
 
-  if (loadingIndex || loadingProducto || !product) {
-    return <div className="container-tr py-24 text-center text-sm text-ink-soft dark:text-paper/60">Cargando producto…</div>
+  const current = detail.slug === slug ? detail : { status: 'loading' }
+  if (loadingIndex || current.status === 'loading') {
+    return <div role="status" className="container-tr py-24 text-center text-sm text-ink-soft dark:text-paper/60">Cargando producto…</div>
   }
+  if (current.status !== 'ready') {
+    const missing = current.status === 'not-found'
+    return <div className="container-tr py-16 text-center" role={missing ? 'status' : 'alert'}>
+      <h1 className="font-display text-2xl font-bold text-ink dark:text-paper">{missing ? 'Producto no encontrado' : 'No pudimos cargar este producto'}</h1>
+      <p className="mt-3 text-sm text-ink-soft dark:text-paper/70">{missing ? 'Revisa otros productos del catálogo.' : 'Reintenta el catálogo para recuperar su información.'}</p>
+      <Link to="/catalogo" className="btn-primary mt-6">Ver catálogo</Link>
+    </div>
+  }
+  const product = current.product
+  const related = index.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4)
 
   const category = getCategoryBySlug(product.category)
   const discount = calculateDiscountPercent(product.price, product.compareAtPrice)
   const outOfStock = product.stock <= 0
+  const purchaseBlocked = outOfStock || !canAdd(product) || quantity > product.stock
 
   return (
     <div className="container-tr py-8">
@@ -139,7 +136,7 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                <img src={product.images[activeImage]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
+                <img src={product.images[Math.min(activeImage, product.images.length - 1)]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
               </div>
               {product.images.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -192,17 +189,18 @@ export default function ProductDetail() {
               <QuantitySelector quantity={quantity} max={product.stock} onChange={setQuantity} />
             </div>
           )}
+          {quantity > product.stock && !outOfStock && <p role="status" className="text-sm text-ink dark:text-paper">El stock cambió. Ajusta la cantidad antes de agregarlo.</p>}
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" disabled={outOfStock} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
+            <button type="button" disabled={purchaseBlocked} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
               <ShoppingCart className="h-4 w-4" />
               {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
             </button>
             <Link
               to="/checkout"
-              onClick={() => !outOfStock && addItem(product, quantity, { silent: true })}
-              className={`btn-secondary flex-1 ${outOfStock ? 'pointer-events-none opacity-40' : ''}`}
-              aria-disabled={outOfStock}
+              onClick={event => { if (purchaseBlocked || !addItem(product, quantity, { silent: true })) event.preventDefault() }}
+              className={`btn-secondary flex-1 ${purchaseBlocked ? 'opacity-40' : ''}`}
+              aria-disabled={purchaseBlocked}
             >
               <Zap className="h-4 w-4" />
               Comprar ahora
