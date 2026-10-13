@@ -97,3 +97,16 @@ html.dark header [role='dialog'] :focus-visible,
 html.dark header [role='group'] :focus-visible {
   outline-color: #7db4ff;
 }
+
+/* Oculta la barra de desplazamiento nativa de un contenedor con scroll (sin plugins). */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}

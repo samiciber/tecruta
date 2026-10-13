@@ -1,73 +1,107 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import { Cpu, Smartphone, Tablet, Laptop } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import CircleItem, { CIRCLE_SIZE, ITEM_WIDTH } from './CircleItem.jsx'
 import { useCategories } from '../../hooks/useCategories.js'
+import { useProductIndex } from '../../hooks/useProductIndex.js'
+import { useSiteSettings } from '../../hooks/useSiteContent.js'
+import { resolveCircles } from '../../utils/homeCircles.js'
 
-const ICONS = { Cpu, Smartphone, Tablet, Laptop }
+// Estado del scroll horizontal: ¿hay desborde?, ¿se puede ir atrás/adelante?
+function useScrollState(ref, dep) {
+  const [s, setS] = useState({ overflow: false, prev: false, next: false })
+  const update = useCallback(() => {
+    const el = ref.current
+    if (!el) return
+    setS({ overflow: el.scrollWidth > el.clientWidth + 1, prev: el.scrollLeft > 1, next: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 })
+  }, [ref])
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, [ref, update, dep])
+  return s
+}
 
-export default function CategoryShowcase({ counts = {} }) {
-  // Solo categorías visibles del árbol que ya tienen productos (o imagen).
-  // Si todavía no hay ninguna, la sección no se muestra (sin tarjetas vacías).
-  const { categories: all } = useCategories()
-  const categories = all.filter((c) => (counts[c.slug] ?? 0) > 0)
-  if (categories.length === 0) return null
+const ARROW =
+  'absolute top-12 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-ink shadow-md transition-opacity hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header disabled:cursor-default disabled:opacity-30 dark:border-night-line dark:bg-night-surface dark:text-paper dark:hover:bg-night sm:top-14 lg:top-16 [@media(hover:hover)]:flex'
+
+function Skeleton() {
   return (
-    <section id="categorias" className="container-tr py-16 sm:py-24">
-      <div className="mb-8 flex flex-col gap-1.5 text-center sm:mb-10 sm:text-left">
-        <span className="text-xs font-semibold uppercase tracking-[0.15em] text-route">Catálogo</span>
-        <h2 className="font-display text-3xl font-bold tracking-tight text-ink dark:text-paper sm:text-4xl">Compra por categoría</h2>
-      </div>
+    <div aria-hidden="true" className="flex gap-4 overflow-hidden sm:gap-6">
+      {Array.from({ length: 8 }, (_, i) => (
+        <div key={i} className={`${ITEM_WIDTH} flex shrink-0 animate-pulse flex-col items-center`}>
+          <span className={`${CIRCLE_SIZE} rounded-full bg-gray-100 dark:bg-white/10`} />
+          <span className="mt-3 h-3 w-4/5 rounded bg-gray-100 dark:bg-white/10" />
+        </div>
+      ))}
+    </div>
+  )
+}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
-        {categories.map((c) => {
-          const Icon = ICONS[c.icon] || Cpu
-          const count = counts[c.slug] ?? 0
-          const comingSoon = count === 0
-          const image = c.image
+// «Compra por categoría»: carrusel de círculos. Por defecto se alimenta de las
+// categorías visibles del árbol; Admin → Círculos de la Home puede elegir cuáles,
+// su orden, etiqueta/imagen propias y círculos personalizados. Se oculta si no
+// hay ítems. (El prop `counts` ya no se usa: se cuenta aquí; se conserva para no
+// romper a quien lo pase.)
+export default function CategoryShowcase() {
+  const { tree, loading: loadingTree } = useCategories()
+  const { settings, loading: loadingSettings } = useSiteSettings()
+  const { index, loading: loadingProducts } = useProductIndex()
+  const scroller = useRef(null)
 
-          return (
-            <Link
-              key={c.slug}
-              to={`/categoria/${c.slug}`}
-              className="group relative block h-[260px] w-full overflow-hidden sm:h-[300px] lg:h-[360px]"
-            >
-              {/* Fondo: foto real o degradado de marca + ícono */}
-              {image ? (
-                <img
-                  src={image}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                  loading="lazy"
-                />
-              ) : (
-                <div
-                  className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-header to-route-dark transition-transform duration-500 ease-out group-hover:scale-105`}
-                >
-                  <Icon className="h-28 w-28 text-white/15 sm:h-36 sm:w-36" strokeWidth={1} />
-                </div>
-              )}
+  const cfg = settings.homeCircles
+  const needsProducts = cfg?.onlyWithProducts !== false
+  const loading = loadingTree || loadingSettings || (needsProducts && loadingProducts)
+  const items = useMemo(() => resolveCircles({ config: cfg, tree, products: index }), [cfg, tree, index])
+  const { overflow, prev, next } = useScrollState(scroller, items.length)
 
-              {/* Velo oscuro para legibilidad del texto */}
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/15 to-transparent" />
+  const scrollBy = (dir) => {
+    const el = scroller.current
+    if (!el) return
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    el.scrollBy({ left: dir * Math.max(240, el.clientWidth * 0.8), behavior: reduced ? 'auto' : 'smooth' })
+  }
 
-              {/* Texto superpuesto */}
-              <div className="absolute inset-x-0 bottom-0 p-6 sm:p-7 lg:p-8">
-                <h3 className="font-display text-xl font-bold text-white sm:text-2xl">{c.name}</h3>
-                <p className="mt-1.5 max-w-xs text-sm text-white/75 line-clamp-2">{c.description}</p>
-                <span
-                  className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium backdrop-blur-sm ${
-                    comingSoon
-                      ? 'border-white/20 bg-white/10 text-white/70'
-                      : 'border-signal-green/30 bg-signal-green/15 text-signal-green'
-                  }`}
-                >
-                  {comingSoon ? 'Próximamente' : `${count} producto${count === 1 ? '' : 's'}`}
-                </span>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+  if (!loading && items.length === 0) return null
+  const title = cfg?.title || 'Compra por categoría'
+
+  return (
+    <section id="categorias" aria-labelledby="circles-title" aria-busy={loading || undefined} className="container-tr py-8 sm:py-10">
+      <h2 id="circles-title" className="mb-5 font-display text-2xl font-bold tracking-tight text-ink dark:text-paper sm:text-3xl">{title}</h2>
+      {loading ? (
+        <Skeleton />
+      ) : (
+        <div className="relative">
+          {overflow && (
+            <>
+              <button type="button" aria-label="Ver categorías anteriores" onClick={() => scrollBy(-1)} disabled={!prev} className={`${ARROW} -left-3 xl:-left-5`}>
+                <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+              </button>
+              <button type="button" aria-label="Ver más categorías" onClick={() => scrollBy(1)} disabled={!next} className={`${ARROW} -right-3 xl:-right-5`}>
+                <ChevronRight className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </>
+          )}
+          <ul
+            ref={scroller}
+            aria-label={title}
+            className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 sm:gap-6"
+          >
+            {items.map((c) => (
+              <li key={c.key} className="shrink-0">
+                <CircleItem label={c.label} to={c.to} image={c.image} external={c.external} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

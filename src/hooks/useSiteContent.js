@@ -1,6 +1,7 @@
 import { api } from '../services/api.js'
 import { FALLBACK_PILLS, FALLBACK_QUICK_LINKS } from '../data/navSeed.js'
 import { useCachedResource } from './useCachedResource.js'
+import { DEFAULT_HOME_CIRCLES } from '../utils/homeCircles.js'
 
 // Hooks de contenido editable desde el admin. Todos revalidan (TTL 60 s,
 // al volver a la pestaña y tras guardar en el admin) y tienen un respaldo
@@ -55,7 +56,7 @@ export function useSiteSettings() {
   })
   // homeBanners: [], heroCarousel y cartFooterLinks → la UI usa sus valores por defecto.
   return {
-    settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], heroCarousel: { intervalSeconds: 6, autoplay: true }, cartFooterLinks: null, menuLayout: null, menuTexts: null, ...data },
+    settings: { seasonalPromo: DEFAULT_PROMO, homeBanners: [], heroCarousel: { intervalSeconds: 6, autoplay: true }, cartFooterLinks: null, menuLayout: null, menuTexts: null, homeCircles: DEFAULT_HOME_CIRCLES, ...data },
     loading,
   }
 }

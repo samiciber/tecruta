@@ -41,6 +41,7 @@ const CategoryPage = lazy(() => import('./pages/CategoryPage.jsx'))
 const AdminCategoryTree = lazy(() => import('./pages/admin/AdminCategoryTree.jsx'))
 const AdminAssignProducts = lazy(() => import('./pages/admin/AdminAssignProducts.jsx'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.jsx'))
+const AdminHomeCircles = lazy(() => import('./pages/admin/AdminHomeCircles.jsx'))
 const AdminBanners = lazy(() => import('./pages/admin/AdminBanners.jsx'))
 const AdminMenu = lazy(() => import('./pages/admin/AdminMenu.jsx'))
 const AdminNavMenus = lazy(() => import('./pages/admin/AdminNavMenus.jsx'))
@@ -98,6 +99,7 @@ export default function App() {
               <Route index element={<AdminDashboard />} />
               <Route path="productos" element={<AdminProducts />} />
               <Route path="banners" element={<AdminBanners />} />
+              <Route path="circulos" element={<AdminHomeCircles />} />
               <Route path="pedidos" element={<AdminOrders />} />
               <Route path="categorias" element={<AdminCategoryTree />} />
               <Route path="pagos" element={<AdminPaymentMethods />} />

@@ -16,6 +16,7 @@ const TABS = [
   { to: '/admin/busquedas', label: 'Búsquedas populares' },
   { to: '/admin/tiendas', label: 'Tiendas' },
   { to: '/admin/banners', label: 'Banners del Home' },
+  { to: '/admin/circulos', label: 'Círculos de la Home' },
   { to: '/admin/ajustes', label: 'Ajustes del sitio' },
 ]
 

@@ -221,12 +221,43 @@ export const menuTextsSchema = z.object({
   allBrandsLabel: z.string({ error: 'El texto es obligatorio.' }).trim().min(1, 'El texto es obligatorio.').max(40, 'Máximo 40 caracteres.'),
 })
 
+// ---------------------------------------------------------------------------
+// Fila de círculos de la Home («Compra por categoría»).
+//   items = null  → modo automático: categorías visibles de primer nivel, en el orden del árbol.
+//   items = [...] → lista elegida: categorías del árbol (con etiqueta/imagen propias opcionales)
+//                   y círculos personalizados (imagen + texto + enlace).
+//   onlyWithProducts: oculta las categorías sin productos (no afecta a los personalizados).
+//   max: tope de ítems (null = todos).
+// ---------------------------------------------------------------------------
+export const homeCirclesSchema = z.object({
+  title: z.string({ error: 'El título es obligatorio.' }).trim().min(1, 'El título es obligatorio.').max(60, 'Máximo 60 caracteres.').optional().default('Compra por categoría'),
+  onlyWithProducts: z.boolean({ error: 'Debe ser verdadero o falso.' }).optional().default(true),
+  max: z.number({ error: 'El máximo debe ser un número.' }).int('El máximo debe ser un entero.').min(1, 'El máximo debe ser al menos 1.').max(200, 'El máximo es 200.').nullable().optional().default(null),
+  items: z
+    .array(
+      z.discriminatedUnion('type', [
+        z.object({ id: rowId, type: z.literal('category'), categoryId: z.string().min(1).max(60), label: rowLabel, image: optionalUrl, visible: rowVisible }),
+        z.object({ id: rowId, type: z.literal('custom'), label: text('El texto', 60), href: z.string({ error: 'El enlace es obligatorio.' }).pipe(linkHref), image: optionalUrl, visible: rowVisible }),
+      ]),
+    )
+    .max(200, 'Máximo 200 ítems.')
+    .refine((rows) => new Set(rows.map((r) => r.id)).size === rows.length, { error: 'Hay ítems con el mismo id.' })
+    .refine((rows) => {
+      const ids = rows.filter((r) => r.type === 'category').map((r) => r.categoryId)
+      return new Set(ids).size === ids.length
+    }, { error: 'Una categoría no puede estar dos veces.' })
+    .nullable()
+    .optional()
+    .default(null),
+})
+
 export const SITE_SETTING_SCHEMAS = {
   seasonalPromo: seasonalPromoSchema,
   homeBanners: homeBannersSchema,
   heroCarousel: heroCarouselSchema,
   menuLayout: menuLayoutSchema,
   menuTexts: menuTextsSchema,
+  homeCircles: homeCirclesSchema,
   cartFooterLinks: cartFooterLinksSchema,
 }
 
