@@ -254,8 +254,8 @@ export default function ProductForm({ categories, initialValues, submitting, onS
             ))}
           </select>
           <label className="flex min-w-0 flex-col gap-1">
-            <span className="sr-only">Marca</span>
-            <input className="input-tr" placeholder="Marca (ej: UGREEN)" value={form.brand} onChange={set('brand')} aria-describedby={brandHelpId} />
+            <span id={`${brandHelpId}-label`} className="sr-only">Marca</span>
+            <input className="input-tr" placeholder="Marca (ej: UGREEN)" value={form.brand} onChange={set('brand')} aria-labelledby={`${brandHelpId}-label`} aria-describedby={brandHelpId} />
             <span id={brandHelpId} className="text-xs text-ink-soft dark:text-paper/60">Usa una marca creada en Admin → Marcas. Vacío quita la marca.</span>
           </label>
           <input type="number" step="0.01" className="input-tr" placeholder="Precio (S/)" value={form.price} onChange={set('price')} />
