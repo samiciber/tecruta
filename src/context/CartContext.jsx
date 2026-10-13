@@ -31,6 +31,7 @@ function withAddedQuantity(prevEntries, product, quantity) {
 
 export function CartProvider({ children }) {
   const [entries, setEntries] = useState(() => sanitizeStoredCart(readStorage(STORAGE_KEY, [])))
+  const [cartSyncing, setCartSyncing] = useState(false)
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
   const { index: products, ready: catalogReady } = useProductIndex()
@@ -56,24 +57,28 @@ export function CartProvider({ children }) {
   // prevUserId.current === undefined significa "todavía no sabemos" (se
   // espera a que authLoading termine de restaurar la sesión guardada).
   const prevUserId = useRef(undefined)
+  const currentUserIdRef = useRef(null)
+  currentUserIdRef.current = user?.id || null
 
   useEffect(() => {
     if (authLoading) return
 
     const currentUserId = user?.id || null
     const previousUserId = prevUserId.current
-    const justLoggedIn = (previousUserId === undefined && currentUserId) || (!previousUserId && currentUserId)
+    const justLoggedIn = currentUserId && previousUserId !== currentUserId
     const justLoggedOut = previousUserId && !currentUserId
 
     if (justLoggedIn) {
       if (!catalogReady) return
       const guestEntries = sanitizeStoredCart(entries)
       // Do not send old static IDs to the server or silently delete them.
-      if (guestEntries.some(e => !products.some(p => p.id === e.productId))) return
+      if (reviewCart(guestEntries, products).length) return
+      setCartSyncing(true)
       const loadCart = guestEntries.length > 0 ? api.cart.merge(guestEntries, token) : api.cart.get(token)
 
       loadCart
         .then((data) => {
+          if (currentUserIdRef.current !== currentUserId) return
           setEntries(sanitizeStoredCart(data.items))
           // Ya se fusionó (o no había nada que fusionar): el carrito de
           // invitado en este navegador queda vacío, el servidor manda.
@@ -82,8 +87,10 @@ export function CartProvider({ children }) {
         .catch((err) => {
           console.warn('No se pudo cargar el carrito del servidor, se mantiene el local:', err.message)
         })
+        .finally(() => { if (currentUserIdRef.current === currentUserId) setCartSyncing(false) })
     } else if (justLoggedOut) {
       setEntries([])
+      setCartSyncing(false)
     }
 
     prevUserId.current = currentUserId
@@ -103,8 +110,8 @@ export function CartProvider({ children }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0)
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const reviewItems = reviewCart(entries, products)
-  const canCheckout = catalogReady && entries.length > 0 && reviewItems.length === 0
-  const canAdd = product => canAddProduct(productResource, product)
+  const canCheckout = catalogReady && !cartSyncing && (!user || prevUserId.current === user.id) && entries.length > 0 && reviewItems.length === 0
+  const canAdd = product => !cartSyncing && (!user || prevUserId.current === user.id) && canAddProduct(productResource, product)
 
   function removeReviewItems() {
     if (!productResource.isFresh()) return
@@ -144,7 +151,7 @@ export function CartProvider({ children }) {
   function removeItem(productId) {
     setEntries((prev) => prev.filter((e) => e.productId !== productId))
 
-    if (user && products.some(p => p.id === productId)) {
+    if (user && prevUserId.current === user.id && products.some(p => p.id === productId)) {
       api.cart
         .removeItem(productId, token)
         .then((data) => setEntries(sanitizeStoredCart(data.items)))
@@ -161,7 +168,7 @@ export function CartProvider({ children }) {
 
     setEntries((prev) => prev.map((e) => (e.productId === productId ? { ...e, quantity: clamped } : e)))
 
-    if (user) {
+    if (user && prevUserId.current === user.id) {
       api.cart
         .setQuantity(productId, clamped, token)
         .then((data) => setEntries(sanitizeStoredCart(data.items)))
