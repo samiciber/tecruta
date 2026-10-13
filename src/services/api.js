@@ -11,11 +11,14 @@
 // responde, el error simplemente se propaga y AuthContext lo muestra
 // como mensaje de error al usuario.
 
+import { invalidateLiveResources } from './liveResource.js'
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, signal } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
+    signal,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -32,18 +35,22 @@ async function request(path, { method = 'GET', body, token } = {}) {
     throw error
   }
 
+  if (method !== 'GET') {
+    if (/^\/api\/admin\/(products|brands)(\/|$)/.test(path) || path === '/api/orders') invalidateLiveResources('products')
+    if (/^\/api\/admin\/payment-methods(\/|$)/.test(path)) invalidateLiveResources('payment-methods')
+  }
   return data
 }
 
 export const api = {
-  getProducts: (params = {}) => {
+  getProducts: (params = {}, options = {}) => {
     const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
     const query = new URLSearchParams(entries).toString()
-    return request(`/api/products${query ? `?${query}` : ''}`)
+    return request(`/api/products${query ? `?${query}` : ''}`, options)
   },
   getProductBySlug: (slug) => request(`/api/products/${encodeURIComponent(slug)}`),
   getCategories: () => request('/api/categories'),
-  getPaymentMethods: () => request('/api/payment-methods'),
+  getPaymentMethods: (options = {}) => request('/api/payment-methods', options),
 
   // --- Contenido de navegación (Bloque 1) ---
   getNav: () => request('/api/nav'),
