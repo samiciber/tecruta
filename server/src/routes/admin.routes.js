@@ -2,8 +2,11 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
-import { serializeProduct, serializeCategory, serializeOrder, serializeUser } from '../lib/serializers.js'
+import { serializeCategory, serializeOrder, serializeUser } from '../lib/serializers.js'
 import { uploadImageToCloudinary, uploadModelToCloudinary } from '../lib/cloudinary.js'
+import { validate } from '../middleware/validate.js'
+import { productCreateSchema, productUpdateSchema, categoryCreateSchema, categoryUpdateSchema, paymentMethodUpdateSchema } from '../lib/adminSchemas.js'
+import { createAdminProduct, updateAdminProduct } from '../lib/adminProducts.js'
 
 export const adminRouter = Router()
 
@@ -12,7 +15,6 @@ export const adminRouter = Router()
 // `npm run make-admin -- correo@ejemplo.com` (ver prisma/make-admin.js).
 adminRouter.use(requireAuth, requireRole('ADMIN'))
 
-const productInclude = { category: true, images: true }
 const orderInclude = { items: { include: { product: true } }, paymentMethod: true }
 
 // -----------------------------------------------------------------------
@@ -21,89 +23,17 @@ const orderInclude = { items: { include: { product: true } }, paymentMethod: tru
 
 adminRouter.post(
   '/products',
+  validate(productCreateSchema),
   asyncHandler(async (req, res) => {
-    const { category, slug, name, price } = req.body || {}
-    if (!slug || !name || price === undefined) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios: slug, name, price.' })
-    }
-
-    const categoryRow = await prisma.category.findUnique({ where: { slug: category } })
-    if (!categoryRow) {
-      return res.status(400).json({ error: `La categoría "${category}" no existe.` })
-    }
-
-    const { images, ...rest } = req.body
-    const product = await prisma.product.create({
-      data: {
-        slug: rest.slug,
-        name: rest.name,
-        brand: rest.brand ?? null,
-        description: rest.description ?? null,
-        shortDescription: rest.shortDescription ?? null,
-        price: rest.price,
-        compareAtPrice: rest.compareAtPrice ?? null,
-        stock: rest.stock ?? 0,
-        featured: Boolean(rest.featured),
-        bestSeller: Boolean(rest.bestSeller),
-        image: rest.image ?? images?.[0] ?? null,
-        tags: rest.tags ?? [],
-        specifications: rest.specifications ?? null,
-        model3DUrl: rest.model3DUrl ?? null,
-        model3DPoster: rest.model3DPoster ?? null,
-        enable3D: Boolean(rest.enable3D),
-        hotspots: rest.hotspots ?? null,
-        categoryId: categoryRow.id,
-        images: images?.length ? { create: images.map((url, position) => ({ url, position })) } : undefined,
-      },
-      include: productInclude,
-    })
-
-    res.status(201).json(serializeProduct(product))
+    res.status(201).json(await createAdminProduct(prisma, req.body))
   }),
 )
 
 adminRouter.patch(
   '/products/:id',
+  validate(productUpdateSchema),
   asyncHandler(async (req, res) => {
-    const existing = await prisma.product.findUnique({ where: { id: req.params.id } })
-    if (!existing) return res.status(404).json({ error: 'Producto no encontrado.' })
-
-    const { category, images, ...rest } = req.body || {}
-    const data = {}
-
-    // Solo actualiza los campos que efectivamente vinieron en el body —
-    // el resto se mantiene tal cual (edición parcial).
-    for (const field of [
-      'slug', 'name', 'brand', 'description', 'shortDescription',
-      'price', 'compareAtPrice', 'stock', 'featured', 'bestSeller',
-      'image', 'tags', 'specifications',
-      'model3DUrl', 'model3DPoster', 'enable3D', 'hotspots',
-    ]) {
-      if (rest[field] !== undefined) data[field] = rest[field]
-    }
-
-    if (category) {
-      const categoryRow = await prisma.category.findUnique({ where: { slug: category } })
-      if (!categoryRow) return res.status(400).json({ error: `La categoría "${category}" no existe.` })
-      data.categoryId = categoryRow.id
-    }
-
-    const product = await prisma.$transaction(async (tx) => {
-      const updated = await tx.product.update({ where: { id: existing.id }, data })
-
-      if (Array.isArray(images)) {
-        await tx.productImage.deleteMany({ where: { productId: existing.id } })
-        if (images.length > 0) {
-          await tx.productImage.createMany({
-            data: images.map((url, position) => ({ url, position, productId: existing.id })),
-          })
-        }
-      }
-
-      return tx.product.findUnique({ where: { id: existing.id }, include: productInclude })
-    })
-
-    res.json(serializeProduct(product))
+    res.json(await updateAdminProduct(prisma, req.params.id, req.body))
   }),
 )
 
@@ -115,11 +45,12 @@ adminRouter.delete(
 
     try {
       await prisma.product.delete({ where: { id: existing.id } })
-    } catch {
+    } catch (error) {
+      if (error.code !== 'P2003') throw error
       // Restricción de llave foránea: el producto ya aparece en algún
       // pedido y no se puede borrar sin perder ese historial.
       return res.status(409).json({
-        error: 'No se puede eliminar: este producto ya tiene pedidos asociados. Puedes ponerlo en stock 0 en su lugar.',
+        error: 'No se puede eliminar: este producto tiene registros asociados (pedidos, carrito o guardados). Puedes ponerlo en stock 0 en su lugar.',
       })
     }
 
@@ -173,10 +104,9 @@ adminRouter.post(
 
 adminRouter.post(
   '/categories',
+  validate(categoryCreateSchema),
   asyncHandler(async (req, res) => {
     const { slug, name } = req.body || {}
-    if (!slug || !name) return res.status(400).json({ error: 'Faltan campos obligatorios: slug, name.' })
-
     const category = await prisma.category.create({
       data: { slug, name, description: req.body.description ?? null, icon: req.body.icon ?? null },
     })
@@ -186,6 +116,7 @@ adminRouter.post(
 
 adminRouter.patch(
   '/categories/:slug',
+  validate(categoryUpdateSchema),
   asyncHandler(async (req, res) => {
     const existing = await prisma.category.findUnique({ where: { slug: req.params.slug } })
     if (!existing) return res.status(404).json({ error: 'Categoría no encontrada.' })
@@ -214,13 +145,14 @@ adminRouter.get(
 
 adminRouter.patch(
   '/payment-methods/:key',
+  validate(paymentMethodUpdateSchema),
   asyncHandler(async (req, res) => {
     const existing = await prisma.paymentMethod.findUnique({ where: { key: req.params.key } })
     if (!existing) return res.status(404).json({ error: 'Método de pago no encontrado.' })
 
     const data = {}
     if (req.body?.label !== undefined) data.label = req.body.label
-    if (req.body?.active !== undefined) data.active = Boolean(req.body.active)
+    if (req.body?.active !== undefined) data.active = req.body.active
     if (req.body?.config !== undefined) data.config = req.body.config
 
     const paymentMethod = await prisma.paymentMethod.update({ where: { id: existing.id }, data })
