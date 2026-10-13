@@ -15,10 +15,11 @@ import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource
 
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function request(path, { method = 'GET', body, token, signal } = {}) {
+async function request(path, { method = 'GET', body, token, signal, cache } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
     signal,
+    cache,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
