@@ -23,6 +23,8 @@ test('many readers share one request; only a successful API snapshot is purchasa
   assert.equal(resource.isFresh(), true); assert.equal(canAddProduct(resource, product), true)
   assert.equal(canAddProduct(resource, { ...product, id: 'static-id' }), false)
   assert.equal(canAddProduct(resource, { ...product, price: 9 }), false)
+  assert.equal(canAddProduct(resource, product, 4), false)
+  assert.equal(canAddProduct(resource, product, 1.5), false)
 })
 test('fallback is explicit and blocked, failed imports finish loading, retry recovers API data', async () => {
   let offline = true

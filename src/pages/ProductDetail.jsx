@@ -72,6 +72,7 @@ export default function ProductDetail() {
   const category = getCategoryBySlug(product.category)
   const discount = calculateDiscountPercent(product.price, product.compareAtPrice)
   const outOfStock = product.stock <= 0
+  const purchaseBlocked = outOfStock || !canAdd(product) || quantity > product.stock
 
   return (
     <div className="container-tr py-8">
@@ -188,17 +189,18 @@ export default function ProductDetail() {
               <QuantitySelector quantity={quantity} max={product.stock} onChange={setQuantity} />
             </div>
           )}
+          {quantity > product.stock && !outOfStock && <p role="status" className="text-sm text-ink dark:text-paper">El stock cambió. Ajusta la cantidad antes de agregarlo.</p>}
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" disabled={outOfStock || !canAdd(product)} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
+            <button type="button" disabled={purchaseBlocked} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
               <ShoppingCart className="h-4 w-4" />
               {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
             </button>
             <Link
               to="/checkout"
-              onClick={event => { if (outOfStock || !canAdd(product) || !addItem(product, quantity, { silent: true })) event.preventDefault() }}
-              className={`btn-secondary flex-1 ${outOfStock || !canAdd(product) ? 'opacity-40' : ''}`}
-              aria-disabled={outOfStock || !canAdd(product)}
+              onClick={event => { if (purchaseBlocked || !addItem(product, quantity, { silent: true })) event.preventDefault() }}
+              className={`btn-secondary flex-1 ${purchaseBlocked ? 'opacity-40' : ''}`}
+              aria-disabled={purchaseBlocked}
             >
               <Zap className="h-4 w-4" />
               Comprar ahora

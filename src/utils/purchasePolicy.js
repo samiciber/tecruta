@@ -9,10 +9,10 @@ export function normalizeCart(stored) {
   }
   return [...quantities].map(([productId, quantity]) => ({ productId, quantity }))
 }
-export function canAddProduct(resource, product) {
-  if (!resource.isFresh()) return false
+export function canAddProduct(resource, product, quantity = 1) {
+  if (!resource.isFresh() || !Number.isInteger(quantity) || quantity <= 0) return false
   const current = resource.getSnapshot().data.find(p => p.id === product?.id)
-  return Boolean(current && current.stock > 0 && current.price === product.price)
+  return Boolean(current && current.stock >= quantity && current.price === product.price)
 }
 export function reviewCart(entries, products) {
   return entries.flatMap(entry => {

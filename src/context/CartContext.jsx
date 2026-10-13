@@ -124,11 +124,11 @@ export function CartProvider({ children }) {
 
   // opts.silent: no muestra la confirmación (p. ej. «Comprar ahora»).
   function addItem(product, quantity = 1, opts = {}) {
-    if (!canAdd(product) || !Number.isInteger(quantity) || quantity <= 0) {
+    if (!canAdd(product) || !canAddProduct(productResource, product, quantity)) {
       toast?.showToast('Necesitamos verificar el precio y la disponibilidad antes de agregarlo.', 'error')
       return false
     }
-    product = products.find(p => p.id === product.id)
+    product = productResource.getSnapshot().data.find(p => p.id === product.id)
 
     setEntries((prev) => withAddedQuantity(prev, product, quantity))
 
