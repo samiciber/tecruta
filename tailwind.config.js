@@ -36,9 +36,9 @@ export default {
           dark: '#E6C800',
         },
         signal: {
-          green: '#12A150',
+          green: '#07723A',
           amber: '#C77D19',
-          red: '#D64545',
+          red: '#B53131',
         },
       },
       fontFamily: {

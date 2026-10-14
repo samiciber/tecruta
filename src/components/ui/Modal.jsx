@@ -1,25 +1,27 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
+import { usePanelBehavior } from '../../hooks/usePanel.js'
 
 export default function Modal({ open, onClose, title, children }) {
+  const containerRef = useRef(null)
+  usePanelBehavior({ open, onClose, containerRef })
+
   useEffect(() => {
     if (!open) return
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', onKey)
+    const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousOverflow
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
+    <div ref={containerRef} className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
       <button
+        type="button"
+        tabIndex={-1}
         aria-label="Cerrar"
         className="absolute inset-0 bg-ink/40 backdrop-blur-sm dark:bg-black/60"
         onClick={onClose}
@@ -28,6 +30,7 @@ export default function Modal({ open, onClose, title, children }) {
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold text-ink dark:text-paper">{title}</h2>
           <button
+            data-autofocus
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
