@@ -16,6 +16,7 @@ const temp = mkdtempSync(join(tmpdir(),'tecruta-lote9-'))
 const image = 'postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==','base64')
 let started, db, server, base, tokens, reads = 0
+const nativeFetch = globalThis.fetch
 const run = (cmd,args,options={})=>execFileSync(cmd,args,{encoding:'utf8',stdio:'pipe',...options}).trim()
 function docker(...args) {
   const env = {...process.env}
@@ -23,7 +24,7 @@ function docker(...args) {
   return run('docker',['--host=unix:///var/run/docker.sock',...args],{env})
 }
 async function request(path, user='a') {
-  const response = await fetch(base+'/api/orders'+path,{headers:user?{Authorization:`Bearer ${tokens[user] || 'qa-invalid-session'}`}:{}})
+  const response = await nativeFetch(base+'/api/orders'+path,{headers:user?{Authorization:`Bearer ${tokens[user] || 'qa-invalid-session'}`}:{}})
   const type = response.headers.get('content-type') || ''
   return {status:response.status,headers:response.headers,data:type.includes('application/json')?await response.json():Buffer.from(await response.arrayBuffer())}
 }
@@ -44,7 +45,7 @@ before(async()=>{
   const {signToken}=await import('../../src/lib/token.js');tokens={}
   for(const [id,role] of [['a','CUSTOMER'],['b','CUSTOMER'],['admin','ADMIN']]){
     await db.user.create({data:{id:'qa-'+id,email:`qa-${id}@example.invalid`,passwordHash:'qa-not-a-login-hash',nombre:'QA',apellido:id,role,verified:true}})
-    tokens[id]=signToken({sub:'qa-'+id,version:0})
+    tokens[id]=signToken({sub:'qa-'+id,tokenVersion:0})
   }
   await db.category.create({data:{id:'qa-category',slug:'qa-category',name:'QA category',legacy:true}})
   await db.product.create({data:{id:'qa-product',slug:'qa-product',name:'QA historical item',categoryId:'qa-category',price:99,stock:7,tags:[]}})
@@ -57,17 +58,20 @@ before(async()=>{
   await db.order.create({data:orderData('qa-old-a','qa-a',{createdAt:new Date('2026-10-11T00:00:00Z')})})
   await db.order.create({data:orderData('qa-order-b','qa-b',{receiptUrl:'https://res.cloudinary.com/qa-test/raw/upload/v1/b.pdf'})})
   await db.order.create({data:orderData('qa-guest',null,{receiptUrl:'https://res.cloudinary.com/qa-test/image/upload/v1/guest.png'})})
-  const {createCustomerOrdersRouter}=await import('../../src/routes/customerOrders.routes.js')
-  const {downloadReceipt}=await import('../../src/lib/receiptDownload.js')
+  const routes=await import('../../src/routes/orders.routes.js')
   const {errorHandler}=await import('../../src/middleware/errorHandler.js')
-  const app=express();app.set('trust proxy',0)
-  app.use('/api/orders',createCustomerOrdersRouter({db,readReceipt:value=>downloadReceipt(value,{fetcher:async url=>{
+  globalThis.fetch=async value=>{
+    const url=String(value)
+    assert.equal(new URL(url).hostname,'res.cloudinary.com','Unexpected outbound provider request')
     reads++;return new Response(url.endsWith('.pdf')?'%PDF-1.7 QA local PDF':png,{headers:{'content-type':url.endsWith('.pdf')?'application/pdf':'image/png'}})
-  }})}))
+  }
+  const app=express();app.set('trust proxy',0)
+  app.use('/api/orders',routes.createOrdersRouter?routes.createOrdersRouter({db}):routes.ordersRouter)
   app.use((_req,res)=>res.status(404).json({error:'Ruta no encontrada.'}));app.use(errorHandler)
   server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));base=`http://127.0.0.1:${server.address().port}`
 })
 after(async()=>{
+  globalThis.fetch=nativeFetch
   if(server)await new Promise(resolve=>server.close(resolve));if(db)await db.$disconnect()
   if(started)docker('rm','--force','--volumes',container)
   rmSync(temp,{recursive:true,force:true})

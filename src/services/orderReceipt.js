@@ -14,4 +14,3 @@ export async function getOrderReceipt(orderId, token, { signal } = {}) {
   }
   return blob
 }
-
