@@ -4,6 +4,7 @@ import { Package } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { api } from '../services/api.js'
+import { getOrderReceipt } from '../services/orderReceipt.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
 
 const STATUS_LABELS = {
@@ -39,7 +40,7 @@ function OrderReceipt({ order, token }) {
     pending.current = controller
     setReceipt({ token, loading: true })
     try {
-      const blob = await api.orders.receipt(order.id, token, { signal: controller.signal })
+      const blob = await getOrderReceipt(order.id, token, { signal: controller.signal })
       if (!controller.signal.aborted) setReceipt({ token, url: URL.createObjectURL(blob), type: blob.type })
     } catch (err) {
       if (!controller.signal.aborted) setReceipt({ token, error: err.message })
