@@ -1,6 +1,6 @@
 // Testimonios/reseñas de clientes mostrados en la Home.
 //
-// Contenido estático a propósito (mismo patrón que heroSlides.js) — no
+// Contenido estático a propósito — no
 // viene de un modelo nuevo en la base de datos. Si más adelante se quiere
 // que sean reseñas reales y administrables, el lugar natural sería un
 // modelo `Review` en server/prisma/schema.prisma + un endpoint de solo
