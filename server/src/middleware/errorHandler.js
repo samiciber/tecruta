@@ -3,10 +3,13 @@
 // aquí, con una respuesta JSON consistente en vez de que Express devuelva
 // HTML de error por defecto.
 export function errorHandler(err, req, res, _next) {
-  console.error(err)
   const status = err.status || 500
+  // Never log request bodies, uploaded files or capabilities.
+  if (status >= 500) console.error('Error del servidor:', err.name, err.code || 'unknown')
   res.status(status).json({
-    error: status === 500 ? 'Error interno del servidor.' : err.message,
+    error: status === 500 ? 'Error interno del servidor.' : status === 413 ? 'El archivo o solicitud supera el tamaño permitido.' : err.type === 'entity.parse.failed' ? 'JSON inválido.' : err.message,
+    ...(err.productId ? { productId: err.productId } : {}),
+    ...(['IDEMPOTENCY_CONFLICT', 'ORDER_REJECTED'].includes(err.code) ? { code: err.code } : {}),
   })
 }
 

@@ -27,10 +27,10 @@ export default function ReceiptUpload({ file, onChange }) {
     e.target.value = ''
     if (!selected) return
 
-    const isImage = selected.type?.startsWith('image/')
+    const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(selected.type)
     const isPdf = selected.type === 'application/pdf'
     if (!isImage && !isPdf) {
-      toast?.showToast('El comprobante debe ser una imagen o un PDF.', 'error')
+      toast?.showToast('El comprobante debe ser JPEG, PNG, GIF, WebP o PDF.', 'error')
       return
     }
     if (selected.size > MAX_RECEIPT_BYTES) {
@@ -43,11 +43,11 @@ export default function ReceiptUpload({ file, onChange }) {
   return (
     <div className="flex flex-col gap-3">
       {!file ? (
-        <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl2 border border-dashed border-paper-line px-4 py-8 text-center transition-colors hover:border-route dark:border-night-line">
+        <label className="focus-within:ring-2 focus-within:ring-route flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl2 border border-dashed border-paper-line px-4 py-8 text-center transition-colors hover:border-route dark:border-night-line">
           <FileUp className="h-6 w-6 text-ink-soft/60 dark:text-paper/40" />
           <span className="text-sm font-medium text-ink dark:text-paper">Adjuntar comprobante de pago</span>
-          <span className="text-xs text-ink-soft/60 dark:text-paper/40">Imagen o PDF, opcional en este paso</span>
-          <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleSelect} />
+          <span className="text-xs text-ink-soft/60 dark:text-paper/40">JPEG, PNG, GIF, WebP o PDF; opcional</span>
+          <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" className="sr-only" onChange={handleSelect} />
         </label>
       ) : (
         <div className="flex items-center gap-3 rounded-xl2 border border-paper-line p-3 dark:border-night-line">

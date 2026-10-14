@@ -4,6 +4,7 @@ import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { formatCurrency } from '../../utils/formatCurrency.js'
+import { canTransition, ORDER_STATUSES } from '../../utils/orderStatus.js'
 
 // Mismo límite que valida el backend (ver RECEIPT_MAX_BYTES en
 // server/src/routes/orders.routes.js).
@@ -18,12 +19,8 @@ function fileToDataUrl(file) {
   })
 }
 
-// Comprobante de pago del pedido: lo muestra si ya existe (imagen o PDF,
-// según la extensión de la URL) y siempre permite subir uno nuevo o
-// reemplazar el actual — reutiliza el MISMO endpoint público que usa el
-// checkout (POST /api/orders/:orderId/receipt), sin ruta separada para
-// admin.
-function ReceiptManager({ order, onUpdated }) {
+// Owner/admin endpoint returns only the new receipt URL.
+function ReceiptManager({ order, token, onUpdated }) {
   const toast = useContext(ToastContext)
   const [uploading, setUploading] = useState(false)
 
@@ -34,10 +31,10 @@ function ReceiptManager({ order, onUpdated }) {
     e.target.value = ''
     if (!file) return
 
-    const isImage = file.type?.startsWith('image/')
+    const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
     const isFilePdf = file.type === 'application/pdf'
     if (!isImage && !isFilePdf) {
-      toast?.showToast('El comprobante debe ser una imagen o un PDF.', 'error')
+      toast?.showToast('El comprobante debe ser JPEG, PNG, GIF, WebP o PDF.', 'error')
       return
     }
     if (file.size > MAX_RECEIPT_BYTES) {
@@ -48,8 +45,8 @@ function ReceiptManager({ order, onUpdated }) {
     setUploading(true)
     try {
       const dataUrl = await fileToDataUrl(file)
-      const { order: updated } = await api.orders.uploadReceipt(order.id, dataUrl)
-      onUpdated(updated)
+      const { receiptUrl } = await api.orders.uploadReceipt(order.id, dataUrl, { token })
+      onUpdated({ ...order, receiptUrl })
       toast?.showToast('Comprobante actualizado.', 'success')
     } catch (err) {
       toast?.showToast(err.message, 'error')
@@ -84,16 +81,16 @@ function ReceiptManager({ order, onUpdated }) {
         <p className="text-sm text-ink-soft/70 dark:text-paper/40">El cliente no adjuntó comprobante.</p>
       )}
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-route hover:text-route dark:border-night-line dark:text-paper/60">
+      <label className="focus-within:ring-2 focus-within:ring-route flex w-fit cursor-pointer items-center gap-2 rounded-lg border border-dashed border-paper-line px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-route hover:text-route dark:border-night-line dark:text-paper/60">
         <Upload className="h-3.5 w-3.5" />
         {uploading ? 'Subiendo…' : order.receiptUrl ? 'Reemplazar comprobante' : 'Subir comprobante'}
-        <input type="file" accept="image/*,application/pdf" className="hidden" disabled={uploading} onChange={handleSelect} />
+        <input type="file" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" className="sr-only" disabled={uploading} onChange={handleSelect} />
       </label>
     </div>
   )
 }
 
-const STATUSES = ['PENDING', 'CONFIRMED', 'PAID', 'SHIPPED', 'DELIVERED', 'CANCELLED']
+const STATUSES = ORDER_STATUSES
 const STATUS_LABELS = {
   PENDING: 'Pendiente',
   CONFIRMED: 'Confirmado',
@@ -154,7 +151,7 @@ function OrderRow({ order, token, onUpdated }) {
             className={`rounded-full border-0 px-3 py-1.5 text-xs font-medium ${STATUS_STYLES[order.status]}`}
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s}>
+              <option key={s} value={s} disabled={!canTransition(order.status, s)}>
                 {STATUS_LABELS[s]}
               </option>
             ))}
@@ -192,7 +189,7 @@ function OrderRow({ order, token, onUpdated }) {
           )}
 
           <div className="mt-3">
-            <ReceiptManager order={order} onUpdated={onUpdated} />
+            <ReceiptManager order={order} token={token} onUpdated={onUpdated} />
           </div>
         </div>
       )}

@@ -365,12 +365,14 @@ model Order {
   whatsappSentAt    DateTime?
 
   // URL en Cloudinary del comprobante de pago (imagen o PDF). Se llena
-  // vía POST /api/orders/:orderId/receipt (endpoint público, ver
-  // orders.routes.js) — el cliente lo sube en el paso 3 del checkout, en
-  // paralelo al envío por WhatsApp sin bloquearlo, y el admin puede
-  // subirlo o reemplazarlo manualmente desde el panel reutilizando el
-  // mismo endpoint. Null hasta que alguien lo suba.
+  // vía POST /api/orders/:orderId/receipt: propietario autenticado,
+  // ADMIN o token por pedido de invitado. Se sube después de confirmar
+  // la creación del pedido; la respuesta contiene solo ok y receiptUrl.
   receiptUrl        String?
+  // Guest receipt capability (hash only) and a stable checkout retry key.
+  receiptTokenHash  String?
+  idempotencyKey    String?       @unique
+  requestHash       String?
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]

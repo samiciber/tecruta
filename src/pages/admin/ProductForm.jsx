@@ -101,8 +101,8 @@ export default function ProductForm({ categories, initialValues, submitting, onS
   // `key === 'main'`, o la fila `images[key]` si es un número.
   async function handleFileUpload(key, file) {
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      toast?.showToast('Solo se aceptan archivos de imagen.', 'error')
+    if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+      toast?.showToast('Solo se aceptan imágenes JPEG, PNG, GIF o WebP.', 'error')
       return
     }
     if (file.size > MAX_UPLOAD_BYTES) {
@@ -303,7 +303,7 @@ export default function ProductForm({ categories, initialValues, submitting, onS
             Subir
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif,image/webp"
               className="hidden"
               onChange={(e) => handleFileUpload('main', e.target.files?.[0])}
             />
@@ -334,7 +334,7 @@ export default function ProductForm({ categories, initialValues, submitting, onS
                 }`}
               >
                 {uploadingKey === i ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleFileUpload(i, e.target.files?.[0])} />
+                <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" className="hidden" onChange={(e) => handleFileUpload(i, e.target.files?.[0])} />
               </label>
               <button
                 type="button"
