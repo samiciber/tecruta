@@ -60,9 +60,10 @@ function buildPaymentLines(paymentMethodDetails) {
 // Construye el mensaje de pedido y el enlace de WhatsApp a partir del
 // carrito, los datos del cliente, la dirección de entrega y el método de
 // pago elegidos en el checkout.
-export function buildWhatsAppOrderLink(items, { customer, delivery, paymentMethodDetails } = {}) {
+export function buildWhatsAppOrderLink(items, { customer, delivery, paymentMethodDetails, confirmedOrder } = {}) {
   const lines = []
   lines.push(`Hola, ${storeConfig.name}. Quiero realizar este pedido:`)
+  if (confirmedOrder) lines.push(`Pedido registrado: ${confirmedOrder.id}`)
   lines.push('')
 
   // Cliente
@@ -80,8 +81,8 @@ export function buildWhatsAppOrderLink(items, { customer, delivery, paymentMetho
     lines.push(`${item.quantity}x ${item.name} — ${formatCurrency(lineTotal)}`)
   })
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const savings = items.reduce((sum, item) => {
+  const subtotal = confirmedOrder?.subtotal ?? items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const savings = confirmedOrder?.savings ?? items.reduce((sum, item) => {
     if (!item.compareAtPrice || item.compareAtPrice <= item.price) return sum
     return sum + (item.compareAtPrice - item.price) * item.quantity
   }, 0)
@@ -89,7 +90,7 @@ export function buildWhatsAppOrderLink(items, { customer, delivery, paymentMetho
   lines.push('')
   lines.push(`${EMOJI.subtotal} Subtotal: ${formatCurrency(subtotal)}`)
   if (savings > 0) lines.push(`${EMOJI.ahorro} Ahorro total: ${formatCurrency(savings)}`)
-  lines.push(`${EMOJI.total} Total: ${formatCurrency(subtotal)} (envío se coordina según destino)`)
+  lines.push(`${EMOJI.total} Total: ${formatCurrency(confirmedOrder?.total ?? subtotal)} (envío se coordina según destino)`)
 
   // Entrega
   if (delivery) {
@@ -131,4 +132,13 @@ export function buildWhatsAppOrderLink(items, { customer, delivery, paymentMetho
   const message = lines.join('\n')
   const encoded = encodeURIComponent(message)
   return `https://wa.me/${storeConfig.whatsapp.number}?text=${encoded}`
+}
+// Uses only the confirmed API snapshot; never cached cart prices/payment config.
+export function buildConfirmedWhatsAppLink(order) {
+  return buildWhatsAppOrderLink(order.items.map(item => ({ ...item, price: item.unitPrice })), {
+    confirmedOrder: order,
+    customer: { nombre: order.customerNombre, apellido: order.customerApellido, correo: order.customerCorreo, celular: order.customerCelular },
+    delivery: { ...order, tipoEntrega: order.deliveryType === 'PICKUP' ? 'recojo' : 'envio' },
+    paymentMethodDetails: order.paymentMethodLabel ? { label: order.paymentMethodLabel } : undefined,
+  })
 }

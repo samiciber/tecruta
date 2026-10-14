@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom'
 import Header from './components/layout/Header.jsx'
 import Footer from './components/layout/Footer.jsx'
 import MobileCartBar from './components/cart/MobileCartBar.jsx'
+import { CatalogAvailability } from './components/ui/CatalogAvailability.jsx'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
 const Catalog = lazy(() => import('./pages/Catalog.jsx'))
@@ -21,7 +22,6 @@ const Account = lazy(() => import('./pages/Account.jsx'))
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout.jsx'))
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts.jsx'))
 const AdminOrders = lazy(() => import('./pages/admin/AdminOrders.jsx'))
-const AdminCategories = lazy(() => import('./pages/admin/AdminCategories.jsx'))
 const AdminPaymentMethods = lazy(() => import('./pages/admin/AdminPaymentMethods.jsx'))
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers.jsx'))
 const AdminBrands = lazy(() => import('./pages/admin/AdminBrands.jsx'))
@@ -70,6 +70,7 @@ export default function App() {
           header transparente. */}
       {/* El header es sticky y ocupa su espacio: no se compensa con padding. */}
       <main id="contenido" tabIndex={-1} className="flex-1 focus:outline-none">
+        <CatalogAvailability />
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />

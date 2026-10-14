@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { UserCircle } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import SessionUnavailable from '../components/auth/SessionUnavailable.jsx'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 
 function ProfileForm() {
@@ -85,7 +86,7 @@ function PasswordForm() {
     setSaving(false)
 
     if (result.ok) {
-      toast?.showToast('Contraseña actualizada', 'success')
+      toast?.showToast('Contraseña actualizada. Inicia sesión nuevamente.', 'success')
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
@@ -132,8 +133,32 @@ function PasswordForm() {
   )
 }
 
+function SessionsPanel() {
+  const { logoutAll } = useAuth()
+  const toast = useContext(ToastContext)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  async function closeAll() {
+    if (busy) return
+    setBusy(true); setError('')
+    const result = await logoutAll()
+    setBusy(false)
+    if (result.ok) toast?.showToast('Se cerraron todas las sesiones. Inicia sesión nuevamente.', 'success')
+    else setError(result.error)
+  }
+  return <section className="flex flex-col gap-3 rounded-xl2 border border-paper-line p-5 dark:border-night-line">
+    <h2 className="font-display text-lg font-semibold text-ink dark:text-paper">Sesiones</h2>
+    <p className="text-sm text-ink-soft dark:text-paper/60">Cierra el acceso de tu cuenta en todos los dispositivos, incluida esta pestaña.</p>
+    {error && <p role="alert" className="text-sm text-ink dark:text-paper">{error}</p>}
+    <button type="button" onClick={closeAll} disabled={busy} className="btn-primary self-start">{busy ? 'Cerrando sesiones…' : 'Cerrar todas las sesiones'}</button>
+  </section>
+}
+
 export default function Account() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, authError, retrySession, authLoading } = useAuth()
+
+  if (authError) return <SessionUnavailable onRetry={retrySession} />
+  if (authLoading) return <div role="status" className="container-tr py-16 text-ink dark:text-paper">Comprobando sesión…</div>
 
   if (!isAuthenticated) {
     return (
@@ -158,6 +183,7 @@ export default function Account() {
       <div className="flex flex-col gap-6">
         <ProfileForm />
         <PasswordForm />
+        <SessionsPanel />
       </div>
     </div>
   )

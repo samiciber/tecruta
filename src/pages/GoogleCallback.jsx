@@ -3,13 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
-// Destino de GET /api/auth/google/callback en el backend una vez que ya
-// procesó el intercambio con Google: llega aquí con ?token=... (éxito) o
-// se redirige directo a /iniciar-sesion?googleError=... (falla), por lo
-// que esta página solo necesita manejar el caso de éxito.
+// Only a short-lived, one-use code reaches this URL; never a session JWT.
 export default function GoogleCallback() {
   const [params] = useSearchParams()
-  const { loginWithGoogleToken } = useAuth()
+  const { loginWithGoogleCode } = useAuth()
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
   const [error, setError] = useState('')
@@ -19,13 +16,14 @@ export default function GoogleCallback() {
     if (ran.current) return
     ran.current = true
 
-    const token = params.get('token')
-    if (!token) {
+    const code = params.get('code')
+    window.history.replaceState(window.history.state, '', window.location.pathname)
+    if (!code) {
       setError('No se recibió una sesión válida de Google.')
       return
     }
 
-    loginWithGoogleToken(token).then((result) => {
+    loginWithGoogleCode(code).then((result) => {
       if (!result.ok) {
         setError(result.error || 'No se pudo completar el inicio de sesión con Google.')
         return
@@ -39,7 +37,7 @@ export default function GoogleCallback() {
   if (error) {
     return (
       <div className="container-tr flex min-h-[50vh] flex-col items-center justify-center gap-3 py-16 text-center">
-        <p className="text-sm text-signal-red">{error}</p>
+        <p role="alert" className="text-sm text-ink dark:text-paper">{error}</p>
         <button type="button" onClick={() => navigate('/iniciar-sesion')} className="btn-primary">
           Volver a iniciar sesión
         </button>

@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { prepareGoogleFlow } from '../../services/googleFlow.js'
 import { API_URL } from '../../services/api.js'
 
 // Ícono oficial de Google "G" multicolor (SVG estático, sin dependencias).
@@ -25,20 +26,27 @@ function GoogleIcon() {
   )
 }
 
-// Este botón hace una navegación de navegador normal (no fetch/XHR) hacia
-// GET /api/auth/google en el backend, que redirige a la pantalla de
-// consentimiento real de Google. El backend maneja todo el intercambio
-// OAuth y termina redirigiendo de vuelta a /auth/google/callback en este
-// mismo frontend con un token de sesión de TecRuta ya emitido — ver
-// GoogleCallback.jsx y server/src/routes/auth.routes.js.
-export default function GoogleButton({ label = 'Continuar con Google' }) {
+// A per-tab proof protects the one-use code, also across separate SPA/API sites.
+export default function GoogleButton({ label = 'Continuar con Google', remember = false }) {
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState(false)
+  async function start() {
+    if (pending) return
+    setPending(true); setError('')
+    try {
+      const challenge = await prepareGoogleFlow(window.sessionStorage, remember)
+      window.location.assign(`${API_URL}/api/auth/google?challenge=${encodeURIComponent(challenge)}`)
+    } catch {
+      setError('No pudimos iniciar Google desde esta pestaña. Habilita el almacenamiento y reintenta.')
+      setPending(false)
+    }
+  }
   return (
-    <a
-      href={`${API_URL}/api/auth/google`}
-      className="flex w-full items-center justify-center gap-3 rounded-xl2 border border-paper-line bg-paper-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-ink/5 dark:border-night-line dark:bg-night-surface dark:text-paper dark:hover:bg-paper/10"
-    >
-      <GoogleIcon />
-      {label}
-    </a>
+    <div className="flex flex-col gap-2">
+      <button type="button" onClick={start} disabled={pending} className="flex w-full items-center justify-center gap-3 rounded-xl2 border border-paper-line bg-paper-surface px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-ink/5 disabled:opacity-60 dark:border-night-line dark:bg-night-surface dark:text-paper dark:hover:bg-paper/10">
+        <GoogleIcon />{pending ? 'Abriendo Google…' : label}
+      </button>
+      {error && <p role="alert" className="text-sm text-ink dark:text-paper">{error}</p>}
+    </div>
   )
 }

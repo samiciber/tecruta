@@ -1,6 +1,6 @@
 # TecRuta — Tienda online
 
-Tienda de tecnología para Perú. **Frontend** React 18 + Vite 5 + Tailwind 3 (`src/`, se despliega en Vercel) y **backend** Node + Express + Prisma + PostgreSQL (`server/`). El diseño sigue la estructura de una tienda tipo bestbuy.com (header de dos filas, menú multinivel, marcas, cuenta, carrito) con la identidad de TecRuta.
+Tienda de tecnología para Perú. **Frontend** React 18 + Vite 6 + React Router 7 + Tailwind 3 (`src/`, se despliega en Vercel) y **backend** Node + Express + Prisma + PostgreSQL (`server/`). El diseño sigue la estructura de una tienda tipo bestbuy.com (header de dos filas, menú multinivel, marcas, cuenta, carrito) con la identidad de TecRuta.
 
 ## Arquitectura
 
@@ -18,18 +18,22 @@ src/
 └── services/api.js    Cliente de la API (VITE_API_URL, por defecto http://localhost:4000)
 ```
 
-**Contenido editable desde el admin** (nada hardcodeado salvo un respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home y enlaces del pie del carrito. Los cambios se ven en menos de 60 s (o al volver a la pestaña) gracias a `useCachedResource`.
+**Contenido editable desde el admin** (con respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home y enlaces del pie del carrito. `useCachedResource` comprueba su TTL al montar, volver a la pestaña o invalidar; no promete actualización automática de todo el contenido en menos de 60 s.
+
+**Catálogo y pagos:** recursos compartidos con TTL activo de 60 s en pestañas visibles, actualización al recuperar foco/visibilidad y después de mutaciones relacionadas. El respaldo de productos permite consultar; para agregar al carrito o crear un pedido se exige información vigente de la API. No se muestran datos de transferencia estáticos si los pagos no se pueden verificar. Ver [Lote 7](docs/lotes/lote-7.md).
 
 **Categorías heredadas:** las 8 originales (power-banks, cargadores…) quedan marcadas `legacy`: no aparecen en menús, filtros ni Home, pero siguen en la BD y en el admin hasta reasignar sus productos (Admin → Asignar productos).
 
 ## Desarrollo
 
+Node >= 20.19; usa una versión LTS vigente. Instala desde ambos lockfiles con `npm ci`. Para configuración de producción, proxy, CSP y verificaciones, consulta [Lote 5](docs/lotes/lote-5.md).
+
 ```bash
-npm install && npm run dev            # frontend → http://localhost:5173
-cd server && npm install && npm run dev   # API → http://localhost:4000
+npm ci && npm run dev                 # frontend → http://localhost:5173
+cd server && npm ci && npm run dev     # API → http://localhost:4000
 ```
 
-Variables: ver `.env.example` (raíz, solo `VITE_API_URL`) y `server/.env.example`. **Nunca subas `.env`**.
+Variables: ver `.env.example` para el frontend y `server/.env.example` para la API. **Nunca subas `.env`** ni pongas secretos en variables `VITE_*`, que se publican en el bundle.
 
 ## Base de datos
 

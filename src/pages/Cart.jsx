@@ -8,6 +8,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useSiteSettings } from '../hooks/useSiteContent.js'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
+import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
 
 // Íconos fijos por posición; texto y destino son editables (Admin → Ajustes).
 const FOOTER_ICONS = [CircleHelp, Package, Truck, ArrowLeftRight, CircleDollarSign]
@@ -20,7 +21,7 @@ const FOOTER_DEFAULT = [
 ]
 
 export default function Cart() {
-  const { items, itemCount, subtotal } = useCart()
+  const { items, itemCount, subtotal, canCheckout } = useCart()
   const { isAuthenticated } = useAuth()
   const { index } = useProductIndex()
   const { settings } = useSiteSettings()
@@ -56,6 +57,7 @@ export default function Cart() {
             </section>
           )}
 
+          <CartReviewNotice />
           <SavedItemsCard />
           <BestSellersCard products={bestSellers} />
         </div>
@@ -69,7 +71,7 @@ export default function Cart() {
             {savings > 0 && <div className="flex justify-between font-medium text-signal-green"><dt>Ahorro</dt><dd>-{formatCurrency(savings)}</dd></div>}
             <div className="flex justify-between text-base font-bold"><dt>Total</dt><dd>{formatCurrency(subtotal)}</dd></div>
           </dl>
-          <Link to={empty ? '/catalogo' : '/checkout'} className="mt-5 block rounded bg-header py-3 text-center text-sm font-bold text-white hover:bg-header-band focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header focus-visible:ring-offset-2">
+          <Link to={empty ? '/catalogo' : '/checkout'} aria-disabled={!empty && !canCheckout} onClick={event => { if (!empty && !canCheckout) event.preventDefault() }} className={`mt-5 block rounded bg-header py-3 text-center text-sm font-bold text-white hover:bg-header-band focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header focus-visible:ring-offset-2 ${!empty && !canCheckout ? 'opacity-50' : ''}`}>
             {empty ? 'Sigue comprando' : 'Ir a pagar'}
           </Link>
           {!empty && <p className="mt-3 text-center text-xs text-ink-soft dark:text-paper/60">El pago se coordina por WhatsApp al finalizar.</p>}

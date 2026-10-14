@@ -7,7 +7,7 @@ import { useCart } from '../../hooks/useCart.js'
 
 export default function CartUpsell() {
   const { index } = useProductIndex()
-  const { items, addItem } = useCart()
+  const { items, addItem, canAdd } = useCart()
 
   const suggestions = useMemo(() => {
     if (items.length === 0 || index.length === 0) return []
@@ -40,6 +40,7 @@ export default function CartUpsell() {
             </div>
             <button
               type="button"
+              disabled={!canAdd(p)}
               onClick={() => addItem(p, 1)}
               aria-label={`Agregar ${p.name} al carrito`}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-paper-line text-ink-soft transition-colors hover:border-route hover:text-route dark:border-night-line dark:text-paper/60"

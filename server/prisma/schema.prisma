@@ -38,6 +38,18 @@ model User {
   verified          Boolean   @default(false)
   verificationCode  String?
   resetCode         String?
+  // Legacy plaintext codes are invalidated; only keyed hashes are used.
+  verificationCodeHash        String?
+  verificationCodeExpiresAt   DateTime?
+  verificationCodeAttempts    Int?
+  verificationCodeLockedUntil DateTime?
+  verificationCodeSentAt      DateTime?
+  resetCodeHash               String?
+  resetCodeExpiresAt          DateTime?
+  resetCodeAttempts           Int?
+  resetCodeLockedUntil        DateTime?
+  resetCodeSentAt             DateTime?
+  tokenVersion                Int? @default(0)
   // Id de cuenta de Google (campo `sub` del perfil) para cuentas creadas o
   // vinculadas vía "Continuar con Google". Null para cuentas que solo usan
   // correo/contraseña. Ver server/src/lib/google.js y la ruta
@@ -54,8 +66,37 @@ model User {
   orders    Order[]
   cart      Cart?
   savedItems SavedItem[]
+  authExchanges AuthExchange[]
 
   @@map("users")
+}
+
+// Short-lived OAuth state bound to an HttpOnly browser cookie.
+model OAuthFlow {
+  id            String   @id @default(cuid())
+  stateHash     String   @unique
+  bindingHash   String
+  exchangeChallenge String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("oauth_flows")
+}
+
+// One-use frontend exchange code; no session or provider token in the URL/DB.
+model AuthExchange {
+  id            String   @id @default(cuid())
+  codeHash      String   @unique
+  exchangeChallenge String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenVersion  Int
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([expiresAt])
+  @@map("auth_exchanges")
 }
 
 model Address {
@@ -365,12 +406,14 @@ model Order {
   whatsappSentAt    DateTime?
 
   // URL en Cloudinary del comprobante de pago (imagen o PDF). Se llena
-  // vía POST /api/orders/:orderId/receipt (endpoint público, ver
-  // orders.routes.js) — el cliente lo sube en el paso 3 del checkout, en
-  // paralelo al envío por WhatsApp sin bloquearlo, y el admin puede
-  // subirlo o reemplazarlo manualmente desde el panel reutilizando el
-  // mismo endpoint. Null hasta que alguien lo suba.
+  // vía POST /api/orders/:orderId/receipt: propietario autenticado,
+  // ADMIN o token por pedido de invitado. Se sube después de confirmar
+  // la creación del pedido; la respuesta contiene solo ok y receiptUrl.
   receiptUrl        String?
+  // Guest receipt capability (hash only) and a stable checkout retry key.
+  receiptTokenHash  String?
+  idempotencyKey    String?       @unique
+  requestHash       String?
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]

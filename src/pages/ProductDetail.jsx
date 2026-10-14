@@ -1,5 +1,5 @@
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Truck, ShieldCheck, MessageCircle, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
@@ -10,8 +10,7 @@ import Product3DViewer from '../components/3d/Product3DViewer.jsx'
 import Reveal from '../components/animations/Reveal.jsx'
 import { useProductIndex } from '../hooks/useProductIndex.js'
 import { useCategories } from '../hooks/useCategories.js'
-import { api } from '../services/api.js'
-import { loadProductDetail } from '../services/productDetail.js'
+import { resolveCatalogDetail } from '../services/catalogDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
 
@@ -26,9 +25,9 @@ const BENEFITS = [
 
 export default function ProductDetail() {
   const { slug } = useParams()
-  const { index, loading: loadingIndex } = useProductIndex()
+  const { index, loading: loadingIndex, source } = useProductIndex()
   const { getCategoryBySlug } = useCategories()
-  const { addItem } = useCart()
+  const { addItem, canAdd } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [activeImage, setActiveImage] = useState(0)
   // '3d' | 'photos' — solo relevante si el producto trae modelo 3D; si no,
@@ -36,28 +35,30 @@ export default function ProductDetail() {
   const [viewMode, setViewMode] = useState('photos')
   const [detail, setDetail] = useState({ slug, status: 'loading' })
   const [retry, setRetry] = useState(0)
+  const viewedProduct = useRef(null)
 
   useEffect(() => {
     if (loadingIndex) return
     let active = true
-    const entrada = index.find((p) => p.slug === slug)
+    const entry = index.find((p) => p.slug === slug)
     setDetail({ slug, status: 'loading' })
-    loadProductDetail({
-      slug,
-      entry: entrada,
-      fetchProduct: api.getProductBySlug,
-      loadFallback: (category) => import(`../data/products/${category}.js`).then((mod) => mod.productos),
+    resolveCatalogDetail({
+      entry,
+      source,
+      loadFallback: category => import(`../data/products/${category}.js`).then(mod => mod.productos),
     }).then((result) => {
       if (!active) return
-      setDetail({ slug, ...result })
-      if (result.status === 'ready') {
+      const identity = result.status === 'ready' ? `${slug}:${result.product.id}` : null
+      if (identity && viewedProduct.current !== identity) {
+        viewedProduct.current = identity
         setQuantity(1)
         setActiveImage(0)
         setViewMode(result.product.enable3D && result.product.model3DUrl ? '3d' : 'photos')
       }
+      setDetail({ slug, ...result })
     })
     return () => { active = false }
-  }, [slug, index, loadingIndex, retry])
+  }, [slug, index, loadingIndex, source, retry])
 
   const current = detail.slug === slug ? detail : { status: 'loading' }
   if (loadingIndex || current.status === 'loading') {
@@ -150,7 +151,7 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                <img src={product.images[activeImage]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
+                <img src={product.images[Math.min(activeImage, product.images.length - 1)]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
               </div>
               {product.images.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -203,17 +204,18 @@ export default function ProductDetail() {
               <QuantitySelector quantity={quantity} max={product.stock} onChange={setQuantity} />
             </div>
           )}
+          {quantity > product.stock && !outOfStock && <p role="status" className="text-sm text-ink dark:text-paper">El stock cambió. Ajusta la cantidad antes de agregarlo.</p>}
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" disabled={outOfStock} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
+            <button type="button" disabled={outOfStock || !canAdd(product) || quantity > product.stock} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
               <ShoppingCart className="h-4 w-4" />
               {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
             </button>
             <Link
               to="/checkout"
-              onClick={() => !outOfStock && addItem(product, quantity, { silent: true })}
-              className={`btn-secondary flex-1 ${outOfStock ? 'pointer-events-none opacity-40' : ''}`}
-              aria-disabled={outOfStock}
+              onClick={event => { if (outOfStock || !canAdd(product) || quantity > product.stock || !addItem(product, quantity, { silent: true })) event.preventDefault() }}
+              className={`btn-secondary flex-1 ${outOfStock || !canAdd(product) || quantity > product.stock ? 'opacity-40' : ''}`}
+              aria-disabled={outOfStock || !canAdd(product) || quantity > product.stock}
             >
               <Zap className="h-4 w-4" />
               Comprar ahora

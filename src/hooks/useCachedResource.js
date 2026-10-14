@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-// Caché a nivel de módulo CON revalidación (a diferencia de useCategories /
-// useProductIndex / usePaymentMethods, que guardan una promesa para siempre).
+// Caché de contenido editable con revalidación al montaje, al volver a la
+// pestaña y al invalidar. Productos/pagos usan liveResource con TTL activo
+// y un estado explícito de verificación para permitir compras.
 //
 // Estrategia stale-while-revalidate:
 //   • Muestra de inmediato lo último que se tuvo (o el `fallback`).

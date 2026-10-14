@@ -24,7 +24,7 @@ const yellowBtn = 'rounded bg-cta px-3 py-2 text-xs font-bold text-ink transitio
 
 // Tarjeta de producto de los carruseles/guardados (estilo tienda).
 export function MiniProductCard({ product, onRemove }) {
-  const { addItem } = useCart()
+  const { addItem, canAdd } = useCart()
   const discount = calculateDiscountPercent(product.price, product.compareAtPrice)
   const out = product.stock <= 0
   return (
@@ -45,7 +45,7 @@ export function MiniProductCard({ product, onRemove }) {
           {out ? (
             <Link to={`/producto/${product.slug}`} className="text-xs font-bold text-header hover:underline dark:text-sky-300">Encuentra una tienda</Link>
           ) : (
-            <button type="button" onClick={() => addItem(product, 1)} className={yellowBtn}>Añadir al carrito</button>
+            <button type="button" disabled={!canAdd(product)} onClick={() => addItem(product, 1)} className={`${yellowBtn} disabled:cursor-not-allowed disabled:opacity-50`}>Añadir al carrito</button>
           )}
           {onRemove && (
             <button type="button" onClick={onRemove} className="text-xs text-ink-soft underline hover:text-signal-red dark:text-paper/60">Quitar</button>

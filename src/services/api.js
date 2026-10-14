@@ -11,14 +11,19 @@
 // responde, el error simplemente se propaga y AuthContext lo muestra
 // como mensaje de error al usuario.
 
+import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
+
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
-async function request(path, { method = 'GET', body, token } = {}) {
+async function request(path, { method = 'GET', body, token, headers = {}, signal, cache } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     method,
+    signal,
+    cache,
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
@@ -29,21 +34,24 @@ async function request(path, { method = 'GET', body, token } = {}) {
     const error = new Error(data?.error || `API respondió ${res.status} en ${path}`)
     error.status = res.status
     error.needsVerification = data?.needsVerification
+    error.code = data?.code
+    error.productId = data?.productId
     throw error
   }
 
+  for (const key of invalidatedResourcesFor(method, path)) invalidateLiveResources(key)
   return data
 }
 
 export const api = {
-  getProducts: (params = {}) => {
+  getProducts: (params = {}, options = {}) => {
     const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
     const query = new URLSearchParams(entries).toString()
-    return request(`/api/products${query ? `?${query}` : ''}`)
+    return request(`/api/products${query ? `?${query}` : ''}`, options)
   },
   getProductBySlug: (slug) => request(`/api/products/${encodeURIComponent(slug)}`),
   getCategories: () => request('/api/categories'),
-  getPaymentMethods: () => request('/api/payment-methods'),
+  getPaymentMethods: (options = {}) => request('/api/payment-methods', options),
 
   // --- Contenido de navegación (Bloque 1) ---
   getNav: () => request('/api/nav'),
@@ -59,6 +67,8 @@ export const api = {
     resendCode: (email) => request('/api/auth/resend-code', { method: 'POST', body: { email } }),
     verify: (email, code) => request('/api/auth/verify', { method: 'POST', body: { email, code } }),
     login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
+    googleExchange: (code, verifier) => request('/api/auth/google/exchange', { method: 'POST', body: { code, verifier } }),
+    logoutAll: (token) => request('/api/auth/logout-all', { method: 'POST', token }),
     me: (token) => request('/api/auth/me', { token }),
     updateProfile: (payload, token) => request('/api/auth/me', { method: 'PATCH', body: payload, token }),
     changePassword: (payload, token) => request('/api/auth/change-password', { method: 'POST', body: payload, token }),
@@ -68,16 +78,18 @@ export const api = {
   },
 
   orders: {
-    // Se llama en paralelo al envío por WhatsApp — nunca debe bloquear
-    // esa acción. Quien la llama (Checkout.jsx) debe atrapar el error.
-    create: (payload, token) => request('/api/orders', { method: 'POST', body: payload, token }),
+    // Await confirmation; reuse the same key and payload when retrying.
+    create: (payload, token, idempotencyKey) => request('/api/orders', {
+      method: 'POST', body: payload, token, headers: { 'Idempotency-Key': idempotencyKey },
+    }),
     mine: (token) => request('/api/orders/me', { token }),
     // Sube el comprobante de pago (imagen o PDF, como data URL en base64)
-    // y lo guarda en el pedido. Endpoint público — no lleva token: lo usa
-    // tanto el checkout de invitado como el panel admin para reemplazar
-    // el comprobante manualmente.
-    uploadReceipt: (orderId, fileDataUrl) =>
-      request(`/api/orders/${encodeURIComponent(orderId)}/receipt`, { method: 'POST', body: { file: fileDataUrl } }),
+    // Owner/admin session or a guest capability, never placed in a URL.
+    uploadReceipt: (orderId, fileDataUrl, { token, receiptToken } = {}) =>
+      request(`/api/orders/${encodeURIComponent(orderId)}/receipt`, {
+        method: 'POST', body: { file: fileDataUrl }, token,
+        headers: receiptToken ? { 'X-Receipt-Token': receiptToken } : {},
+      }),
   },
 
   // Carrito persistente en servidor — solo para clientes con sesión

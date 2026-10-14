@@ -1,12 +1,14 @@
 import React from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { ACCOUNT_LINKS } from '../layout/AccountMenu.jsx'
+import SessionUnavailable from '../auth/SessionUnavailable.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 
 // Estructura común de las páginas de cuenta: menú lateral + contenido.
 // `requireLogin`: si no hay sesión, muestra una invitación a iniciarla.
 export default function AccountShell({ title, description, requireLogin = false, children }) {
-  const { isAuthenticated, authLoading } = useAuth()
+  const { isAuthenticated, authLoading, authError, retrySession } = useAuth()
+  if (authError) return <SessionUnavailable onRetry={retrySession} />
   const blocked = requireLogin && !isAuthenticated && !authLoading
 
   return (
