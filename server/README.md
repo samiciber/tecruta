@@ -2,7 +2,7 @@
 
 Express 4 + Prisma 5 + PostgreSQL (Node ESM). JWT (30 días), zod 4, bcryptjs, express-rate-limit. Integraciones: Resend (correo), Cloudinary (subidas firmadas), Google OAuth.
 
-## Puesta en marcha
+## Puesta en marcha (base local de desarrollo)
 
 ```bash
 cp .env.example .env      # completa los valores reales (NUNCA subas .env)
@@ -46,3 +46,32 @@ Los endpoints de contenido llevan `Cache-Control: public, max-age=30`.
 - `Product.brand` (texto) se conserva; `brandId` es la marca normalizada (`brandSlug` en la respuesta).
 - Los endpoints admin **legados** aún no usan zod y devuelven 500 en slugs duplicados: pendiente de endurecer.
 - Seguridad: validar siempre con zod, no confiar en precios del cliente (el pedido recalcula en servidor).
+
+## Historial de migraciones
+
+- `20260924000001_add_google_oauth` agrega `users.googleId` y su índice único.
+- `20260924000002_add_order_receipt_url` agrega `orders.receiptUrl`.
+- **`20260925071715_add_google_and_receipt` tiene un nombre histórico impreciso:**
+  solo agrega `products.enable3D`, `hotspots`, `model3DPoster` y `model3DUrl`.
+  Se conserva su carpeta y SQL porque ya fue aplicada; no se renombra.
+- `20261012000000_add_nav_brands_stores_saved_items` completa navegación,
+  marcas, tiendas, ajustes y guardados. Marca como `legacy` las ocho categorías
+  originales sin eliminar categorías ni reasignar productos. No ejecuta seeds.
+
+Prueba reproducible, desde la raíz del repositorio, con Docker y las dependencias
+del servidor instaladas:
+
+```bash
+node --test server/prisma/tests/lote-2.test.mjs
+```
+
+La prueba crea y elimina su propio PostgreSQL desechable; sobrescribe
+`DATABASE_URL` únicamente en los procesos de prueba con una URL local generada.
+No usa la base definida en `.env`.
+
+Para producción sigue [el procedimiento del Lote 2](../docs/lotes/lote-2.md#producción-pasos-para-el-operador).
+`migrate status` compara el historial, no demuestra que este reproduzca todo el
+esquema. Si Neon ya tiene los objetos de navegación, no ejecutes esta nueva
+migración sobre ellos: primero verifica estructura **y datos `legacy`**, y usa
+`migrate resolve --applied` solo si ambos coinciden. Nunca `db push`,
+`migrate reset` ni `migrate dev` en producción.
