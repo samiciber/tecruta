@@ -1,6 +1,10 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { validateRuntimeEnv } from './lib/runtimeConfig.js'
+import { apiSecurityHeaders } from './middleware/securityHeaders.js'
 import { categoriesRouter } from './routes/categories.routes.js'
 import { productsRouter } from './routes/products.routes.js'
 import { authRouter } from './routes/auth.routes.js'
@@ -14,38 +18,48 @@ import { cartRouter } from './routes/cart.routes.js'
 import { addressesRouter } from './routes/addresses.routes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
-const app = express()
+export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
+  validateRuntimeEnv()
+  const app = express()
+  // Render has one proxy hop. Never trust every forwarded address.
+  const proxyHops = Number(process.env.TRUST_PROXY ?? 1)
+  if (!Number.isInteger(proxyHops) || proxyHops < 0 || proxyHops > 5) throw new Error('TRUST_PROXY debe ser un entero entre 0 y 5.')
+  app.set('trust proxy', proxyHops)
+  app.disable('x-powered-by')
+  app.use(apiSecurityHeaders())
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }))
-// El límite por defecto de express.json() es 100kb — muy poco para una
-// imagen o un modelo 3D en base64 (POST /api/admin/uploads y
-// /uploads/model). 20mb es holgado para fotos de producto y modelos GLB
-// de hasta ~15MB en crudo, sin abrir la puerta a payloads absurdamente
-// grandes.
-app.use(express.json({ limit: '20mb' }))
+  app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }))
+  // Upload limits are handled separately in Lote 3.
+  app.use(express.json({ limit: '20mb' }))
 
-// Verificación rápida de que el servidor está vivo (útil para monitoreo
-// y para que la app móvil futura confirme conectividad).
-app.get('/api/health', (req, res) => res.json({ ok: true }))
+  // Verificación rápida de que el servidor está vivo (útil para monitoreo
+  // y para que la app móvil futura confirme conectividad).
+  app.get('/api/health', (req, res) => res.json({ ok: true }))
 
-app.use('/api/categories', categoriesRouter)
-app.use('/api/products', productsRouter)
-app.use('/api/payment-methods', paymentMethodsRouter)
-app.use('/api/auth', authRouter)
-app.use('/api/orders', ordersRouter)
-app.use('/api/admin', adminRouter)
-app.use('/api/admin', adminContentRouter)
-app.use('/api/cart', cartRouter)
-app.use('/api/addresses', addressesRouter)
-app.use('/api/saved', savedRouter)
-// Contenido público: /api/nav, /api/brands, /api/popular-searches,
-// /api/stores, /api/site-settings
-app.use('/api', contentRouter)
+  app.use('/api/categories', categoriesRouter)
+  app.use('/api/products', productsRouter)
+  app.use('/api/payment-methods', paymentMethodsRouter)
+  app.use('/api/auth', authRouter)
+  app.use('/api/orders', orders)
+  app.use('/api/admin', admin)
+  app.use('/api/admin', adminContentRouter)
+  app.use('/api/cart', cartRouter)
+  app.use('/api/addresses', addressesRouter)
+  app.use('/api/saved', savedRouter)
+  // Contenido público: /api/nav, /api/brands, /api/popular-searches,
+  // /api/stores, /api/site-settings
+  app.use('/api', contentRouter)
 
-app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada.' }))
-app.use(errorHandler)
+  app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada.' }))
+  app.use(errorHandler)
+
+  return app
+}
+export const app = createApp()
 
 const PORT = process.env.PORT || 4000
-app.listen(PORT, () => {
-  console.log(`✔ API de TecRuta corriendo en http://localhost:${PORT}`)
-})
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  app.listen(PORT, () => {
+    console.log(`✔ API de TecRuta corriendo en http://localhost:${PORT}`)
+  })
+}

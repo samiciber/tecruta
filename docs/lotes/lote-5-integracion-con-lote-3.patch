@@ -1,0 +1,10 @@
+--- a/server/src/index.js
++++ b/server/src/index.js
+@@ -5,0 +6,2 @@
++import { validateRuntimeEnv } from './lib/runtimeConfig.js'
++import { apiSecurityHeaders } from './middleware/securityHeaders.js'
+@@ -20,0 +23 @@
++  validateRuntimeEnv()
+@@ -25,0 +29,2 @@
++  app.disable('x-powered-by')
++  app.use(apiSecurityHeaders())
