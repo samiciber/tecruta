@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useId, useState } from 'react'
 import { Plus, X, Upload, Loader2 } from 'lucide-react'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -79,6 +79,7 @@ export function productToFormValues(product) {
 }
 
 export default function ProductForm({ categories, initialValues, submitting, onSubmit, onCancel, submitLabel = 'Crear producto' }) {
+  const brandHelpId = useId()
   const toast = useContext(ToastContext)
   const { token } = useAuth()
   const [form, setForm] = useState(() => initialValues ?? { ...emptyValues, category: categories[0]?.slug || '' })
@@ -218,7 +219,7 @@ export default function ProductForm({ categories, initialValues, submitting, onS
       slug: form.slug.trim(),
       name: form.name.trim(),
       category: form.category,
-      brand: form.brand.trim() || undefined,
+      brand: form.brand.trim() || null,
       price: Number(form.price),
       compareAtPrice: form.compareAtPrice === '' ? null : Number(form.compareAtPrice),
       stock: Number(form.stock || 0),
@@ -252,7 +253,11 @@ export default function ProductForm({ categories, initialValues, submitting, onS
               </option>
             ))}
           </select>
-          <input className="input-tr" placeholder="Marca (ej: UGREEN)" value={form.brand} onChange={set('brand')} />
+          <label className="flex min-w-0 flex-col gap-1">
+            <span id={`${brandHelpId}-label`} className="sr-only">Marca</span>
+            <input className="input-tr" placeholder="Marca (ej: UGREEN)" value={form.brand} onChange={set('brand')} aria-labelledby={`${brandHelpId}-label`} aria-describedby={brandHelpId} />
+            <span id={brandHelpId} className="text-xs text-ink-soft dark:text-paper/60">Usa una marca creada en Admin → Marcas. Vacío quita la marca.</span>
+          </label>
           <input type="number" step="0.01" className="input-tr" placeholder="Precio (S/)" value={form.price} onChange={set('price')} />
           <input
             type="number"

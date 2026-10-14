@@ -44,5 +44,5 @@ Los endpoints de contenido llevan `Cache-Control: public, max-age=30`.
 ## Notas de diseño
 
 - `Product.brand` (texto) se conserva; `brandId` es la marca normalizada (`brandSlug` en la respuesta).
-- Los endpoints admin **legados** aún no usan zod y devuelven 500 en slugs duplicados: pendiente de endurecer.
+- Productos, categorías y métodos de pago admin **legados** validan sus entradas con zod; duplicados → 409, registros inexistentes → 404. La marca del producto se resuelve contra marcas existentes y se guarda junto con su relación. Ver [Lote 6](../docs/lotes/lote-6.md).
 - Seguridad: validar siempre con zod, no confiar en precios del cliente (el pedido recalcula en servidor).
