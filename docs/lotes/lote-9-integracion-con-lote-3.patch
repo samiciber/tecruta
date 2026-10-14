@@ -1,0 +1,10 @@
+--- a/server/src/routes/orders.routes.js
++++ b/server/src/routes/orders.routes.js
+@@ -1,0 +2 @@
++import { createCustomerOrdersRouter } from './customerOrders.routes.js'
+@@ -46,4 +47 @@
+-  router.get('/me', requireAuth, asyncHandler(async (req, res) => {
+-    const orders = await db.order.findMany({ where: { userId: req.user.id }, include: orderInclude, orderBy: { createdAt: 'desc' } })
+-    res.json(orders.map(serializeOrder))
+-  }))
++  router.use(createCustomerOrdersRouter({ db }))
