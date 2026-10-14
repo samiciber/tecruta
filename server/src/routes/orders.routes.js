@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
-import { requireAuth, optionalAuth } from '../middleware/auth.js'
+import { optionalAuth } from '../middleware/auth.js'
+import { customerOrdersRouter } from './customerOrders.routes.js'
 import { serializeOrder } from '../lib/serializers.js'
 import { validate } from '../middleware/validate.js'
 import { createOrderSchema } from '../lib/schemas.js'
@@ -177,16 +178,5 @@ ordersRouter.post(
   }),
 )
 
-// GET /api/orders/me — historial de compras del cliente autenticado.
-ordersRouter.get(
-  '/me',
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    const orders = await prisma.order.findMany({
-      where: { userId: req.user.id },
-      include: orderInclude,
-      orderBy: { createdAt: 'desc' },
-    })
-    res.json(orders.map(serializeOrder))
-  }),
-)
+// Owner-only list, history and authenticated receipt reading.
+ordersRouter.use(customerOrdersRouter)
