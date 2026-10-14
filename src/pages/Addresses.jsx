@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MapPin, Plus, Pencil, Trash2, Star } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
+import SessionUnavailable from '../components/auth/SessionUnavailable.jsx'
 import UbigeoSelector from '../components/checkout/UbigeoSelector.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { api } from '../services/api.js'
@@ -105,7 +106,7 @@ function AddressForm({ initialValue, onCancel, onSaved }) {
 }
 
 export default function Addresses() {
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, authError, retrySession, authLoading } = useAuth()
   const toast = useContext(ToastContext)
   const [addresses, setAddresses] = useState(null)
   const [error, setError] = useState('')
@@ -147,6 +148,9 @@ export default function Addresses() {
       toast?.showToast(err.message, 'error')
     }
   }
+
+  if (authError) return <SessionUnavailable onRetry={retrySession} />
+  if (authLoading) return <div role="status" className="container-tr py-16 text-ink dark:text-paper">Comprobando sesión…</div>
 
   if (!isAuthenticated) {
     return (

@@ -86,13 +86,9 @@ export default function Register() {
       return
     }
 
-    if (result.emailSent) {
-      toast?.showToast('Cuenta creada. Verifica tu correo para continuar.', 'success')
-    } else {
-      toast?.showToast('Cuenta creada, pero no pudimos enviarte el correo. Usa "Reenviar código" en la siguiente pantalla.', 'error')
-    }
+    toast?.showToast(result.message || 'Si corresponde, recibirás instrucciones por correo.', 'success')
     navigate(`/verificar-correo?email=${encodeURIComponent(result.email)}`, {
-      state: { emailSent: result.emailSent },
+      state: { message: result.message },
     })
   }
 

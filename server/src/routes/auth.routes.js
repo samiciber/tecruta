@@ -1,377 +1,179 @@
-import crypto from 'crypto'
-import jwt from 'jsonwebtoken'
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
-import { signToken } from '../lib/token.js'
+import { signSession } from '../lib/token.js'
 import { serializeUser } from '../lib/serializers.js'
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/mailer.js'
 import { buildGoogleAuthUrl, exchangeCodeForAccessToken, fetchGoogleProfile } from '../lib/google.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
-import { requireAuth } from '../middleware/auth.js'
+import { createAuthMiddleware } from '../middleware/auth.js'
 import { loginRateLimiter, authActionRateLimiter } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
-import {
-  registerSchema,
-  emailOnlySchema,
-  loginSchema,
-  verifySchema,
-  resetPasswordSchema,
-  changePasswordSchema,
-  updateProfileSchema,
-} from '../lib/schemas.js'
+import { registerSchema, emailOnlySchema, loginSchema, verifySchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../lib/schemas.js'
+import { AuthError, UNIFORM_AUTH_RESPONSE, normalizeEmail, secret, challenge, signFlowCookie, readFlowCookie,
+  oauthCookieName, oauthCookieOptions, randomSecret } from '../lib/authSecurity.js'
+import { lockUser, version, issueCode, consumeCode } from '../lib/authCodes.js'
+import { startGoogleFlow, consumeGoogleFlow, resolveGoogleUser, issueExchange, consumeExchange } from '../lib/oauthService.js'
 
-export const authRouter = Router()
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function generateCode() {
-  return String(Math.floor(100000 + Math.random() * 900000))
+const invalidCode = { error: 'El código no es válido o venció. Solicita uno nuevo; si agotaste los intentos, espera 15 minutos.' }
+function dateValue(value) {
+  if (!value) return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) throw new AuthError(400, 'Ingresa una fecha válida.')
+  return date
 }
+function frontendUrl() { return (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, '') }
 
-function normalizeEmail(value) {
-  return String(value || '').trim().toLowerCase()
-}
-
-// POST /api/auth/register
-authRouter.post(
-  '/register',
-  authActionRateLimiter,
-  validate(registerSchema),
-  asyncHandler(async (req, res) => {
-    const { password, nombre, apellido, fechaNacimiento } = req.body || {}
-    const email = normalizeEmail(req.body?.email)
-
-    if (!EMAIL_RE.test(email) || !password || password.length < 8 || !nombre?.trim() || !apellido?.trim()) {
-      return res.status(400).json({ error: 'Revisa los datos del formulario: hay campos inválidos o incompletos.' })
-    }
-
-    const existing = await prisma.user.findUnique({ where: { email } })
-    if (existing) {
-      return res.status(409).json({ error: 'Ya existe una cuenta registrada con este correo.' })
-    }
-
-    const passwordHash = await bcrypt.hash(password, 10)
-    const code = generateCode()
-
-    await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        nombre: nombre.trim(),
-        apellido: apellido.trim(),
-        fechaNacimiento: fechaNacimiento ? new Date(fechaNacimiento) : null,
-        verificationCode: code,
-      },
+export function createAuthRouter({ db = prisma, now = () => new Date(),
+  mailer = { verification: sendVerificationEmail, reset: sendPasswordResetEmail },
+  google = { authorizationUrl: buildGoogleAuthUrl, exchange: exchangeCodeForAccessToken, profile: fetchGoogleProfile } } = {}) {
+  const router = Router()
+  const dummyPasswordHash = bcrypt.hash(randomSecret(), 10)
+  const { requireAuth } = createAuthMiddleware({ db })
+  router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); res.set('Referrer-Policy', 'no-referrer'); next() })
+  const dispatch = (purpose, message) => {
+    if (message) void Promise.resolve().then(() => mailer[purpose](message)).catch(() => {
+      // Delivery state must not reveal whether an account exists.
+      console.error('No se pudo enviar un correo de autenticación.')
     })
-
-    // El código nunca se devuelve en la respuesta: se envía únicamente
-    // por correo. Si el envío falla (proveedor caído, límite alcanzado,
-    // etc.) la cuenta igual queda creada — el usuario puede reintentarlo
-    // con "Reenviar código" — pero se lo indicamos al frontend con
-    // emailSent: false para que pueda avisarle.
-    let emailSent = true
-    try {
-      await sendVerificationEmail({ to: email, code })
-    } catch (err) {
-      emailSent = false
-      console.error('No se pudo enviar el correo de verificación:', err.message)
-    }
-
-    res.status(201).json({ email, emailSent })
-  }),
-)
-
-// POST /api/auth/resend-code
-authRouter.post(
-  '/resend-code',
-  authActionRateLimiter,
-  validate(emailOnlySchema),
-  asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email)
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(404).json({ error: 'No encontramos una cuenta con este correo.' })
-    if (user.verified) return res.status(400).json({ error: 'Esta cuenta ya está verificada.' })
-
-    const code = generateCode()
-    await prisma.user.update({ where: { id: user.id }, data: { verificationCode: code } })
-
-    let emailSent = true
-    try {
-      await sendVerificationEmail({ to: email, code })
-    } catch (err) {
-      emailSent = false
-      console.error('No se pudo reenviar el correo de verificación:', err.message)
-    }
-
-    res.json({ emailSent })
-  }),
-)
-
-// POST /api/auth/verify
-authRouter.post(
-  '/verify',
-  loginRateLimiter,
-  validate(verifySchema),
-  asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email)
-    const code = String(req.body?.code || '').trim()
-
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(404).json({ error: 'No encontramos una cuenta con este correo.' })
-    if (user.verified) return res.json({ ok: true })
-    if (!code || user.verificationCode !== code) {
-      return res.status(400).json({ error: 'El código ingresado no es válido.' })
-    }
-
-    await prisma.user.update({ where: { id: user.id }, data: { verified: true, verificationCode: null } })
-    res.json({ ok: true })
-  }),
-)
-
-// POST /api/auth/login
-authRouter.post(
-  '/login',
-  loginRateLimiter,
-  validate(loginSchema),
-  asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email)
-    const { password } = req.body || {}
-
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
-
-    const matches = await bcrypt.compare(password || '', user.passwordHash)
-    if (!matches) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
-
-    if (!user.verified) {
-      return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión.', needsVerification: true })
-    }
-
-    const token = signToken({ sub: user.id })
-    res.json({ token, user: serializeUser(user) })
-  }),
-)
-
-// GET /api/auth/me — usado al recargar la app para restaurar la sesión
-// a partir del token guardado en el navegador.
-authRouter.get(
-  '/me',
-  requireAuth,
-  asyncHandler(async (req, res) => {
-    res.json({ user: serializeUser(req.user) })
-  }),
-)
-
-// PATCH /api/auth/me — editar nombre/apellido/fecha de nacimiento desde
-// "Mi cuenta". El correo NO se puede cambiar aquí a propósito: es el
-// identificador de login y cambiarlo requeriría re-verificarlo, como al
-// registrarse — se puede agregar más adelante si hace falta.
-authRouter.patch(
-  '/me',
-  requireAuth,
-  validate(updateProfileSchema),
-  asyncHandler(async (req, res) => {
-    const { nombre, apellido, fechaNacimiento } = req.body
-    const data = {}
-    if (nombre !== undefined) data.nombre = nombre
-    if (apellido !== undefined) data.apellido = apellido
-    if (fechaNacimiento !== undefined) data.fechaNacimiento = fechaNacimiento ? new Date(fechaNacimiento) : null
-
-    const user = await prisma.user.update({ where: { id: req.user.id }, data })
-    res.json({ user: serializeUser(user) })
-  }),
-)
-
-// POST /api/auth/change-password — cambiar contraseña estando logueado
-// (distinto del flujo de "olvidé mi contraseña", que no pide la actual).
-authRouter.post(
-  '/change-password',
-  requireAuth,
-  validate(changePasswordSchema),
-  asyncHandler(async (req, res) => {
-    const { currentPassword, newPassword } = req.body
-
-    const valid = await bcrypt.compare(currentPassword, req.user.passwordHash)
-    if (!valid) {
-      return res.status(400).json({ error: 'La contraseña actual no es correcta.' })
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10)
-    await prisma.user.update({ where: { id: req.user.id }, data: { passwordHash } })
-    res.json({ ok: true })
-  }),
-)
-
-// POST /api/auth/forgot-password
-authRouter.post(
-  '/forgot-password',
-  authActionRateLimiter,
-  validate(emailOnlySchema),
-  asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email)
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(404).json({ error: 'No encontramos una cuenta con este correo.' })
-
-    const code = generateCode()
-    await prisma.user.update({ where: { id: user.id }, data: { resetCode: code } })
-
-    let emailSent = true
-    try {
-      await sendPasswordResetEmail({ to: email, code })
-    } catch (err) {
-      emailSent = false
-      console.error('No se pudo enviar el correo de restablecimiento de contraseña:', err.message)
-    }
-
-    res.json({ emailSent })
-  }),
-)
-
-// POST /api/auth/reset-password
-authRouter.post(
-  '/reset-password',
-  loginRateLimiter,
-  validate(resetPasswordSchema),
-  asyncHandler(async (req, res) => {
-    const email = normalizeEmail(req.body?.email)
-    const code = String(req.body?.code || '').trim()
-    const { newPassword } = req.body || {}
-
-    const user = await prisma.user.findUnique({ where: { email } })
-    if (!user) return res.status(404).json({ error: 'No encontramos una cuenta con este correo.' })
-    if (!code || user.resetCode !== code) {
-      return res.status(400).json({ error: 'El código ingresado no es válido.' })
-    }
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres.' })
-    }
-
-    const passwordHash = await bcrypt.hash(newPassword, 10)
-    await prisma.user.update({ where: { id: user.id }, data: { passwordHash, resetCode: null } })
-    res.json({ ok: true })
-  }),
-)
-
-// -----------------------------------------------------------------------
-// Login con Google (OAuth 2.0, flujo "Authorization Code").
-//
-// Flujo completo:
-//   1. El botón "Continuar con Google" del frontend hace un GET normal
-//      (navegación de navegador, no fetch) a /api/auth/google.
-//   2. Esta ruta redirige a la pantalla de consentimiento de Google, con
-//      un `state` firmado (JWT de corta duración) como mitigación CSRF.
-//   3. Google redirige de vuelta a /api/auth/google/callback con `code`
-//      y el mismo `state`.
-//   4. El callback valida el `state`, intercambia el `code` por un perfil
-//      de Google, busca/crea/vincula el usuario, y redirige al frontend
-//      con un token de sesión de TecRuta (el mismo formato que devuelve
-//      /api/auth/login) en la URL — el frontend lo recoge en
-//      /auth/google/callback y completa el login igual que uno normal.
-// -----------------------------------------------------------------------
-
-const GOOGLE_STATE_PURPOSE = 'google-oauth-state'
-
-function getFrontendUrl() {
-  // Reutiliza CORS_ORIGIN: ya es, por definición, el origen del frontend
-  // que esta API acepta — no hace falta una variable de entorno nueva.
-  return (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, '')
-}
-
-// GET /api/auth/google
-// Navegación de navegador (no fetch/XHR): el botón de la UI es un <a> o
-// hace window.location.href = esta URL.
-authRouter.get('/google', (req, res) => {
-  try {
-    const state = jwt.sign({ purpose: GOOGLE_STATE_PURPOSE }, process.env.JWT_SECRET, { expiresIn: '10m' })
-    res.redirect(buildGoogleAuthUrl(state))
-  } catch (err) {
-    console.error('No se pudo iniciar el login con Google:', err.message)
-    res.redirect(`${getFrontendUrl()}/iniciar-sesion?googleError=config`)
   }
-})
+  const lookupAndIssue = async (email, purpose) => db.$transaction(async tx => {
+    const found = await tx.user.findUnique({ where: { email } })
+    if (!found) return null
+    const user = await lockUser(tx, found.id)
+    return issueCode(tx, user, purpose, now())
+  })
 
-// GET /api/auth/google/callback
-authRouter.get(
-  '/google/callback',
-  asyncHandler(async (req, res) => {
-    const frontendUrl = getFrontendUrl()
-    const { code, state, error } = req.query || {}
+  router.post('/register', authActionRateLimiter, validate(registerSchema), asyncHandler(async (req, res) => {
+    secret()
+    const email = normalizeEmail(req.body.email)
+    const birthdate = dateValue(req.body.fechaNacimiento)
+    // Perform the password work for both existing and new emails.
+    const passwordHash = await bcrypt.hash(req.body.password, 10)
+    const message = await db.$transaction(async tx => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`auth-email:${email}`}, 0))`
+      let user = await tx.user.findUnique({ where: { email } })
+      if (user) user = await lockUser(tx, user.id)
+      else user = await tx.user.create({ data: { email, passwordHash, nombre: req.body.nombre,
+        apellido: req.body.apellido, fechaNacimiento: birthdate } })
+      return issueCode(tx, user, 'verify', now())
+    })
+    dispatch('verification', message)
+    res.status(202).json(UNIFORM_AUTH_RESPONSE)
+  }))
+  router.post('/resend-code', authActionRateLimiter, validate(emailOnlySchema), asyncHandler(async (req, res) => {
+    secret()
+    dispatch('verification', await lookupAndIssue(normalizeEmail(req.body.email), 'verify'))
+    res.status(202).json(UNIFORM_AUTH_RESPONSE)
+  }))
+  router.post('/forgot-password', authActionRateLimiter, validate(emailOnlySchema), asyncHandler(async (req, res) => {
+    secret()
+    dispatch('reset', await lookupAndIssue(normalizeEmail(req.body.email), 'reset'))
+    res.status(202).json(UNIFORM_AUTH_RESPONSE)
+  }))
+  router.post('/verify', loginRateLimiter, validate(verifySchema), asyncHandler(async (req, res) => {
+    secret()
+    const accepted = await db.$transaction(async tx => {
+      const found = await tx.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
+      if (!found) return false
+      const user = await lockUser(tx, found.id)
+      if (!await consumeCode(tx, user, 'verify', req.body.code, now())) return false
+      await tx.user.update({ where: { id: user.id }, data: { verified: true } })
+      return true
+    })
+    return accepted ? res.json({ ok: true }) : res.status(400).json(invalidCode)
+  }))
+  router.post('/reset-password', loginRateLimiter, validate(resetPasswordSchema), asyncHandler(async (req, res) => {
+    secret()
+    const passwordHash = await bcrypt.hash(req.body.newPassword, 10)
+    const accepted = await db.$transaction(async tx => {
+      const found = await tx.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
+      if (!found) return false
+      const user = await lockUser(tx, found.id)
+      if (!await consumeCode(tx, user, 'reset', req.body.code, now())) return false
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash, tokenVersion: version(user) + 1,
+        verified: true, resetCode: null, verificationCode: null, verificationCodeHash: null,
+        verificationCodeExpiresAt: null, verificationCodeAttempts: 0, verificationCodeLockedUntil: null } })
+      return true
+    })
+    return accepted ? res.json({ ok: true }) : res.status(400).json(invalidCode)
+  }))
+  router.post('/login', loginRateLimiter, validate(loginSchema), asyncHandler(async (req, res) => {
+    secret()
+    const user = await db.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
+    const matches = await bcrypt.compare(req.body.password, user?.passwordHash ?? await dummyPasswordHash)
+    if (!user || !matches) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
+    if (!user.verified) return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión.', needsVerification: true })
+    res.json({ token: signSession(user), user: serializeUser(user) })
+  }))
+  router.get('/me', requireAuth, (req, res) => res.json({ user: serializeUser(req.user) }))
+  router.patch('/me', requireAuth, validate(updateProfileSchema), asyncHandler(async (req, res) => {
+    const { nombre, apellido, fechaNacimiento } = req.body
+    const user = await db.user.update({ where: { id: req.user.id }, data: {
+      ...(nombre !== undefined ? { nombre } : {}), ...(apellido !== undefined ? { apellido } : {}),
+      ...(fechaNacimiento !== undefined ? { fechaNacimiento: dateValue(fechaNacimiento) } : {}),
+    } })
+    res.json({ user: serializeUser(user) })
+  }))
+  router.post('/change-password', requireAuth, loginRateLimiter, validate(changePasswordSchema), asyncHandler(async (req, res) => {
+    await db.$transaction(async tx => {
+      const user = await lockUser(tx, req.user.id)
+      if (version(user) !== version(req.user)) throw new AuthError(401, 'La sesión cambió. Inicia sesión nuevamente.')
+      if (!await bcrypt.compare(req.body.currentPassword, user.passwordHash)) throw new AuthError(400, 'La contraseña actual no es correcta.')
+      const passwordHash = await bcrypt.hash(req.body.newPassword, 10)
+      await tx.user.update({ where: { id: user.id }, data: { passwordHash, tokenVersion: version(user) + 1,
+        resetCode: null, resetCodeHash: null, resetCodeExpiresAt: null, resetCodeAttempts: 0, resetCodeLockedUntil: null } })
+    })
+    res.json({ ok: true })
+  }))
+  router.post('/logout-all', requireAuth, authActionRateLimiter, asyncHandler(async (req, res) => {
+    await db.$transaction(async tx => {
+      const user = await lockUser(tx, req.user.id)
+      if (version(user) !== version(req.user)) throw new AuthError(401, 'La sesión ya cambió.')
+      await tx.user.update({ where: { id: user.id }, data: { tokenVersion: version(user) + 1 } })
+    })
+    res.json({ ok: true })
+  }))
 
-    if (error) {
-      // El usuario canceló el consentimiento, o Google reportó un error.
-      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=denied`)
-    }
-
-    if (!code || !state) {
-      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=invalid`)
-    }
-
+  router.get('/google', authActionRateLimiter, asyncHandler(async (req, res) => {
     try {
-      const statePayload = jwt.verify(state, process.env.JWT_SECRET)
-      if (statePayload.purpose !== GOOGLE_STATE_PURPOSE) throw new Error('state inválido')
-    } catch {
-      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=state`)
+      secret()
+      const flow = await startGoogleFlow(db, req.query.challenge, now())
+      const destination = google.authorizationUrl(flow.state, challenge(flow.verifier))
+      res.cookie(oauthCookieName(), signFlowCookie({ stateHash: flow.stateHash, binding: flow.binding, verifier: flow.verifier }), oauthCookieOptions())
+      res.redirect(destination)
+    } catch (error) {
+      if (error.status && error.status < 500) return res.status(error.status).json({ error: error.message })
+      res.redirect(`${frontendUrl()}/iniciar-sesion?googleError=config`)
     }
-
+  }))
+  router.get('/google/callback', asyncHandler(async (req, res) => {
+    const fail = reason => res.redirect(`${frontendUrl()}/iniciar-sesion?googleError=${reason}`)
+    const cookie = readFlowCookie(req.headers.cookie)
+    const { maxAge: _maxAge, ...cookieOptions } = oauthCookieOptions()
+    res.clearCookie(oauthCookieName(), cookieOptions)
+    let flow
+    try { flow = await consumeGoogleFlow(db, req.query.state, cookie, now()) }
+    catch (error) {
+      if (error.status === 400) return fail('state')
+      return fail('unavailable')
+    }
+    if (req.query.error) return fail('denied')
+    if (typeof req.query.code !== 'string' || !req.query.code || req.query.code.length > 4096) return fail('invalid')
     let profile
+    try { profile = await google.profile(await google.exchange(req.query.code, flow.verifier)) }
+    catch { return fail('exchange') }
     try {
-      const accessToken = await exchangeCodeForAccessToken(code)
-      profile = await fetchGoogleProfile(accessToken)
-    } catch (err) {
-      console.error('Falló el intercambio con Google:', err.message)
-      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=exchange`)
-    }
-
-    if (!profile?.email) {
-      return res.redirect(`${frontendUrl}/iniciar-sesion?googleError=no-email`)
-    }
-
-    const email = normalizeEmail(profile.email)
-
-    // 1) ¿Ya existe una cuenta vinculada a este googleId? (login recurrente)
-    let user = await prisma.user.findUnique({ where: { googleId: profile.sub } })
-
-    // 2) Si no, ¿existe una cuenta con este correo creada por otra vía
-    //    (registro tradicional, o un login de Google anterior con otro
-    //    googleId)? Si existe, se vincula esta cuenta de Google a ella en
-    //    vez de crear un usuario duplicado.
-    if (!user) {
-      const existingByEmail = await prisma.user.findUnique({ where: { email } })
-      if (existingByEmail) {
-        user = await prisma.user.update({
-          where: { id: existingByEmail.id },
-          data: {
-            googleId: profile.sub,
-            // Si la cuenta existente aún no estaba verificada, el login
-            // con Google confirma que el correo sí es del usuario.
-            verified: true,
-          },
-        })
-      }
-    }
-
-    // 3) Si tampoco existe por correo, se crea una cuenta nueva. La
-    //    contraseña se genera aleatoria e inutilizable — este usuario
-    //    inicia sesión con Google; si más adelante quiere una contraseña
-    //    propia, puede definirla con el flujo existente de "olvidé mi
-    //    contraseña" (POST /api/auth/forgot-password).
-    if (!user) {
-      const randomPassword = crypto.randomBytes(32).toString('hex')
-      const passwordHash = await bcrypt.hash(randomPassword, 10)
-      user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          nombre: profile.given_name?.trim() || profile.name?.trim() || 'Cliente',
-          apellido: profile.family_name?.trim() || '',
-          googleId: profile.sub,
-          verified: true,
-        },
-      })
-    }
-
-    const token = signToken({ sub: user.id })
-    res.redirect(`${frontendUrl}/auth/google/callback?token=${encodeURIComponent(token)}`)
-  }),
-)
+      const user = await resolveGoogleUser(db, profile)
+      const code = await issueExchange(db, user, flow.exchangeChallenge, now())
+      res.redirect(`${frontendUrl()}/auth/google/callback?code=${encodeURIComponent(code)}`)
+    } catch (error) { return fail(error.status === 403 ? 'linking' : 'unavailable') }
+  }))
+  router.post('/google/exchange', loginRateLimiter, asyncHandler(async (req, res) => {
+    secret()
+    const user = await consumeExchange(db, req.body?.code, req.body?.verifier, now())
+    res.json({ token: signSession(user), user: serializeUser(user) })
+  }))
+  return router
+}
+export const authRouter = createAuthRouter()

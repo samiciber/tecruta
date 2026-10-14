@@ -1,12 +1,12 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { CheckCircle2, MailCheck } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import AuthCard from '../components/auth/AuthCard.jsx'
 import FormBanner from '../components/auth/FormBanner.jsx'
 import { ToastContext } from '../components/ui/ToastProvider.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 
-const RESEND_COOLDOWN = 30
+const RESEND_COOLDOWN = 60
 
 export default function VerifyEmail() {
   const { verifyEmail, resendCode } = useAuth()
@@ -17,9 +17,7 @@ export default function VerifyEmail() {
   const params = new URLSearchParams(location.search)
   const email = params.get('email') || ''
 
-  // Si el correo con el código no se pudo enviar (proveedor caído, etc.),
-  // se lo avisamos al usuario para que use "Reenviar código".
-  const [emailFailed, setEmailFailed] = useState(location.state?.emailSent === false)
+  const [requestMessage, setRequestMessage] = useState(location.state?.message || '')
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -94,13 +92,9 @@ export default function VerifyEmail() {
       toast?.showToast(result.error, 'error')
       return
     }
-    setEmailFailed(result.emailSent === false)
+    setRequestMessage(result.message || 'Si corresponde, recibirás instrucciones por correo.')
     setCooldown(RESEND_COOLDOWN)
-    if (result.emailSent === false) {
-      toast?.showToast('No pudimos enviarte el correo. Intenta de nuevo en unos minutos.', 'error')
-    } else {
-      toast?.showToast('Enviamos un nuevo código a tu correo.', 'success')
-    }
+    toast?.showToast(result.message || 'Si corresponde, recibirás instrucciones por correo.', 'success')
   }
 
   if (verified) {
@@ -126,7 +120,7 @@ export default function VerifyEmail() {
       title="Verifica tu correo"
       subtitle={
         <>
-          Ingresa el código de 6 dígitos que enviamos a{' '}
+          Ingresa el código de 6 dígitos que recibas en{' '}
           <span className="font-medium text-ink dark:text-paper">{email}</span>.
         </>
       }
@@ -139,17 +133,12 @@ export default function VerifyEmail() {
         </p>
       }
     >
-      {emailFailed && (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-signal-red/30 bg-signal-red/10 px-3 py-2.5 text-sm text-signal-red">
-          <MailCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <span>No pudimos enviarte el correo con el código. Usa "Reenviar código" para intentarlo de nuevo.</span>
-        </div>
-      )}
+      {requestMessage && <p role="status" className="mb-4 text-sm text-ink dark:text-paper">{requestMessage}</p>}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <FormBanner tone="error">{formError}</FormBanner>
 
-        <div className="flex justify-between gap-2" onPaste={handlePaste}>
+        <div className="grid grid-cols-6 gap-2" onPaste={handlePaste}>
           {digits.map((d, i) => (
             <input
               key={i}
@@ -161,7 +150,7 @@ export default function VerifyEmail() {
               onChange={handleDigitChange(i)}
               onKeyDown={handleKeyDown(i)}
               aria-label={`Dígito ${i + 1} del código`}
-              className="input-tr h-14 w-12 text-center text-xl font-semibold tracking-widest sm:w-14"
+              className="input-tr h-14 min-w-0 w-full px-1 text-center text-xl font-semibold tracking-widest"
             />
           ))}
         </div>
@@ -178,6 +167,7 @@ export default function VerifyEmail() {
         >
           {cooldown > 0 ? `Reenviar código en ${cooldown}s` : 'Reenviar código'}
         </button>
+        <p className="text-center text-xs text-ink-soft dark:text-paper/60">El código vence en 15 minutos. Si ya verificaste tu cuenta, <Link to="/iniciar-sesion" className="text-route hover:underline">inicia sesión</Link>.</p>
       </form>
     </AuthCard>
   )

@@ -29,7 +29,7 @@ function getCredentials() {
 // consentimiento de Google. `state` es un token de un solo uso (ver
 // GET /api/auth/google en auth.routes.js) que se verifica al volver en el
 // callback, como mitigación de CSRF.
-export function buildGoogleAuthUrl(state) {
+export function buildGoogleAuthUrl(state, codeChallenge) {
   const { clientId, callbackUrl } = getCredentials()
 
   const params = new URLSearchParams({
@@ -40,6 +40,8 @@ export function buildGoogleAuthUrl(state) {
     access_type: 'online',
     prompt: 'select_account',
     state,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
   })
 
   return `${GOOGLE_AUTH_URL}?${params.toString()}`
@@ -47,14 +49,16 @@ export function buildGoogleAuthUrl(state) {
 
 // Intercambia el `code` que Google manda al callback por un access_token
 // utilizable para pedir el perfil del usuario.
-export async function exchangeCodeForAccessToken(code) {
+export async function exchangeCodeForAccessToken(code, codeVerifier) {
   const { clientId, clientSecret, callbackUrl } = getCredentials()
 
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(10000),
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       code,
+      code_verifier: codeVerifier,
       client_id: clientId,
       client_secret: clientSecret,
       redirect_uri: callbackUrl,
@@ -63,11 +67,11 @@ export async function exchangeCodeForAccessToken(code) {
   })
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    throw new Error(`Google respondió ${response.status} al intercambiar el código: ${detail}`)
+    throw new Error(`Google respondió ${response.status} al intercambiar el código.`)
   }
 
   const data = await response.json()
+  if (typeof data.access_token !== 'string' || !data.access_token) throw new Error('Google no devolvió un acceso válido.')
   return data.access_token
 }
 
@@ -75,12 +79,12 @@ export async function exchangeCodeForAccessToken(code) {
 // si el correo está verificado, id estable de la cuenta de Google).
 export async function fetchGoogleProfile(accessToken) {
   const response = await fetch(GOOGLE_USERINFO_URL, {
+    signal: AbortSignal.timeout(10000),
     headers: { Authorization: `Bearer ${accessToken}` },
   })
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => '')
-    throw new Error(`Google respondió ${response.status} al pedir el perfil: ${detail}`)
+    throw new Error(`Google respondió ${response.status} al pedir el perfil.`)
   }
 
   // Shape relevante: { sub, email, email_verified, given_name, family_name, name, picture }
