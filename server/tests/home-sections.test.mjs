@@ -47,7 +47,7 @@ test('5b schema preserves 5a defaults and bounds nested content, icons, sources 
   assert.equal(HOME_BENEFIT_ICONS.length, 8)
 })
 
-test('all seven types resolve public data, support reuses settings and brands use visible featured-first query', async () => {
+test('all seven types resolve public data and brands require catalog products before limiting featured-first results', async () => {
   const queries = []
   const home = await resolveHome({ db: fakeDb(queries), layout: homeLayoutSchema.parse({ sections }), settings })
   assert.deepEqual(home.sections.map(s => s.id), sections.map(s => s.id))
@@ -59,7 +59,7 @@ test('all seven types resolve public data, support reuses settings and brands us
   assert.equal(home.sections[3].items[0].text, '<b>Texto plano</b>')
   assert.equal(home.sections[2].items[0].href, '/marca/real-brand')
   const brandQuery = queries.find(([key]) => key === 'brands')[1]
-  assert.deepEqual(brandQuery.where, { visible: true })
+  assert.deepEqual(brandQuery.where, { visible: true, products: { some: {} } })
   assert.deepEqual(brandQuery.orderBy, [{ featured: 'desc' }, { featuredPosition: 'asc' }, { name: 'asc' }])
   assert.equal(brandQuery.take, 3)
   assert.equal(queries.find(([key]) => key === 'categories')[1].where.visible, true)

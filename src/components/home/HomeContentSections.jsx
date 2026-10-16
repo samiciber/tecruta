@@ -114,7 +114,7 @@ export default function HomeContentSection({ section }) {
   if (section.type === 'useSelections') return <UseSelections section={section} />
   if (section.type === 'brands') return <Section section={section}>
     <h2 className={`${heading} mb-5`}>{section.title || 'Comprar por marca'}</h2>
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">{section.items.map(item => <BrandItem key={`${item.id}-${item.image}`} item={item} />)}</div>
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-[repeat(var(--brand-columns-sm),minmax(0,1fr))] lg:grid-cols-[repeat(var(--brand-columns-lg),minmax(0,1fr))]" style={{ '--brand-columns-sm': Math.min(section.items.length, 3), '--brand-columns-lg': Math.min(section.items.length, 6) }}>{section.items.map(item => <BrandItem key={`${item.id}-${item.image}`} item={item} />)}</div>
   </Section>
   if (section.type === 'benefits') return <Section section={section}><div className={`${surface} p-5 sm:p-6`}>
     {section.title && <h2 className={`${heading} mb-5`}>{section.title}</h2>}

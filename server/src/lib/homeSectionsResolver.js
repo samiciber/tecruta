@@ -32,10 +32,10 @@ export async function resolveAdditionalSection({ section, db, settings, banners,
   }
   if (section.type === 'brands') {
     const rows = await db.brand.findMany({
-      where: { visible: true }, orderBy: [{ featured: 'desc' }, { featuredPosition: 'asc' }, { name: 'asc' }],
+      where: { visible: true, products: { some: {} } }, orderBy: [{ featured: 'desc' }, { featuredPosition: 'asc' }, { name: 'asc' }],
       take: section.limit, select: { slug: true, name: true, logo: true },
     })
-    if (!rows.length) return hidden('No hay marcas visibles.')
+    if (!rows.length) return hidden('No hay marcas visibles con productos en el catálogo.')
     return { section: { ...section, items: rows.map(row => ({ id: row.slug, title: row.name, image: safeImage(row.logo), href: `/marca/${encodeURIComponent(row.slug)}` })) } }
   }
   if (section.type === 'benefits') {

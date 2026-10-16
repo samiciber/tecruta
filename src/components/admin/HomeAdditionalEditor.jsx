@@ -90,7 +90,7 @@ export default function HomeAdditionalEditor({ section, onChange, categories, br
       <p className="text-xs text-ink-soft dark:text-paper/70">Completa todos los tiles para publicar la sección. Se admiten borradores incompletos.</p>
     </>}
     {section.type === 'brands' && <Field label="Límite de marcas (1–24)"><input type="number" min="1" max="24" className={input} value={section.limit} onChange={event => patch({ limit: Number(event.target.value) })} /></Field>}
-    {section.type === 'brands' && <p className="text-xs text-ink-soft dark:text-paper/70">Usa marcas visibles del catálogo, destacadas primero. Edita sus logos y orden en <Link to="/admin/marcas" className="underline">Marcas</Link>.</p>}
+    {section.type === 'brands' && <p className="text-xs text-ink-soft dark:text-paper/70">Usa marcas visibles con productos en el catálogo, destacadas primero. Edita sus logos y orden en <Link to="/admin/marcas" className="underline">Marcas</Link>.</p>}
     {section.type === 'benefits' && <>
       {section.items.map((item, index) => <fieldset key={item.id} className="space-y-3 rounded-lg border border-paper-line p-3 dark:border-night-line"><legend className="px-1 text-sm">Beneficio {index + 1}</legend>
         <Field label="Icono permitido"><select className={input} value={item.icon} onChange={event => updateItem(index, { ...item, icon: event.target.value })}>{Object.keys(BENEFIT_ICONS).map(icon => <option key={icon}>{icon}</option>)}</select></Field>

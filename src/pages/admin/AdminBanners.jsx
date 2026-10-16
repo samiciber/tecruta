@@ -84,6 +84,9 @@ function ImageField({ label, hint, value, onChange, token, testId }) {
     <div className="rounded-xl2 border border-paper-line p-3 dark:border-night-line">
       <p className="text-xs font-semibold text-ink dark:text-paper">{label}</p>
       <p className="mb-2 text-[11px] text-ink-soft dark:text-paper/60">{hint}</p>
+      <Field label={`${label} (URL)`}>
+        <input className="input-tr mb-3" type="url" maxLength={1000} value={value || ''} placeholder="https://…" disabled={busy} onChange={event => onChange(event.target.value.trim() || null)} />
+      </Field>
       <div className="flex items-center gap-3">
         {value ? <img src={value} alt="" className="h-14 w-24 rounded object-cover" /> : <span className="flex h-14 w-24 items-center justify-center rounded bg-route-soft text-[11px] text-route dark:bg-route-softDark">Sin imagen</span>}
         <div className="flex flex-wrap gap-2">
