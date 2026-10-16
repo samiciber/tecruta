@@ -283,7 +283,7 @@ export default function AdminBanners() {
 
   return (
     <section aria-labelledby="banners-title">
-      <SectionHeader id="banners-title" title="Banners del Home" description="Slides del carrusel principal de la Home (y banners intercalados, en el Cambio 5). Sin slides vigentes se muestra el hero genérico de TecRuta. El intervalo y el autoplay se cambian en Ajustes del sitio.">
+      <SectionHeader id="banners-title" title="Banners del Home" description="Configura los slides del hero y banners intercalados por slot. El Diseño del Home determina qué slots inline se muestran. Sin banners vigentes, el hero se oculta.">
         <div className="flex gap-2">
           <button type="button" onClick={add} disabled={banners.length >= 30} className="btn-secondary px-4 py-2 text-xs"><Plus size={14} className="mr-1 inline" />Agregar slide</button>
           <button type="button" onClick={save} disabled={!dirty || invalidCount > 0 || saving} className="btn-primary px-4 py-2 text-xs">{saving ? 'Guardando…' : 'Guardar cambios'}</button>

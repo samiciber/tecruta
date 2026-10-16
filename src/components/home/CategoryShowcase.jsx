@@ -50,16 +50,21 @@ function Skeleton() {
 // su orden, etiqueta/imagen propias y círculos personalizados. Se oculta si no
 // hay ítems. (El prop `counts` ya no se usa: se cuenta aquí; se conserva para no
 // romper a quien lo pase.)
-export default function CategoryShowcase() {
+export default function CategoryShowcase({ items: suppliedItems, title: suppliedTitle, loading: suppliedLoading }) {
   const { tree, loading: loadingTree } = useCategories()
   const { settings, loading: loadingSettings } = useSiteSettings()
-  const { index, loading: loadingProducts } = useProductIndex()
+  const { index, loading: loadingProducts } = useProductIndex({ enabled: suppliedItems === undefined })
   const scroller = useRef(null)
 
   const cfg = settings.homeCircles
   const needsProducts = cfg?.onlyWithProducts !== false
-  const loading = loadingTree || loadingSettings || (needsProducts && loadingProducts)
-  const items = useMemo(() => resolveCircles({ config: cfg, tree, products: index }), [cfg, tree, index])
+  const loading = suppliedItems === undefined
+    ? loadingTree || loadingSettings || (needsProducts && loadingProducts)
+    : Boolean(suppliedLoading)
+  const items = useMemo(
+    () => suppliedItems ?? resolveCircles({ config: cfg, tree, products: index }),
+    [suppliedItems, cfg, tree, index],
+  )
   const { overflow, prev, next } = useScrollState(scroller, items.length)
 
   const scrollBy = (dir) => {
@@ -70,10 +75,10 @@ export default function CategoryShowcase() {
   }
 
   if (!loading && items.length === 0) return null
-  const title = cfg?.title || 'Compra por categoría'
+  const title = suppliedTitle || cfg?.title || 'Compra por categoría'
 
   return (
-    <section id="categorias" aria-labelledby="circles-title" aria-busy={loading || undefined} className="container-tr py-8 sm:py-10">
+    <section id="categorias" aria-labelledby="circles-title" aria-busy={loading || undefined} className="container-tr py-6 sm:py-10">
       <h2 id="circles-title" className="mb-5 font-display text-2xl font-bold tracking-tight text-ink dark:text-paper sm:text-3xl">{title}</h2>
       {loading ? (
         <Skeleton />

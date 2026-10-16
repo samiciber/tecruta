@@ -35,7 +35,7 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
   const { searches } = usePopularSearches()
   const { all: brands } = useBrands()
   const { tree } = useCategoryTree()
-  const { index: products } = useProductIndex()
+  const { index: products } = useProductIndex({ enabled: open && value.trim().length >= 2 })
 
   usePanelBehavior({ open, onClose, containerRef: wrapRef, trap: false, autoFocus: false, restoreFocus: false })
 

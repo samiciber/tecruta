@@ -1,95 +1,111 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import ProductCard from '../components/product/ProductCard.jsx'
+import React, { useEffect, useRef, useState } from 'react'
 import HeroSlider from '../components/home/HeroSlider.jsx'
-import GuestStrip from '../components/home/GuestStrip.jsx'
 import CategoryShowcase from '../components/home/CategoryShowcase.jsx'
-import PromoBanner from '../components/home/PromoBanner.jsx'
-import BestSellers from '../components/home/BestSellers.jsx'
-import OffersSection from '../components/home/OffersSection.jsx'
-import ExploreCategories from '../components/home/ExploreCategories.jsx'
-import TrustSection from '../components/home/TrustSection.jsx'
-import Testimonials from '../components/home/Testimonials.jsx'
-import Reveal from '../components/animations/Reveal.jsx'
-import { useProductIndex } from '../hooks/useProductIndex.js'
-import { useCategories } from '../hooks/useCategories.js'
-import { countProducts } from '../utils/categoryTree.js'
+import { ProductCarousel } from '../components/home/ProductCarousel.jsx'
+import InlineBannerSections from '../components/home/InlineBannerSections.jsx'
+import GuestStrip from '../components/home/GuestStrip.jsx'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth.js'
+import { useHome } from '../hooks/useHome.js'
+import HomeContentSection from '../components/home/HomeContentSections.jsx'
 
-// Producto real usado en el banner promocional — cámbialo por el id de
-// cualquier otro producto real de src/data/products.js si quieres rotar
-// la campaña.
-const PROMO_PRODUCT_ID = 'cg02'
+function CampaignSection({ section, refresh }) {
+  const [now, setNow] = useState(Date.now())
+  const didRefresh = useRef(false)
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [])
+  const expired = new Date(section.endsAt).getTime() <= now
+  useEffect(() => {
+    if (expired && !didRefresh.current) {
+      didRefresh.current = true
+      refresh()
+    }
+  }, [expired, refresh])
+  if (expired) return null
+  const remaining = Math.max(0, Math.floor((new Date(section.endsAt).getTime() - now) / 1000))
+  const parts = [
+    Math.floor(remaining / 86400),
+    Math.floor((remaining % 86400) / 3600),
+    Math.floor((remaining % 3600) / 60),
+    remaining % 60,
+  ]
+  const timer = parts.map((part) => String(part).padStart(2, '0')).join(':')
+  const tab = { id: section.id, label: section.source.label, href: section.source.href, products: section.products }
+  return <ProductCarousel id={section.id} title={section.title} tabs={[tab]} countdown={timer} endsAt={section.endsAt} />
+}
+
+function HomeSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Cargando contenido de inicio">
+      <div className="h-[320px] animate-pulse bg-gradient-to-br from-header to-route-dark sm:h-[420px]" />
+      <div className="container-tr space-y-5 py-8">
+        <div className="h-8 w-56 animate-pulse rounded bg-gray-200 dark:bg-white/10" />
+        <div className="h-28 animate-pulse rounded-xl2 bg-gray-100 dark:bg-white/5" />
+      </div>
+    </div>
+  )
+}
 
 export default function Home() {
-  const { index } = useProductIndex()
-  const featured = index.filter((p) => p.featured)
-  const bestSellers = index.filter((p) => p.bestSeller)
-  const promoProduct = index.find((p) => p.id === PROMO_PRODUCT_ID)
-  // Conteo de productos por categoría de primer nivel (incluye su rama).
-  const { categories } = useCategories()
-  const conteos = Object.fromEntries(categories.map((c) => [c.slug, countProducts(c, index)]))
+  const { data, loading, error, refresh } = useHome()
+
+  if (loading && !data) return <HomeSkeleton />
+  if (!data) {
+    return (
+      <section className="container-tr py-20 text-center">
+        <h1 className="font-display text-2xl font-bold text-ink dark:text-paper">No pudimos cargar el inicio</h1>
+        <p role="alert" className="mt-2 text-sm text-ink-soft dark:text-paper/70">{error?.message || 'La API no devolvió contenido.'}</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <button type="button" onClick={refresh} className="btn-primary px-5 py-2.5">Reintentar</button>
+          <Link to="/catalogo" className="btn-secondary px-5 py-2.5">Explorar catálogo</Link>
+        </div>
+      </section>
+    )
+  }
+
+  return <HomeView data={data} error={error} refresh={refresh} />
+}
+
+export function HomeView({ data, error, refresh }) {
+  const { isAuthenticated, authLoading } = useAuth()
+  const hasContentSection = data.sections.some((section) => section.type !== 'guestStrip')
+    || (data.sections.some((section) => section.type === 'guestStrip') && !isAuthenticated && !authLoading)
 
   return (
-    <div>
-      <HeroSlider />
-      <GuestStrip />
-
-      <Reveal>
-        <CategoryShowcase counts={conteos} />
-      </Reveal>
-
-      {/* Destacados */}
-      {featured.length > 0 && (
-        <section className="border-t border-paper-line bg-paper-surface py-16 dark:border-night-line dark:bg-night-surface sm:py-24">
-          <div className="container-tr">
-            <Reveal className="mb-8 flex items-end justify-between sm:mb-10">
-              <div>
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.15em] text-route">Selección TecRuta</span>
-                <h2 className="font-display text-3xl font-bold tracking-tight text-ink dark:text-paper sm:text-4xl">Destacados</h2>
-              </div>
-              <Link to="/catalogo" className="text-sm font-medium text-route hover:underline">
-                Ver todo
-              </Link>
-            </Reveal>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {featured.map((p, i) => (
-                <Reveal key={p.id} delay={Math.min(i, 6) * 60} duration={500}>
-                  <ProductCard product={p} />
-                </Reveal>
-              ))}
-            </div>
-          </div>
+    <div className="min-h-screen bg-paper dark:bg-night">
+      {error && (
+        <div role="status" className="container-tr pt-3">
+          <p className="rounded-lg bg-amber-50 p-3 text-sm text-ink dark:bg-night-surface dark:text-paper">No pudimos actualizar el Home; se conserva el último contenido válido. <button type="button" onClick={refresh} className="font-semibold underline">Reintentar</button></p>
+        </div>
+      )}
+      {!hasContentSection && (
+        <section className="container-tr py-16 text-center">
+          <h1 className="font-display text-2xl font-bold text-ink dark:text-paper">Aún no hay contenido para mostrar</h1>
+          <p className="mt-2 text-sm text-ink-soft dark:text-paper/70">Puedes explorar el catálogo mientras se actualiza el inicio.</p>
+          <Link to="/catalogo" className="btn-primary mt-5 inline-flex px-5 py-2.5">Explorar catálogo</Link>
         </section>
       )}
-
-      <Reveal>
-        <PromoBanner
-          eyebrow="Tecnología sin límites"
-          title="Carga rápida a donde vayas"
-          description="Encuentra accesorios diseñados para acompañar tu ritmo, dentro y fuera de casa."
-          product={promoProduct}
-        />
-      </Reveal>
-
-      <Reveal>
-        <OffersSection products={index} />
-      </Reveal>
-
-      <Reveal>
-        <BestSellers products={bestSellers} />
-      </Reveal>
-
-      <Reveal>
-        <Testimonials />
-      </Reveal>
-
-      <Reveal>
-        <ExploreCategories counts={conteos} />
-      </Reveal>
-
-      <Reveal>
-        <TrustSection />
-      </Reveal>
+      {data.sections.map((section, index) => (
+        <div
+          key={section.id}
+          className={`${section.appearance?.tone === 'soft' ? 'bg-route-soft dark:bg-route-softDark' : ''} ${section.appearance?.density === 'compact' ? '[&>section]:py-4' : ''}`}
+          style={index > 1 ? { contentVisibility: 'auto', containIntrinsicSize: '560px' } : undefined}
+        >
+          {section.type === 'hero' && data.hero && (
+            <HeroSlider slides={data.hero.slides} carouselConfig={data.hero.config} />
+          )}
+          {section.type === 'guestStrip' && <GuestStrip {...section} />}
+          {section.type === 'circles' && data.circles && (
+            <CategoryShowcase items={data.circles.items} title={data.circles.title} />
+          )}
+          {section.type === 'products' && <ProductCarousel id={section.id} title={section.title} tabs={section.tabs} panel={section.panel} />}
+          {section.type === 'inlineBanners' && <InlineBannerSections groups={section.groups} />}
+          {section.type === 'campaign' && <CampaignSection section={section} refresh={refresh} />}
+          <HomeContentSection section={section} />
+        </div>
+      ))}
     </div>
   )
 }

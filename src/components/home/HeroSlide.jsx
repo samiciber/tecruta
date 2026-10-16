@@ -29,6 +29,13 @@ const SIZES = {
   },
   desktop: { pad: 'p-12', padControls: 'pb-14', title: 'text-5xl', desc: 'text-lg', box: 'max-w-2xl' },
   mobile: { pad: 'p-5', padControls: 'pb-14', title: 'text-2xl', desc: 'text-sm', box: 'max-w-[90%]' },
+  banner: {
+    pad: 'p-5 sm:p-6 lg:p-8',
+    padControls: '',
+    title: 'text-2xl sm:text-3xl',
+    desc: 'text-sm sm:text-base',
+    box: 'max-w-[90%] sm:max-w-xl',
+  },
 }
 
 const BTN_BASE =
@@ -51,11 +58,27 @@ const isExternal = (h) => /^https?:\/\//.test(h || '')
 //   priority: primera imagen con prioridad de carga; el resto, perezosas.
 //   preview:  vista previa del admin (botones no navegan, sin interacción).
 //   controls: reserva espacio abajo para los puntos y el botón de pausa.
-export default function HeroSlide({ slide, priority = false, preview = false, controls = false, size = 'auto', className = '' }) {
+export default function HeroSlide({ slide, priority = false, preview = false, controls = false, size = 'auto', mobileFocus = false, className = '' }) {
   const sz = SIZES[size] ?? SIZES.auto
+  const isInlineBanner = size === 'banner'
   const color = slide.textColor === 'dark' ? 'dark' : 'light'
   const position = POSITION_CLASSES[slide.position] ?? POSITION_CLASSES['bottom-left']
   const align = ALIGN_CLASSES[slide.textAlign] ?? ALIGN_CLASSES.left
+  const mobileImageShade = color === 'dark'
+    ? {
+        left: 'bg-gradient-to-r from-white/80 via-white/45 to-transparent',
+        center: 'bg-white/30',
+        right: 'bg-gradient-to-l from-white/80 via-white/45 to-transparent',
+      }
+    : {
+        left: 'bg-gradient-to-r from-black/75 via-black/45 to-transparent',
+        center: 'bg-black/30',
+        right: 'bg-gradient-to-l from-black/75 via-black/45 to-transparent',
+      }
+  const mobileTextSide = slide.position?.endsWith('-right') ? 'right' : slide.position?.endsWith('-left') ? 'left' : slide.textAlign
+  const mobileTextWidth = mobileFocus && mobileTextSide !== 'center'
+    ? 'max-w-[62%] sm:max-w-xl lg:max-w-2xl'
+    : sz.box
   const buttons = (slide.buttons || []).slice(0, 2)
   const desktop = slide.imageDesktop
   const mobile = slide.imageMobile
@@ -63,7 +86,14 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
   let media = null
   if (desktop || mobile) {
     const loading = priority ? 'eager' : 'lazy'
-    const common = { alt: slide.imageAlt || '', loading, decoding: priority ? 'sync' : 'async', draggable: false, className: 'absolute inset-0 h-full w-full object-cover' }
+    const mobileObjectPosition = mobile || !mobileFocus
+      ? 'object-center'
+      : mobileTextSide === 'right'
+        ? 'object-[25%_center] sm:object-center'
+        : mobileTextSide === 'center'
+          ? 'object-center'
+          : 'object-[85%_center] sm:object-center'
+    const common = { alt: slide.imageAlt || '', loading, decoding: priority ? 'sync' : 'async', draggable: false, className: `absolute inset-0 h-full w-full object-cover ${mobileObjectPosition}` }
     if (priority) common.fetchpriority = 'high'
     if (size === 'mobile') {
       media = <img {...common} src={optimizeImage(mobile || desktop, 900)} />
@@ -86,12 +116,15 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
   }
 
   return (
-    <div className={`relative h-full w-full overflow-hidden bg-gradient-to-br from-header to-route-dark ${className}`}>
+    <div className={`relative ${isInlineBanner ? 'min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'h-full'} w-full overflow-hidden bg-gradient-to-br from-header to-route-dark ${className}`}>
       {media}
+      {mobileFocus && !mobile && (
+        <div aria-hidden="true" className={`absolute inset-0 sm:hidden ${mobileImageShade[mobileTextSide] || mobileImageShade.center}`} />
+      )}
       {slide.overlay > 0 && <div aria-hidden="true" className="absolute inset-0 bg-black" style={{ opacity: slide.overlay / 100 }} />}
 
-      <div className={`absolute inset-0 flex ${sz.pad} ${controls ? sz.padControls : ''} ${position}`}>
-        <div className={`${sz.box} ${align} ${color === 'dark' ? 'text-ink' : 'text-white'}`}>
+      <div className={`${isInlineBanner ? 'relative min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'absolute inset-0'} flex ${sz.pad} ${controls ? sz.padControls : ''} ${position}`}>
+        <div className={`${mobileTextWidth} ${align} ${color === 'dark' ? 'text-ink' : 'text-white'} ${isInlineBanner ? '[overflow-wrap:anywhere]' : ''}`}>
           {slide.eyebrow && <p className="mb-2 text-xs font-semibold uppercase tracking-widest opacity-90">{slide.eyebrow}</p>}
           {slide.title && <h2 className={`font-display font-extrabold leading-[1.05] tracking-tight ${sz.title}`}>{slide.title}</h2>}
           {slide.description && <p className={`mt-3 ${sz.desc}`}>{slide.description}</p>}

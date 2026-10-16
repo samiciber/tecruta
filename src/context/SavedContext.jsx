@@ -19,11 +19,11 @@ export function SavedProvider({ children }) {
   const [ids, setIds] = useState(() => clean(readStorage(STORAGE_KEY, [])))
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
-  const { index: products } = useProductIndex()
   const auth = useContext(AuthContext)
   const user = auth?.user ?? null
   const token = auth?.token ?? null
   const authLoading = auth?.authLoading ?? false
+  const { index: products } = useProductIndex({ enabled: ids.length > 0 || Boolean(user) })
 
   useEffect(() => {
     if (!user) writeStorage(STORAGE_KEY, ids)

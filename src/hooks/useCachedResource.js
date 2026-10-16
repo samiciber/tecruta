@@ -57,6 +57,13 @@ export function invalidate(prefix = '') {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.addEventListener('tecruta:resource-invalidated', (event) => {
+    const prefix = typeof event.detail === 'string' ? event.detail : ''
+    invalidate(prefix)
+  })
+}
+
 export function useCachedResource(key, fetcher, { fallback, ttl = 60_000 } = {}) {
   const fetcherRef = useRef(fetcher)
   fetcherRef.current = fetcher

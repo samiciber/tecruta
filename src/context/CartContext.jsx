@@ -34,7 +34,6 @@ export function CartProvider({ children }) {
   const [cartSyncing, setCartSyncing] = useState(false)
   const toast = useContext(ToastContext)
   const navigate = useNavigate()
-  const { index: products, ready: catalogReady } = useProductIndex()
 
   // Se usa useContext(AuthContext) directamente (no el hook useAuth) para
   // no atar CartProvider a que siempre exista un <AuthProvider> más
@@ -43,6 +42,7 @@ export function CartProvider({ children }) {
   const user = auth?.user ?? null
   const token = auth?.token ?? null
   const authLoading = auth?.authLoading ?? false
+  const { index: products, ready: catalogReady } = useProductIndex({ enabled: entries.length > 0 || Boolean(user) })
 
   // Invitados: el carrito vive solo en localStorage, exactamente igual
   // que antes de conectar el carrito persistente. Mientras hay sesión
@@ -128,6 +128,7 @@ export function CartProvider({ children }) {
       toast?.showToast('Necesitamos verificar el precio y la disponibilidad antes de agregarlo.', 'error')
       return false
     }
+
     product = productResource.getSnapshot().data.find(p => p.id === product.id)
 
     setEntries((prev) => withAddedQuantity(prev, product, quantity))
@@ -146,6 +147,23 @@ export function CartProvider({ children }) {
       })
     }
     return true
+  }
+
+  async function addItemVerified(product, quantity = 1, opts = {}) {
+    try {
+      const current = productResource.isFresh()
+        ? productResource.getSnapshot().data
+        : await productResource.fresh()
+      const verified = current.find((item) => item.id === product.id)
+      if (!verified || verified.stock < quantity || verified.price !== product.price) {
+        toast?.showToast('El producto o su disponibilidad cambiaron. Revisa la ficha antes de comprar.', 'error')
+        return false
+      }
+      return addItem(verified, quantity, opts)
+    } catch (error) {
+      toast?.showToast(error.message || 'No pudimos verificar el producto. Reintenta.', 'error')
+      return false
+    }
   }
 
   function removeItem(productId) {
@@ -193,6 +211,7 @@ export function CartProvider({ children }) {
         itemCount,
         subtotal,
         addItem,
+        addItemVerified,
         removeItem,
         updateQuantity,
         clearCart,

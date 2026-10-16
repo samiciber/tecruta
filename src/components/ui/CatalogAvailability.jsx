@@ -6,7 +6,7 @@ import { useCart } from '../../hooks/useCart.js'
 const box = 'rounded-xl border border-amber-500/50 bg-amber-50 p-4 text-sm text-ink dark:bg-night-surface dark:text-paper'
 export function CatalogAvailability() {
   const { pathname } = useLocation()
-  const { error, isFallback, refresh, refreshing } = useProductIndex()
+  const { error, isFallback, refresh, refreshing } = useProductIndex({ enabled: pathname !== '/' && !pathname.startsWith('/admin') })
   if (pathname.startsWith('/admin') || !error) return null
   return <div className="container-tr pt-4"><div role="status" className={box}>
     <p>{isFallback ? 'Mostramos un catálogo de referencia. Para comprar necesitamos verificar precios y disponibilidad.' : 'No pudimos actualizar el catálogo. Las compras están pausadas hasta verificar precios y disponibilidad.'}</p>

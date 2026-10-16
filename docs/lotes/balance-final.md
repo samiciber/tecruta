@@ -1,5 +1,17 @@
 # Balance de los lotes autorizados 0–9
 
+> Estado candidato al 16 de octubre de 2026: también están implementados 5b y
+> 5c sobre esta rama, incluido footer y registro de suscriptores. Las exclusiones
+> de la actualización 5a siguiente describen su alcance histórico. Consultar
+> `cambio-5b.md`, `cambio-5c.md` y `../publicacion-tecruta.md` para el alcance
+> actual y los requisitos antes de publicar. No implica despliegue en producción.
+
+> Actualización posterior al balance: el Cambio 5a en `revision/cambio-5a`
+> agrega Home modular y su compositor; véase [cambio-5a.md](cambio-5a.md).
+> Esto no certifica completos los Cambios 1–4 de Claude ni el Cambio 5 entero.
+> Los tiles adicionales, marcas, beneficios, footer nuevo y newsletter de 5b/5c
+> permanecen fuera de alcance.
+
 Se completó la entrega en ramas/PR, sin integrar en `main` ni desplegar.
 Los resultados siguientes describen el código propuesto y sus pruebas locales;
 no certifican que producción ya tenga las correcciones. Base más reciente:
@@ -44,8 +56,10 @@ todos los PR y proveedores reales. No hay registros de QA creados en producción
   aún tienen importadores. No se elimina respaldo activo como parte de la limpieza.
 - **H32:** normalizar enlaces editables (`//` y `/\\`) en `navSchemas.js` después
   de coordinar el Cambio 5; cabeceras y proxy sí se prepararon en los lotes previos.
-- **H33:** el resumen checkout/cart se corrigió; la promesa de envío del
-  componente reservado `GuestStrip` requiere coordinación y definición comercial.
+- **H33:** el resumen checkout/cart se corrigió. El Home 5a reincorporó
+  `GuestStrip` como sección administrable para visitantes sin sesión, sin la
+  promesa de envío gratis. Las promociones/testimonios fijos dejaron de renderizarse.
+  No se cambia aquí el contenido comercial de otras páginas.
 - **H35:** compras de invitado siguen sin vinculación a cuentas. Las rutas de
   TecRuta autorizan las lecturas, pero no convierten activos públicos antiguos de
   Cloudinary en privados.
@@ -53,10 +67,11 @@ todos los PR y proveedores reales. No hay registros de QA creados en producción
 ## Fuera de estos lotes y comprobaciones pendientes
 
 H24 (referencia del banner) y H25 (reasignación de categorías/imágenes) son datos
-del admin: no se escribieron ni se verificó su corrección actual. H26, rendimiento
-de la Home, está reservado al otro proceso; H27, SEO, y suscripciones por email
-se dejaron expresamente para otra fase. No se amplía automáticamente el trabajo
-a nuevos lotes.
+del admin: no se escribieron ni se verificó su corrección actual. H26 tiene
+medidas iniciales en Home 5a (carga condicional del catálogo y renderizado
+inferior diferido), pero no una auditoría de rendimiento ni mediciones de
+Core Web Vitals. H27, SEO, y suscripciones por email se dejaron expresamente
+para otra fase. No se amplía automáticamente el trabajo a nuevos lotes.
 
 Antes de producción corresponde revisar/integrar los PR y sus resoluciones,
 comprobar la combinación final, revisar el estado real de migraciones y respaldar

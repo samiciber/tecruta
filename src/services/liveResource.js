@@ -3,12 +3,22 @@ const resources = new Map()
 export function invalidatedResourcesFor(method, path) {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return []
   const keys = []
-  if (/^\/api\/admin\/(products|brands|categories|category-tree)(\/|$)/.test(path) || path === '/api/orders' || /^\/api\/admin\/orders\/[^/]+\/status$/.test(path)) keys.push('products')
+  if (/^\/api\/admin\/(products|brands|categories|category-tree)(\/|$)/.test(path) || path === '/api/orders' || /^\/api\/admin\/orders\/[^/]+\/status$/.test(path)) {
+    keys.push('products', 'home')
+  }
   if (/^\/api\/admin\/payment-methods(\/|$)/.test(path)) keys.push('payment-methods')
+  if (/^\/api\/admin\/site-settings\/(homeLayout|homeBanners|homeCircles|heroCarousel|cartFooterLinks)$/.test(path)) keys.push('site-settings', 'home')
+  if (path === '/api/admin/home-layout') keys.push('home')
+  if (/^\/api\/admin\/site-settings\/(footerContent|cartFooterLinks)$/.test(path)) keys.push('footer')
+  if (path === '/api/admin/site-settings/legalPages') keys.push('legal')
+  if (path === '/api/admin/footer-content') keys.push('footer', 'legal', 'site-settings')
   return keys
 }
 export function invalidateLiveResources(prefix) {
   for (const [key, resource] of resources) if (key.startsWith(prefix)) resource.invalidate()
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('tecruta:resource-invalidated', { detail: prefix }))
+  }
 }
 export function createLiveResource({ key, fetcher, fallback, ttl = 60_000, retry = 15_000, timeout = 10_000, now = Date.now }) {
   let state = { data: [], source: 'none', loading: true, refreshing: false, error: null, checkedAt: 0, stale: true, version: 0 }

@@ -3,6 +3,11 @@ import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { serializeBrand, serializeStore, serializeNavItem, buildTree, pruneUnreachable } from '../lib/serializers.js'
 import { normalizeHomeBanners, isBannerLive } from '../lib/navSchemas.js'
+import { homeDefaults } from '../lib/homeDefaults.js'
+import { homeLayoutSchema } from '../lib/homeSchemas.js'
+import { resolveHome } from '../lib/homeResolver.js'
+import { resolveFooter } from '../lib/footerContent.js'
+import { legalDefaults } from '../lib/legalDefaults.js'
 
 // Endpoints PÚBLICOS de contenido de la tienda. Se monta en /api, así que
 // define: /nav, /brands, /popular-searches, /stores, /site-settings.
@@ -12,10 +17,30 @@ export const contentRouter = Router()
 // menos de un minuto sin recargar a mano.
 const cacheShort = (res) => res.set('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
 
+contentRouter.get('/footer', asyncHandler(async (req, res) => { cacheShort(res); res.json(resolveFooter(await loadSettings())) }))
+contentRouter.get('/legal/:type', asyncHandler(async (req, res) => {
+  if (!['terminos', 'privacidad'].includes(req.params.type)) return res.status(404).json({ error: 'Documento no encontrado.' })
+  const settings = await loadSettings(); cacheShort(res)
+  res.json((settings.legalPages ?? legalDefaults)[req.params.type])
+}))
+
 export async function loadSettings() {
   const rows = await prisma.siteSetting.findMany()
   return Object.fromEntries(rows.map((r) => [r.key, r.value]))
 }
+
+// GET /api/home: configuración resuelta y limitada a contenido publicable.
+contentRouter.get(
+  '/home',
+  asyncHandler(async (req, res) => {
+    const settings = await loadSettings()
+    const parsed = homeLayoutSchema.safeParse(settings.homeLayout ?? homeDefaults)
+    if (!parsed.success) throw new Error('La configuración de la Home almacenada no es válida.')
+    const home = await resolveHome({ db: prisma, layout: parsed.data, settings })
+    cacheShort(res)
+    res.json(home)
+  }),
+)
 
 // GET /api/nav → { menus: { acuerdos, soporte, descubre, mas, quick }, seasonalPromo }
 contentRouter.get(

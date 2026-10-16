@@ -18,6 +18,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("newsletter_subscribers")
+}
+
 // ---------------------------------------------------------------------
 // Cuentas y direcciones
 // ---------------------------------------------------------------------

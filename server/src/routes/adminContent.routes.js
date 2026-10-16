@@ -30,6 +30,12 @@ import {
   NAV_MENU_KEYS,
   normalizeHomeBanners,
 } from '../lib/navSchemas.js'
+import { homeDefaults, HOME_LAYOUT_KEY } from '../lib/homeDefaults.js'
+import { homeLayoutSchema } from '../lib/homeSchemas.js'
+import { resolveHome } from '../lib/homeResolver.js'
+import { footerDefaults, footerSchema, legalPagesSchema } from '../lib/footerContent.js'
+import { legalDefaults } from '../lib/legalDefaults.js'
+import { z } from 'zod'
 
 // Endpoints de administración de contenido (marcas, navegación, categorías
 // en árbol, tiendas, búsquedas populares, ajustes, asignación de productos).
@@ -38,6 +44,31 @@ export const adminContentRouter = Router()
 adminContentRouter.use(requireAuth, requireRole('ADMIN'))
 
 const orNull = (v) => (v === '' ? null : v)
+
+adminContentRouter.get('/footer-content', asyncHandler(async (req, res) => {
+  const settings = Object.fromEntries((await prisma.siteSetting.findMany()).map(row => [row.key, row.value]))
+  res.json({ footer: footerSchema.parse(settings.footerContent ?? footerDefaults), legal: legalPagesSchema.parse(settings.legalPages ?? legalDefaults) })
+}))
+adminContentRouter.put('/footer-content', asyncHandler(async (req, res) => {
+  const parsed = z.object({ footer: footerSchema, legal: legalPagesSchema }).safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') })
+  await prisma.$transaction(Object.entries({ footerContent: parsed.data.footer, legalPages: parsed.data.legal }).map(([key, value]) => prisma.siteSetting.upsert({ where: { key }, update: { value }, create: { key, value } })))
+  res.json(parsed.data)
+}))
+
+adminContentRouter.post('/home-layout/preview', asyncHandler(async (req, res) => {
+  const parsed = homeLayoutSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ') })
+  const settings = Object.fromEntries((await prisma.siteSetting.findMany()).map(row => [row.key, row.value]))
+  res.json(await resolveHome({ db: prisma, layout: parsed.data, settings }))
+}))
+adminContentRouter.get('/home-layout/products', asyncHandler(async (req, res) => {
+  const parsed = z.object({ q: z.string().trim().max(80).default(''), ids: z.string().max(1600).default('') }).safeParse(req.query)
+  if (!parsed.success) return res.status(400).json({ error: 'Búsqueda inválida.' })
+  const ids = parsed.data.ids.split(',').filter(Boolean).slice(0, 20)
+  if (parsed.data.q.length < 2 && !ids.length) return res.json([])
+  res.json(await prisma.product.findMany({ where: ids.length ? { id: { in: ids } } : { name: { contains: parsed.data.q, mode: 'insensitive' } }, take: 20, select: { id: true, name: true } }))
+}))
 
 // =======================================================================
 // Marcas
@@ -198,6 +229,58 @@ adminContentRouter.delete(
 // =======================================================================
 // Ajustes del sitio (clave → JSON validado con su propio schema)
 // =======================================================================
+
+adminContentRouter.get(
+  '/home-layout',
+  asyncHandler(async (req, res) => {
+    const settings = Object.fromEntries((await prisma.siteSetting.findMany()).map((row) => [row.key, row.value]))
+    const parsed = homeLayoutSchema.safeParse(settings[HOME_LAYOUT_KEY] ?? homeDefaults)
+    if (!parsed.success) throw new Error('La configuración de la Home almacenada no es válida.')
+    const [resolved, categories, brands] = await Promise.all([
+      resolveHome({ db: prisma, layout: parsed.data, settings }),
+      prisma.category.findMany({
+        where: { visible: true, legacy: false },
+        select: { id: true, slug: true, name: true },
+        orderBy: [{ position: 'asc' }, { name: 'asc' }],
+      }),
+      prisma.brand.findMany({
+        where: { visible: true },
+        select: { slug: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+    ])
+    res.json({
+      layout: parsed.data,
+      defaults: homeDefaults,
+      states: resolved.states,
+      revalidateAt: resolved.revalidateAt,
+      sources: { categories, brands, banners: normalizeHomeBanners(settings.homeBanners).map(({ id, title, active }) => ({ id, title, active })) },
+      isDefault: settings[HOME_LAYOUT_KEY] === undefined,
+    })
+  }),
+)
+
+adminContentRouter.put(
+  '/home-layout',
+  asyncHandler(async (req, res) => {
+    const parsed = homeLayoutSchema.safeParse(req.body)
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => ({ path: issue.path.join('.'), message: issue.message }))
+      return res.status(400).json({
+        error: issues[0] ? `${issues[0].path}: ${issues[0].message}` : 'Datos inválidos.',
+        issues,
+      })
+    }
+    await prisma.siteSetting.upsert({
+      where: { key: HOME_LAYOUT_KEY },
+      update: { value: parsed.data },
+      create: { key: HOME_LAYOUT_KEY, value: parsed.data },
+    })
+    const settings = Object.fromEntries((await prisma.siteSetting.findMany()).map((row) => [row.key, row.value]))
+    const resolved = await resolveHome({ db: prisma, layout: parsed.data, settings })
+    res.json({ layout: parsed.data, states: resolved.states })
+  }),
+)
 
 adminContentRouter.get(
   '/site-settings',

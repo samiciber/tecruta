@@ -8,7 +8,7 @@ const product = { id: 'qa-api-id', slug: 'qa', name: 'QA', price: 10, stock: 3, 
 const deferred = () => { let resolve; const promise = new Promise(r => resolve = r); return { promise, resolve } }
 const flush = async () => { for (let i = 0; i < 15; i++) await Promise.resolve() }
 test('successful mutation routes identify affected catalog/payment resources, including stock restored by cancellation', () => {
-  for (const path of ['/api/admin/products/id', '/api/admin/products/assign', '/api/admin/brands/id', '/api/admin/category-tree/id', '/api/admin/orders/id/status', '/api/orders']) assert.deepEqual(invalidatedResourcesFor('PATCH', path), ['products'])
+  for (const path of ['/api/admin/products/id', '/api/admin/products/assign', '/api/admin/brands/id', '/api/admin/category-tree/id', '/api/admin/orders/id/status', '/api/orders']) assert.deepEqual(invalidatedResourcesFor('PATCH', path), ['products', 'home'])
   assert.deepEqual(invalidatedResourcesFor('PATCH', '/api/admin/payment-methods/bankTransfer'), ['payment-methods'])
   assert.deepEqual(invalidatedResourcesFor('GET', '/api/admin/products'), [])
   assert.deepEqual(invalidatedResourcesFor('POST', '/api/auth/login'), [])

@@ -18,6 +18,7 @@ import { cartRouter } from './routes/cart.routes.js'
 import { addressesRouter } from './routes/addresses.routes.js'
 import { defaultJson } from './middleware/bodyLimits.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { newsletterRouter } from './routes/newsletter.routes.js'
 
 export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
   validateRuntimeEnv()
@@ -45,6 +46,7 @@ export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
   app.use('/api/admin', adminContentRouter)
   app.use('/api/cart', cartRouter)
   app.use('/api/addresses', addressesRouter)
+  app.use('/api', newsletterRouter)
   app.use('/api/saved', savedRouter)
   // Contenido público: /api/nav, /api/brands, /api/popular-searches,
   // /api/stores, /api/site-settings

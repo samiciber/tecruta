@@ -56,7 +56,7 @@ function fallbackSlides(categories) {
   ]
 }
 
-export default function HeroSlider() {
+export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loading: suppliedLoading }) {
   const { settings, loading } = useSiteSettings()
   const { categories } = useCategories()
   const reduced = usePrefersReducedMotion()
@@ -71,14 +71,15 @@ export default function HeroSlider() {
   const swipe = useRef(null)
   const regionRef = useRef(null)
 
-  const cfg = settings.heroCarousel || { intervalSeconds: 6, autoplay: true }
+  const cfg = carouselConfig || settings.heroCarousel || { intervalSeconds: 6, autoplay: true }
 
   const slides = useMemo(() => {
+    if (Array.isArray(suppliedSlides)) return suppliedSlides
     const now = new Date()
     const live = (settings.homeBanners || []).filter((b) => (b.placement ?? 'hero') === 'hero' && isLive(b, now))
     return live.length > 0 ? live : fallbackSlides(categories)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings.homeBanners, categories])
+  }, [suppliedSlides, settings.homeBanners, categories])
 
   const count = slides.length
   const multi = count > 1
@@ -128,7 +129,7 @@ export default function HeroSlider() {
   }
 
   // Cargando: misma caja que el hero final (sin salto de diseño ni parpadeo).
-  if (loading) {
+  if (suppliedLoading || (suppliedSlides === undefined && loading)) {
     return <section id="home-hero" aria-busy="true" aria-label="Destacados" className={`${BOX} animate-pulse bg-gradient-to-br from-header to-route-dark`} />
   }
 
@@ -168,7 +169,7 @@ export default function HeroSlider() {
                 {...(current ? {} : { inert: '' })}
                 className="h-full w-full shrink-0 basis-full"
               >
-                <HeroSlide slide={slide} priority={i === 0} controls={multi} />
+                <HeroSlide slide={slide} priority={i === 0} controls={multi} mobileFocus />
               </div>
             )
           })}

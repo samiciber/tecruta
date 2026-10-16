@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { homeLayoutSchema } from './homeSchemas.js'
+import { footerSchema, legalPagesSchema } from './footerContent.js'
 
 // Esquemas zod 4 de los endpoints nuevos (nav, marcas, categorías en árbol,
 // búsquedas populares, tiendas, ajustes). Los mensajes usan la sintaxis de
@@ -252,8 +254,11 @@ export const homeCirclesSchema = z.object({
 })
 
 export const SITE_SETTING_SCHEMAS = {
+  footerContent: footerSchema,
+  legalPages: legalPagesSchema,
   seasonalPromo: seasonalPromoSchema,
   homeBanners: homeBannersSchema,
+  homeLayout: homeLayoutSchema,
   heroCarousel: heroCarouselSchema,
   menuLayout: menuLayoutSchema,
   menuTexts: menuTextsSchema,

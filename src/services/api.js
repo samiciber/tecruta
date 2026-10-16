@@ -44,6 +44,9 @@ async function request(path, { method = 'GET', body, token, headers = {}, signal
 }
 
 export const api = {
+  getFooter: () => request('/api/footer'),
+  getLegal: type => request(`/api/legal/${encodeURIComponent(type)}`),
+  subscribe: body => request('/api/newsletter/subscribe', { method: 'POST', body }),
   getProducts: (params = {}, options = {}) => {
     const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
     const query = new URLSearchParams(entries).toString()
@@ -61,6 +64,7 @@ export const api = {
   getSiteSettings: () => request('/api/site-settings'),
   getCategoryTree: () => request('/api/categories/tree'),
   getCategoryDetail: (slug) => request(`/api/categories/${encodeURIComponent(slug)}`),
+  getHome: (options = {}) => request('/api/home', { cache: 'no-store', ...options }),
 
   auth: {
     register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),
@@ -127,6 +131,16 @@ export const api = {
   // Todo esto requiere el token de una cuenta con rol ADMIN (lo rechaza
   // el backend si no lo es). Usado únicamente por el panel /admin.
   admin: {
+    searchHomeProducts: (params, token) => request(`/api/admin/home-layout/products?${new URLSearchParams(params)}`, { token }),
+    getFooter: token => request('/api/admin/footer-content', { token }),
+    saveFooter: (body, token) => request('/api/admin/footer-content', { method: 'PUT', body, token }),
+    previewHome: (body, token) => request('/api/admin/home-layout/preview', { method: 'POST', body, token }),
+    getNewsletter: (page, token) => request(`/api/admin/newsletter/subscribers?page=${page}`, { token }),
+    exportNewsletter: async token => {
+      const response = await fetch(`${API_URL}/api/admin/newsletter/export.csv`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
+      if (!response.ok) throw new Error((await response.json()).error || 'No se pudo exportar.')
+      return response.blob()
+    },
     createProduct: (payload, token) => request('/api/admin/products', { method: 'POST', body: payload, token }),
     updateProduct: (id, payload, token) =>
       request(`/api/admin/products/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload, token }),
@@ -181,6 +195,8 @@ export const api = {
     getSiteSettings: (token) => request('/api/admin/site-settings', { token }),
     saveSiteSetting: (key, value, token) =>
       request(`/api/admin/site-settings/${encodeURIComponent(key)}`, { method: 'PUT', body: value, token }),
+    getHomeLayout: (token) => request('/api/admin/home-layout', { token }),
+    saveHomeLayout: (layout, token) => request('/api/admin/home-layout', { method: 'PUT', body: layout, token }),
 
     // Usados desde los Bloques 2 y 3 (editor de menús, categorías en árbol, asignación).
     getNavItems: (menu, token) => request(`/api/admin/nav-items${menu ? `?menu=${encodeURIComponent(menu)}` : ''}`, { token }),

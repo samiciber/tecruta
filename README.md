@@ -18,7 +18,7 @@ src/
 └── services/api.js    Cliente de la API (VITE_API_URL, por defecto http://localhost:4000)
 ```
 
-**Contenido editable desde el admin** (con respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home y enlaces del pie del carrito. `useCachedResource` comprueba su TTL al montar, volver a la pestaña o invalidar; no promete actualización automática de todo el contenido en menos de 60 s.
+**Contenido editable desde el admin** (con respaldo mínimo si la API falla): categorías en árbol (visibilidad, orden, imagen, tiles), marcas, menús Acuerdos / Soporte / Descubre / Más y enlaces rápidos, búsquedas populares, tiendas, promo de temporada, banners del Home, diseño modular de la Home y enlaces del pie del carrito. `useCachedResource` comprueba su TTL al montar, volver a la pestaña o invalidar; no promete actualización automática de todo el contenido en menos de 60 s. El alcance de Home 5a, su API, compositor y limitaciones se describe en [Cambio 5a](docs/lotes/cambio-5a.md).
 
 **Catálogo y pagos:** recursos compartidos con TTL activo de 60 s en pestañas visibles, actualización al recuperar foco/visibilidad y después de mutaciones relacionadas. El respaldo de productos permite consultar; para agregar al carrito o crear un pedido se exige información vigente de la API. No se muestran datos de transferencia estáticos si los pagos no se pueden verificar. Ver [Lote 7](docs/lotes/lote-7.md).
 
@@ -48,6 +48,12 @@ npm run seed:nav           # navegación: categorías, marcas, menús, búsqueda
 > Primer administrador: regístrate en `/crear-cuenta`, verifica el correo y ejecuta `npm run make-admin -- tu@correo.com`.
 
 ## Checklist de salida a producción
+
+La versión candidata de Home, footer y newsletter tiene un
+[plan de publicación y reversión](docs/publicacion-tecruta.md). Ese plan precisa
+el orden base → API → frontend y los requisitos pendientes; no se ha autorizado
+el despliegue. Véanse también [Cambio 5b](docs/lotes/cambio-5b.md) y
+[Cambio 5c](docs/lotes/cambio-5c.md).
 
 **Seguridad**
 - [ ] Rotar TODAS las claves que alguna vez estuvieron en `server/.env.example` o en un zip (Resend, Google OAuth, Cloudinary, JWT_SECRET) y revisar el historial de git.
