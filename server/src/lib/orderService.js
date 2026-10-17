@@ -1,10 +1,12 @@
 import { createHmac } from 'node:crypto'
 import { Prisma } from '@prisma/client'
 import { aggregateItems, canTransition, hashSecret, OrderError } from './orderPolicy.js'
+import { InventoryError, recordConfirmedMovement } from './inventoryService.js'
 
 export const orderInclude = {
   items: { include: { product: { select: { image: true, slug: true } } } },
   paymentMethod: true,
+  posSale: { select: { id: true, status: true, confirmedAt: true, _count: { select: { refunds: true } } } },
 }
 const deliveryFields = ['tipoEntrega', 'departamento', 'provincia', 'distrito', 'direccion', 'numero', 'interior',
   'referencia', 'quiereComprobante', 'documento', 'otraPersona', 'personaNombre', 'personaCelular']
@@ -59,11 +61,6 @@ export async function createOrder(db, body, user, idempotencyKey, secret) {
     for (const { productId, quantity } of items) {
       const product = byId.get(productId)
       if (!product || product.price.lt(0)) throw rejected(409, 'Un producto ya no está disponible. Revisa el carrito.', productId)
-      const reserved = await tx.product.updateMany({
-        where: { id: productId, stock: { gte: quantity }, price: product.price, compareAtPrice: product.compareAtPrice },
-        data: { stock: { decrement: quantity } },
-      })
-      if (reserved.count !== 1) throw rejected(409, `El stock o precio de "${product.name}" cambió. Revisa el carrito.`, productId)
       subtotal = subtotal.plus(product.price.mul(quantity))
       if (product.compareAtPrice?.gt(product.price)) savings = savings.plus(product.compareAtPrice.minus(product.price).mul(quantity))
       resolved.push({ productId, name: product.name, quantity, unitPrice: product.price })
@@ -89,11 +86,39 @@ export async function createOrder(db, body, user, idempotencyKey, secret) {
         statusHistory: { create: { status: 'PENDING', note: 'Pedido creado desde el checkout.' } },
       }, include: orderInclude,
     })
+    for (const { productId, quantity } of [...items].sort((a, b) => a.productId.localeCompare(b.productId))) {
+      const expectedProduct = byId.get(productId)
+      const result = await recordConfirmedMovement(tx, {
+        productId,
+        type: 'WEB_ORDER',
+        direction: 'OUT',
+        quantity,
+        reason: `Reserva de pedido web ${order.id}`,
+        reference: order.id,
+        sourceKey: `web-order:${order.id}:${productId}`,
+        createdById: user?.id ?? null,
+        confirmedById: user?.id ?? null,
+      }).catch(error => {
+        if (error instanceof InventoryError) throw rejected(error.status, error.message, productId)
+        throw error
+      })
+      const productAfterReservation = await tx.product.findUnique({
+        where: { id: productId },
+        select: { price: true, compareAtPrice: true },
+      })
+      const compareAtPriceChanged = expectedProduct.compareAtPrice === null
+        ? productAfterReservation?.compareAtPrice !== null
+        : !productAfterReservation?.compareAtPrice?.equals(expectedProduct.compareAtPrice)
+      if (!productAfterReservation || !productAfterReservation.price.equals(expectedProduct.price) || compareAtPriceChanged) {
+        throw rejected(409, `El stock o precio de "${expectedProduct.name}" cambió. Revisa el carrito.`, productId)
+      }
+      if (result.replayed) throw rejected(409, 'La reserva de stock del pedido ya fue aplicada.', productId)
+    }
     return { order, receiptToken, replayed: false }
   }, { maxWait: 5000, timeout: 10000 })
 }
 
-export async function changeOrderStatus(db, id, status, note) {
+export async function changeOrderStatus(db, id, status, note, userId = null) {
   return db.$transaction(async tx => {
     // Re-read after acquiring the row lock; simultaneous cancellations see CANCELLED.
     await tx.$queryRaw`SELECT id FROM orders WHERE id = ${id} FOR UPDATE`
@@ -101,9 +126,29 @@ export async function changeOrderStatus(db, id, status, note) {
     if (!current) throw new OrderError(404, 'Pedido no encontrado.')
     if (!canTransition(current.status, status)) throw new OrderError(409, `No se permite pasar de ${current.status} a ${status}.`)
     if (current.status === status) return current
+    // Un cobro POS tiene su propio historial de reembolsos; una cancelación
+    // administrativa no puede reponer de nuevo sus unidades.
+    if (status === 'CANCELLED' && tx.posSale) {
+      const linked = await tx.posSale.findUnique({ where: { orderId: id }, select: { confirmedAt: true } })
+      if (linked?.confirmedAt) throw new OrderError(409, 'Este pedido fue cobrado en POS. Usa su devolución o anulación para conciliar dinero y stock.')
+    }
+    if (status === 'SHIPPED' && tx.posSale) {
+      const linked = await tx.posSale.findUnique({ where: { orderId: id }, select: { _count: { select: { refunds: true } } } })
+      if (linked?._count.refunds) throw new OrderError(409, 'El pedido tiene devoluciones POS. Concilia la venta antes de despachar; no se puede enviar el pedido original íntegro.')
+    }
     if (status === 'CANCELLED') {
       for (const item of [...current.items].sort((a, b) => a.productId.localeCompare(b.productId))) {
-        await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.quantity } } })
+        await recordConfirmedMovement(tx, {
+          productId: item.productId,
+          type: 'WEB_CANCELLATION',
+          direction: 'IN',
+          quantity: item.quantity,
+          reason: `Reposición por cancelación del pedido ${current.id}`,
+          reference: current.id,
+          sourceKey: `web-cancellation:${current.id}:${item.productId}`,
+          createdById: userId,
+          confirmedById: userId,
+        })
       }
     }
     return tx.order.update({

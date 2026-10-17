@@ -177,6 +177,7 @@ export default function ForgotPassword() {
         <button type="submit" disabled={submitting} className="btn-primary mt-1 w-full">
           {submitting ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" /> : 'Enviar código'}
         </button>
+        <button type="button" disabled={submitting} className="text-sm font-semibold text-route hover:underline" onClick={() => { if (EMAIL_RE.test(email.trim())) { setFormError(''); setStep('reset') } else setFormError('Ingresa primero tu correo.') }}>Ya tengo un código de activación o recuperación</button>
       </form>
     </AuthCard>
   )

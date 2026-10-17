@@ -24,6 +24,11 @@ export function AuthProvider({ children }) {
     clearGoogleFlow(storage.session)
   }, [storage])
   useEffect(() => {
+    const expire = event => { if (event.detail?.token === token) logout() }
+    window.addEventListener('tecruta:session-expired', expire)
+    return () => window.removeEventListener('tecruta:session-expired', expire)
+  }, [logout, token])
+  useEffect(() => {
     if (!token) { setChecking(false); return }
     let active = true
     setChecking(true); setAuthError('')
@@ -42,10 +47,10 @@ export function AuthProvider({ children }) {
     saveSessionToken(storage.local, storage.session, data.token, remember)
     setToken(data.token); setUser(data.user); setAuthError(''); setChecking(false)
   }, [storage])
-  const login = useCallback(async ({ email, password, remember = false }) => {
+  const login = useCallback(async ({ email, password, remember = false, panel = false }) => {
     const current = ++operation.current
     try {
-      const data = await api.auth.login({ email, password })
+      const data = await (panel ? api.auth.staffLogin : api.auth.login)({ email, password })
       if (current !== operation.current) return { ok: false, error: 'El acceso fue cancelado.' }
       adopt(data, remember)
       return { ok: true }

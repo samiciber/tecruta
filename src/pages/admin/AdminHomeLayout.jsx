@@ -8,7 +8,7 @@ import HomeAdditionalEditor, { createAdditionalSection } from '../../components/
 import { SECTION_LABELS } from '../../components/home/HomeContentSections.jsx'
 import ManualProductSource from '../../components/admin/ManualProductSource.jsx'
 import { useUnsavedContent } from '../../hooks/useUnsavedContent.js'
-import { HomeView } from '../Home.jsx'
+import HomePreview from '../../components/admin/HomePreview.jsx'
 
 const newId = () => `home-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`
 const clone = (value) => JSON.parse(JSON.stringify(value))
@@ -280,7 +280,7 @@ export default function AdminHomeLayout() {
       {dirty && <p role="status" className="mb-3 text-xs text-signal-amber">Hay cambios sin guardar.</p>}
       {dirty && <p className="mb-3 text-xs text-ink-soft dark:text-paper/70">Previsualiza para actualizar los estados de visibilidad del borrador.</p>}
       {saveError && <p role="alert" className="my-3 text-sm text-red-700 dark:text-red-300">{saveError}</p>}
-      {preview && <aside className="my-6 rounded-xl2 border border-paper-line dark:border-night-line"><div className="flex flex-wrap items-center justify-between gap-3 p-4"><h3 className="font-semibold">Previsualización del borrador (sin guardar)</h3><button type="button" className="underline" onClick={() => setPreview(null)}>Cerrar previsualización</button></div><HomeView data={preview} refresh={() => {}} error={null} /></aside>}
+      {preview && <aside className="my-6 rounded-xl2 border border-paper-line dark:border-night-line"><div className="flex flex-wrap items-center justify-between gap-3 p-4"><h3 className="font-semibold">Previsualización del borrador (sin guardar)</h3><button type="button" className="underline" onClick={() => setPreview(null)}>Cerrar previsualización</button></div><HomePreview data={preview} refresh={() => {}} error={null} /></aside>}
       {loading && <p role="status" className="text-sm text-ink-soft dark:text-paper/60">Cargando diseño y fuentes…</p>}
       {error && <p role="alert" className="text-sm text-signal-red">{error} <button type="button" onClick={load} className="underline">Reintentar</button></p>}
       {!loading && !error && layout?.sections.length === 0 && <EmptyRow>El diseño está vacío. No se aplicará un diseño alternativo automáticamente.</EmptyRow>}

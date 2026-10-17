@@ -1,8 +1,9 @@
 import React, { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/layout/Header.jsx'
 import Footer from './components/layout/Footer.jsx'
 import MobileCartBar from './components/cart/MobileCartBar.jsx'
+import { PANEL_ORIGIN, legacyPanelPath } from './app/urls.js'
 import { CatalogAvailability } from './components/ui/CatalogAvailability.jsx'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
@@ -19,15 +20,6 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword.jsx'))
 const OrderHistory = lazy(() => import('./pages/OrderHistory.jsx'))
 const Addresses = lazy(() => import('./pages/Addresses.jsx'))
 const Account = lazy(() => import('./pages/Account.jsx'))
-const AdminLayout = lazy(() => import('./pages/admin/AdminLayout.jsx'))
-const AdminProducts = lazy(() => import('./pages/admin/AdminProducts.jsx'))
-const AdminOrders = lazy(() => import('./pages/admin/AdminOrders.jsx'))
-const AdminPaymentMethods = lazy(() => import('./pages/admin/AdminPaymentMethods.jsx'))
-const AdminUsers = lazy(() => import('./pages/admin/AdminUsers.jsx'))
-const AdminBrands = lazy(() => import('./pages/admin/AdminBrands.jsx'))
-const AdminPopularSearches = lazy(() => import('./pages/admin/AdminPopularSearches.jsx'))
-const AdminStores = lazy(() => import('./pages/admin/AdminStores.jsx'))
-const AdminSiteSettings = lazy(() => import('./pages/admin/AdminSiteSettings.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
 const Proximamente = lazy(() => import('./pages/Proximamente.jsx'))
 const Cart = lazy(() => import('./pages/Cart.jsx'))
@@ -38,16 +30,6 @@ const SavedItems = lazy(() => import('./pages/account/SavedItems.jsx'))
 const BrandsPage = lazy(() => import('./pages/Brands.jsx'))
 const BrandPage = lazy(() => import('./pages/BrandPage.jsx'))
 const CategoryPage = lazy(() => import('./pages/CategoryPage.jsx'))
-const AdminCategoryTree = lazy(() => import('./pages/admin/AdminCategoryTree.jsx'))
-const AdminAssignProducts = lazy(() => import('./pages/admin/AdminAssignProducts.jsx'))
-const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.jsx'))
-const AdminHomeCircles = lazy(() => import('./pages/admin/AdminHomeCircles.jsx'))
-const AdminHomeLayout = lazy(() => import('./pages/admin/AdminHomeLayout.jsx'))
-const AdminFooter = lazy(() => import('./pages/admin/AdminFooter.jsx'))
-const AdminNewsletter = lazy(() => import('./pages/admin/AdminNewsletter.jsx'))
-const AdminBanners = lazy(() => import('./pages/admin/AdminBanners.jsx'))
-const AdminMenu = lazy(() => import('./pages/admin/AdminMenu.jsx'))
-const AdminNavMenus = lazy(() => import('./pages/admin/AdminNavMenus.jsx'))
 
 function PageFallback() {
   return (
@@ -58,7 +40,8 @@ function PageFallback() {
 }
 
 export default function App() {
-
+  const location = useLocation()
+  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/') || location.pathname === '/pos' || location.pathname.startsWith('/pos/')) return <PanelRedirect />
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#contenido" className="sr-only z-[200] rounded bg-white px-4 py-2 text-sm font-bold text-ink shadow focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
@@ -99,26 +82,8 @@ export default function App() {
             <Route path="/mis-pedidos" element={<OrderHistory />} />
             <Route path="/mis-direcciones" element={<Addresses />} />
             <Route path="/mi-cuenta" element={<Account />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="productos" element={<AdminProducts />} />
-              <Route path="banners" element={<AdminBanners />} />
-              <Route path="circulos" element={<AdminHomeCircles />} />
-              <Route path="home-layout" element={<AdminHomeLayout />} />
-              <Route path="footer" element={<AdminFooter />} />
-              <Route path="suscriptores" element={<AdminNewsletter />} />
-              <Route path="pedidos" element={<AdminOrders />} />
-              <Route path="categorias" element={<AdminCategoryTree />} />
-              <Route path="pagos" element={<AdminPaymentMethods />} />
-              <Route path="clientes" element={<AdminUsers />} />
-              <Route path="marcas" element={<AdminBrands />} />
-              <Route path="busquedas" element={<AdminPopularSearches />} />
-              <Route path="tiendas" element={<AdminStores />} />
-              <Route path="ajustes" element={<AdminSiteSettings />} />
-              <Route path="menu" element={<AdminMenu />} />
-              <Route path="menus" element={<AdminNavMenus />} />
-              <Route path="asignar" element={<AdminAssignProducts />} />
-            </Route>
+            <Route path="/admin/*" element={<PanelRedirect />} />
+            <Route path="/pos/*" element={<PanelRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -127,4 +92,11 @@ export default function App() {
       <MobileCartBar />
     </div>
   )
+}
+
+function PanelRedirect() {
+  const location = useLocation()
+  const path = legacyPanelPath(location.pathname) + location.search + location.hash
+  React.useEffect(() => { window.location.replace(PANEL_ORIGIN + path) }, [path])
+  return <p className="p-8">Abriendo Panel TecRuta… <a className="text-route underline" href={PANEL_ORIGIN + path}>Continuar</a></p>
 }

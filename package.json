@@ -6,7 +6,20 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:inventory": "node --test server/prisma/tests/inventory-part1.test.mjs",
+    "qa:inventory-ui": "node scripts/verify-inventory-ui.mjs",
+    "test:pos": "node --test server/prisma/tests/pos-part2.test.mjs",
+    "qa:pos-ui": "node scripts/verify-pos-ui.mjs",
+    "dev:store": "vite --mode store",
+    "dev:panel": "vite --mode panel",
+    "build:store": "vite build --mode store",
+    "build:panel": "vite build --mode panel",
+    "build:all": "npm run build:store && npm run build:panel",
+    "preview:panel": "vite preview --mode panel --port 5180",
+    "preview:local": "node scripts/preview-panel-local.mjs",
+    "test:panel": "node --test server/prisma/tests/panel.test.mjs",
+    "qa:panel-ui": "node scripts/verify-panel-ui.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateRuntimeEnv } from './lib/runtimeConfig.js'
+import { validateRuntimeEnv, corsOrigins } from './lib/runtimeConfig.js'
 import { apiSecurityHeaders } from './middleware/securityHeaders.js'
 import { categoriesRouter } from './routes/categories.routes.js'
 import { productsRouter } from './routes/products.routes.js'
@@ -19,8 +19,11 @@ import { addressesRouter } from './routes/addresses.routes.js'
 import { defaultJson } from './middleware/bodyLimits.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { newsletterRouter } from './routes/newsletter.routes.js'
+import { inventoryRouter } from './routes/inventory.routes.js'
+import { posRouter } from './routes/pos.routes.js'
+import { staffRouter } from './routes/staff.routes.js'
 
-export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
+export function createApp({ orders = ordersRouter, admin = adminRouter, inventory = inventoryRouter, staff = staffRouter, auth = authRouter } = {}) {
   validateRuntimeEnv()
   const app = express()
   // Render has one proxy hop. Never trust every forwarded address.
@@ -30,18 +33,34 @@ export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
   app.disable('x-powered-by')
   app.use(apiSecurityHeaders())
 
-  app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }))
+  const origins = corsOrigins()
+  app.use(cors({ origin(origin, callback) { callback(null, !origin || origins.includes(origin)) },
+    allowedHeaders: ['content-type', 'authorization', 'idempotency-key'], methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }))
   app.use(defaultJson)
 
   // Verificación rápida de que el servidor está vivo (útil para monitoreo
   // y para que la app móvil futura confirme conectividad).
-  app.get('/api/health', (req, res) => res.json({ ok: true }))
+  app.get('/api/health', (req, res) => res.json({ ok: true,
+    ...(process.env.MAINTENANCE_MODE === 'true' ? { maintenance: true } : {}),
+    ...(process.env.RENDER_GIT_COMMIT ? { revision: process.env.RENDER_GIT_COMMIT } : {}),
+  }))
+  // Deployment fence: activate before the final backup/migrations and keep it
+  // until the compatible API is live. Existing sessions are preserved.
+  app.use('/api', (_req, res, next) => {
+    if (process.env.MAINTENANCE_MODE !== 'true') return next()
+    res.set('Cache-Control', 'no-store').set('Retry-After', '120')
+    return res.status(503).json({ error: 'TecRuta está en mantenimiento. Conserva tu sesión e inténtalo nuevamente en unos minutos.', maintenance: true })
+  })
 
   app.use('/api/categories', categoriesRouter)
   app.use('/api/products', productsRouter)
   app.use('/api/payment-methods', paymentMethodsRouter)
-  app.use('/api/auth', authRouter)
+  app.use('/api/auth', auth)
   app.use('/api/orders', orders)
+  app.use('/api/pos', posRouter)
+  // Inventory roles differ from the ADMIN-only routers mounted below.
+  app.use('/api/admin/inventory', inventory)
+  app.use('/api/admin/staff', staff)
   app.use('/api/admin', admin)
   app.use('/api/admin', adminContentRouter)
   app.use('/api/cart', cartRouter)

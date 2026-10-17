@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { formatCurrency } from '../../utils/formatCurrency.js'
 import { canTransition, ORDER_STATUSES } from '../../utils/orderStatus.js'
+import { Link } from 'react-router-dom'
 
 // Mismo límite que valida el backend (ver RECEIPT_MAX_BYTES en
 // server/src/routes/orders.routes.js).
@@ -151,7 +152,7 @@ function OrderRow({ order, token, onUpdated }) {
             className={`rounded-full border-0 px-3 py-1.5 text-xs font-medium ${STATUS_STYLES[order.status]}`}
           >
             {STATUSES.map((s) => (
-              <option key={s} value={s} disabled={!canTransition(order.status, s)}>
+              <option key={s} value={s} disabled={!canTransition(order.status, s) || (s === 'PAID' && !order.posSale?.confirmedAt) || (s === 'CANCELLED' && order.posSale?.confirmedAt && order.status !== 'CANCELLED') || (s === 'SHIPPED' && order.posSale?._count?.refunds > 0)}>
                 {STATUS_LABELS[s]}
               </option>
             ))}
@@ -167,6 +168,10 @@ function OrderRow({ order, token, onUpdated }) {
         </div>
       </div>
 
+      <div className="px-4 pb-3 text-xs text-ink-soft dark:text-paper/60">
+        <Link className="font-semibold text-route" to={`/pos?order=${encodeURIComponent(order.id)}`}>{order.posSale ? `Ver cobro POS · ${order.posSale.status}` : 'Registrar cobro verificado en POS'}</Link>
+        {order.posSale?._count?.refunds > 0 && <p className="mt-1">Esta venta tiene devoluciones en POS. Revisa la trazabilidad antes de despachar.</p>}
+      </div>
       {expanded && (
         <div className="border-t border-paper-line px-4 py-3 dark:border-night-line">
           <ul className="mb-2 flex flex-col gap-1 text-sm">

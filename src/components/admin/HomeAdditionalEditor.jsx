@@ -75,7 +75,7 @@ export default function HomeAdditionalEditor({ section, onChange, categories, br
         {categories.map(category => <Check key={category.slug} label={category.name} checked={section.categorySlugs.includes(category.slug)} onChange={selected => patch({ categorySlugs: selected ? [...section.categorySlugs, category.slug].slice(0, 12) : section.categorySlugs.filter(slug => slug !== category.slug) })} />)}
         {!categories.length && <p className="text-sm">No hay categorías visibles.</p>}
       </fieldset> : section.source ? <SourceEditor source={section.source} categories={categories} brands={brands} onChange={source => patch({ source })} /> : <button type="button" className="btn-secondary px-3 py-2 text-xs" onClick={() => patch({ source: { id: newId(), label: 'Destacados', kind: 'featured' } })}>Configurar fuente de productos</button>}
-      <p className="text-xs text-ink-soft dark:text-paper/70">Edita imágenes, textos y botones en <Link className="underline" to="/admin/banners">Banners del Home</Link>. Si falta un lado, el otro ocupa el ancho completo.</p>
+      <p className="text-xs text-ink-soft dark:text-paper/70">Edita imágenes, textos y botones en <Link className="underline" to="/banners">Banners del Home</Link>. Si falta un lado, el otro ocupa el ancho completo.</p>
     </>}
     {section.type === 'editorialTiles' && <>
       <Field label="Cantidad de tiles"><select className={input} value={section.columns} onChange={event => {
@@ -90,7 +90,7 @@ export default function HomeAdditionalEditor({ section, onChange, categories, br
       <p className="text-xs text-ink-soft dark:text-paper/70">Completa todos los tiles para publicar la sección. Se admiten borradores incompletos.</p>
     </>}
     {section.type === 'brands' && <Field label="Límite de marcas (1–24)"><input type="number" min="1" max="24" className={input} value={section.limit} onChange={event => patch({ limit: Number(event.target.value) })} /></Field>}
-    {section.type === 'brands' && <p className="text-xs text-ink-soft dark:text-paper/70">Usa marcas visibles con productos en el catálogo, destacadas primero. Edita sus logos y orden en <Link to="/admin/marcas" className="underline">Marcas</Link>.</p>}
+    {section.type === 'brands' && <p className="text-xs text-ink-soft dark:text-paper/70">Usa marcas visibles con productos en el catálogo, destacadas primero. Edita sus logos y orden en <Link to="/marcas" className="underline">Marcas</Link>.</p>}
     {section.type === 'benefits' && <>
       {section.items.map((item, index) => <fieldset key={item.id} className="space-y-3 rounded-lg border border-paper-line p-3 dark:border-night-line"><legend className="px-1 text-sm">Beneficio {index + 1}</legend>
         <Field label="Icono permitido"><select className={input} value={item.icon} onChange={event => updateItem(index, { ...item, icon: event.target.value })}>{Object.keys(BENEFIT_ICONS).map(icon => <option key={icon}>{icon}</option>)}</select></Field>
@@ -101,7 +101,7 @@ export default function HomeAdditionalEditor({ section, onChange, categories, br
       <button type="button" className="btn-secondary px-3 py-2 text-xs disabled:opacity-40" disabled={section.items.length >= 4} onClick={() => patch({ items: [...section.items, { id: newId(), icon: 'info', title: '', text: '' }] })}>Agregar beneficio</button>
       <p className="text-xs text-ink-soft dark:text-paper/70">Texto plano. Publica únicamente beneficios y condiciones definidos por TecRuta.</p>
     </>}
-    {section.type === 'supportLinks' && <p className="text-sm text-ink-soft dark:text-paper/70">Reutiliza los cinco enlaces del carrito, con sus textos y destinos existentes. Se editan una sola vez en <Link to="/admin/ajustes" className="underline">Ajustes del sitio</Link>. Sin configuración válida, la sección se oculta.</p>}
+    {section.type === 'supportLinks' && <p className="text-sm text-ink-soft dark:text-paper/70">Reutiliza los cinco enlaces del carrito, con sus textos y destinos existentes. Se editan una sola vez en <Link to="/ajustes" className="underline">Ajustes del sitio</Link>. Sin configuración válida, la sección se oculta.</p>}
     {section.type === 'legalText' && <TextField multiline label="Texto legal (texto plano)" value={section.text} maxLength={6000} onChange={text => patch({ text })} />}
     {section.type === 'useSelections' && <>
       {section.tabs.map((tab, index) => <fieldset key={tab.id} className="space-y-4 rounded-lg border border-paper-line p-3 dark:border-night-line"><legend className="px-1 text-sm">Pestaña {index + 1}</legend>

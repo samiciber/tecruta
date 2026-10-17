@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "Login propio: cliente rechazado, sin registro público de trabajadores",
+    "Ajuste administrativo persiste y previsualización del Home conserva el render sin compras",
+    "Compatibilidad /admin y recarga directa conservan ruta y sesión",
+    "Invitación, persistencia, activación privada y acceso real del nuevo cajero",
+    "Almacén entra a inventario y cajero a POS con navegación restringida",
+    "Panel adaptable a escritorio/tablet/móvil y temas claro/oscuro",
+    "Carrito persistente, checkout y guardados funcionan en la tienda con su propio login",
+    "Tienda conservada, sesiones independientes y redirección hacia el panel sin tokens en URL",
+    "Ruta POS anterior redirige y una sesión expirada vuelve al login del panel"
+  ],
+  "captures": [
+    "login-escritorio-claro",
+    "dashboard-escritorio-claro",
+    "usuarios-escritorio-claro",
+    "dashboard-tablet-claro",
+    "dashboard-tablet-oscuro",
+    "dashboard-movil-claro",
+    "dashboard-movil-oscuro",
+    "tienda-escritorio",
+    "checkout-conservado"
+  ],
+  "errors": []
+}

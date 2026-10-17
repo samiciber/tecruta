@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { STORE_ORIGIN } from '../../app/urls.js'
 import { AlertTriangle, ClipboardList, Package, Users, Wallet } from 'lucide-react'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -39,10 +40,10 @@ export default function AdminDashboard() {
       {data && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat icon={ClipboardList} label="Pedidos pendientes" value={data.orders.pending} to="/admin/pedidos" tone={data.orders.pending > 0 ? 'warn' : 'default'} hint={`${data.orders.last7Days} en los últimos 7 días`} />
+            <Stat icon={ClipboardList} label="Pedidos pendientes" value={data.orders.pending} to="/pedidos" tone={data.orders.pending > 0 ? 'warn' : 'default'} hint={`${data.orders.last7Days} en los últimos 7 días`} />
             <Stat icon={Wallet} label="Ventas cobradas (30 días)" value={formatCurrency(data.revenue30Days)} hint="Pagados, enviados y entregados" />
-            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/admin/productos" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
-            <Stat icon={Users} label="Clientes" value={data.customers} to="/admin/clientes" />
+            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/productos" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
+            <Stat icon={Users} label="Clientes" value={data.customers} to="/clientes" />
           </div>
 
           {(data.catalog.withoutBrand > 0 || data.catalog.inLegacyCategories > 0) && (
@@ -50,7 +51,7 @@ export default function AdminDashboard() {
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-signal-amber" aria-hidden="true" />
               <p>
                 {data.catalog.inLegacyCategories} producto(s) siguen en categorías heredadas y {data.catalog.withoutBrand} no tienen marca.{' '}
-                <Link to="/admin/asignar" className="font-medium text-route underline">Asignarlos en bloque</Link>
+                <Link to="/asignar" className="font-medium text-route underline">Asignarlos en bloque</Link>
               </p>
             </div>
           )}
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
                 <ul className="divide-y divide-paper-line rounded-xl2 border border-paper-line dark:divide-night-line dark:border-night-line">
                   {data.stock.lowList.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <Link to={`/producto/${p.slug}`} className="min-w-0 truncate text-ink hover:text-route dark:text-paper">{p.name}</Link>
+                      <a href={`${STORE_ORIGIN}/producto/${encodeURIComponent(p.slug)}`} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-ink hover:text-route dark:text-paper">{p.name}</a>
                       <span className="shrink-0 rounded-full bg-signal-amber/15 px-2 py-0.5 text-xs font-semibold text-signal-amber">{p.stock} u.</span>
                     </li>
                   ))}

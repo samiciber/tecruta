@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { storeOrigin } from '../lib/runtimeConfig.js'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
 import { signSession } from '../lib/token.js'
@@ -22,7 +23,7 @@ function dateValue(value) {
   if (!Number.isFinite(date.getTime())) throw new AuthError(400, 'Ingresa una fecha válida.')
   return date
 }
-function frontendUrl() { return (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, '') }
+function frontendUrl() { return storeOrigin() }
 
 export function createAuthRouter({ db = prisma, now = () => new Date(),
   mailer = { verification: sendVerificationEmail, reset: sendPasswordResetEmail },
@@ -98,11 +99,12 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     })
     return accepted ? res.json({ ok: true }) : res.status(400).json(invalidCode)
   }))
-  router.post('/login', loginRateLimiter, validate(loginSchema), asyncHandler(async (req, res) => {
+  router.post(['/login', '/staff-login'], loginRateLimiter, validate(loginSchema), asyncHandler(async (req, res) => {
     secret()
     const user = await db.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
     const matches = await bcrypt.compare(req.body.password, user?.passwordHash ?? await dummyPasswordHash)
     if (!user || !matches) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
+    if (req.path === '/staff-login' && !['ADMIN', 'WAREHOUSE', 'CASHIER'].includes(user.role)) return res.status(403).json({ error: 'Tu cuenta no tiene acceso al Panel TecRuta.' })
     if (!user.verified) return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión.', needsVerification: true })
     res.json({ token: signSession(user), user: serializeUser(user) })
   }))

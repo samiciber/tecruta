@@ -32,7 +32,7 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
     '/products',
     validate(productCreateSchema),
     asyncHandler(async (req, res) => {
-      res.status(201).json(await createAdminProduct(prisma, req.body))
+      res.status(201).json(await createAdminProduct(prisma, req.body, req.user.id))
     }),
   )
 
@@ -40,7 +40,7 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
     '/products/:id',
     validate(productUpdateSchema),
     asyncHandler(async (req, res) => {
-      res.json(await updateAdminProduct(prisma, req.params.id, req.body))
+      res.json(await updateAdminProduct(prisma, req.params.id, req.body, req.user.id))
     }),
   )
 
@@ -179,7 +179,11 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
       const parsed = statusBodySchema.safeParse(req.body)
       if (!parsed.success) return res.status(400).json({ error: 'Estado o nota inválidos.' })
       const { status, note } = parsed.data
-      const order = await changeOrderStatus(prisma, req.params.id, status, note)
+      if (status === 'PAID') {
+        const linked = await prisma.posSale.findUnique({ where: { orderId: req.params.id }, select: { confirmedAt: true } })
+        if (!linked?.confirmedAt) return res.status(409).json({ error: 'Registra el cobro verificado desde Punto de venta para conciliar pagos y caja. Una captura no confirma el dinero.' })
+      }
+      const order = await changeOrderStatus(prisma, req.params.id, status, note, req.user.id)
 
       res.json(serializeOrder(order))
     }),
@@ -194,6 +198,28 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
     asyncHandler(async (req, res) => {
       const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } })
       res.json(users.map(serializeUser))
+    }),
+  )
+  adminRouter.patch(
+    '/users/:id/role',
+    asyncHandler(async (req, res) => {
+      const parsed = z.object({ role: z.enum(['CUSTOMER', 'WAREHOUSE', 'CASHIER']) }).strict().safeParse(req.body)
+      if (!parsed.success) return res.status(400).json({ error: 'Rol de usuario inválido.' })
+      if (req.user.id === req.params.id) return res.status(409).json({ error: 'No puedes cambiar tu propio rol.' })
+      const user = await prisma.user.findUnique({ where: { id: req.params.id } })
+      if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' })
+      if (user.role === 'ADMIN') return res.status(409).json({ error: 'El rol ADMIN se gestiona únicamente mediante el procedimiento de administración de cuentas.' })
+      const updated = await prisma.$transaction(async tx => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('tecruta:staff-access', 0))`
+        const actor = await tx.user.findUnique({ where: { id: req.user.id } })
+        if (actor?.role !== 'ADMIN' || (actor.tokenVersion ?? 0) !== (req.user.tokenVersion ?? 0)) throw Object.assign(new Error('Tu autorización cambió.'), { status: 403 })
+        await tx.$queryRaw`SELECT id FROM users WHERE id = ${user.id} FOR UPDATE`
+        const fresh = await tx.user.findUnique({ where: { id: user.id } })
+        if (fresh.role === 'ADMIN') throw Object.assign(new Error('Gestiona administradores desde Usuarios y permisos.'), { status: 409 })
+        if (await tx.cashSession.count({ where: { userId: user.id, status: 'OPEN' } })) throw Object.assign(new Error('Cierra el turno de caja antes de cambiar el acceso.'), { status: 409 })
+        return tx.user.update({ where: { id: user.id }, data: { role: parsed.data.role, tokenVersion: (fresh.tokenVersion ?? 0) + 1 } })
+      })
+      res.json(serializeUser(updated))
     }),
   )
   return adminRouter

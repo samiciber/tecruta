@@ -1,0 +1,49 @@
+{
+  "fechaLima": "2026-10-17",
+  "rama": "implementacion/panel-separado",
+  "baseMain": "97684b3",
+  "publicado": false,
+  "produccionModificada": false,
+  "dnsModificado": false,
+  "baseDeDatosCambiadaDeProveedor": false,
+  "dependenciasOLockfilesActualizados": false,
+  "migracionesNuevasPorSeparacion": 0,
+  "migracionesInventarioPos": "conservadas; sin aplicar en producción",
+  "pruebas": {
+    "panelPostgresLocal": { "correctas": 8, "total": 8 },
+    "inventarioPostgresLocal": { "correctas": 14, "total": 14 },
+    "posPostgresLocal": { "correctas": 19, "total": 19 },
+    "catalogoLoginColeccionesPostgresLocal": { "correctas": 4, "total": 4 },
+    "regresionExistente": { "correctas": 67, "total": 67 },
+    "total": 112,
+    "base": "PostgreSQL Docker desechable, loopback, datos sintéticos, dotenv vacío",
+    "fixtureActualizada": "lote-5 de integración ahora crea existencias mediante el mecanismo central, con todas las migraciones; antes escribía stock directamente"
+  },
+  "interfaz": {
+    "panel": "docs/panel/evidencia/resultados.json",
+    "inventario": "docs/inventario/evidencia/resultados.json",
+    "pos": "docs/pos/evidencia/resultados.json",
+    "panelComprobaciones": 9,
+    "panelCapturas": 9,
+    "dispositivos": ["escritorio 1440", "tablet 834", "móvil 390"],
+    "temas": ["claro", "oscuro"],
+    "erroresNoControlados": 0,
+    "correosRealesEnviados": 0
+  },
+  "builds": {
+    "tienda": "correcto; dist",
+    "panel": "correcto; dist-panel",
+    "guardaDeModulos": "correcta: sin pantallas administrativas en tienda ni páginas comerciales en panel",
+    "avisosExistentes": ["importación estática/dinámica de ubigeo", "bundle de visor 3D mayor de 500 kB en tienda"],
+    "panelNoIndexable": "meta robots, robots.txt y plantilla X-Robots-Tag preparada"
+  },
+  "gitDiffCheck": "correcto",
+  "revisarAntesDeProduccion": [
+    "Proyecto Vercel del panel y selección de configuración por proyecto",
+    "DNS exclusivo del subdominio admin, HTTPS y mismos SHA compatibles",
+    "Cuenta real del administrador inicial y configuración de correo transaccional",
+    "Respaldo, corte y migraciones pendientes de las partes 1 y 2",
+    "Prueba de Google con credenciales reales en entorno autorizado",
+    "Integración fiscal, validación bancaria automática y hardware físico siguen pendientes según la Parte 2"
+  ]
+}

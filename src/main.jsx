@@ -1,11 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
+import Application from '@tecruta/application'
 import { ThemeProvider } from './context/ThemeContext.jsx'
-import { CartProvider } from './context/CartContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
-import { SavedProvider } from './context/SavedContext.jsx'
 import { ToastProvider } from './components/ui/ToastProvider.jsx'
 import './index.css'
 
@@ -15,11 +13,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <CartProvider>
-              <SavedProvider>
-                <App />
-              </SavedProvider>
-            </CartProvider>
+            <Application />
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

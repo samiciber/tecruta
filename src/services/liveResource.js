@@ -3,6 +3,8 @@ const resources = new Map()
 export function invalidatedResourcesFor(method, path) {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) return []
   const keys = []
+  if (/^\/api\/pos\/sales(\/|$)/.test(path)) keys.push('products', 'home')
+  if (/^\/api\/admin\/inventory\/movements\/[^/]+\/(confirm|reverse)$/.test(path)) keys.push('products', 'home')
   if (/^\/api\/admin\/(products|brands|categories|category-tree)(\/|$)/.test(path) || path === '/api/orders' || /^\/api\/admin\/orders\/[^/]+\/status$/.test(path)) {
     keys.push('products', 'home')
   }

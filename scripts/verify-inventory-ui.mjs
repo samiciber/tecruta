@@ -1,0 +1,145 @@
+﻿import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { createServer } from 'vite'
+import { createInventoryRuntime } from '../server/prisma/tests/helpers/inventory-runtime.mjs'
+const require = createRequire(import.meta.url)
+const qaTools = process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-final-tools/node_modules')
+const zxing = require(join(qaTools, '@zxing/library'))
+const { PNG } = require(join(qaTools, 'pngjs'))
+const { chromium } = require(join(qaTools, 'playwright-core'))
+process.env.CORS_ORIGINS = 'http://127.0.0.1:5178,http://127.0.0.1:5188'
+const rt = await createInventoryRuntime()
+const evidence = join(rt.root, 'docs/inventario/evidencia')
+mkdirSync(evidence, { recursive: true })
+const results = { checks: [], captures: [], errors: [] }
+let browser, vite, store
+try {
+  const base = await rt.start()
+  const p = await rt.product(7, { name: 'Cable USB-C de prueba', sku: 'TR-QA_CABLE-01' })
+  const second = await rt.product(2, { name: 'Cargador de prueba', sku: 'TR-QA-CHARGER' })
+  await rt.db.productBarcode.create({ data: { code: '0012345678905', normalizedCode: '0012345678905', kind: 'MANUFACTURER', productId: p.id } })
+  process.chdir(rt.root)
+  vite = await createServer({ root: rt.root, configFile: join(rt.root, 'vite.config.js'), mode: 'panel', cacheDir: join(rt.tempRoot, 'vite-panel'), envFile: false, define: { 'import.meta.env.VITE_API_URL': JSON.stringify(base) }, server: { host: '127.0.0.1', port: 5178, strictPort: true } })
+  await vite.listen()
+  store = await createServer({ root: rt.root, configFile: join(rt.root, 'vite.config.js'), mode: 'store', cacheDir: join(rt.tempRoot, 'vite-store'), envFile: false, define: { 'import.meta.env.VITE_API_URL': JSON.stringify(base) }, server: { host: '127.0.0.1', port: 5188, strictPort: true } }); await store.listen()
+  browser = await chromium.launch({ executablePath: process.env.TECRUTA_QA_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true, chromiumSandbox: true })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'America/Lima' })
+  await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort())
+  const page = await context.newPage()
+  const productPanel = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Productos', exact: true }) })
+  page.on('pageerror', error => results.errors.push(error.message))
+  const loginAs = async user => {
+    await page.goto('http://127.0.0.1:5178')
+    await page.evaluate(token => localStorage.setItem('tecruta:token', JSON.stringify(token)), rt.auth(user))
+    await page.goto('http://127.0.0.1:5178/admin/inventario')
+    await page.getByRole('heading', { name: 'Kardex', exact: true }).waitFor()
+    await productPanel.getByText(p.name, { exact: true }).first().waitFor()
+  }
+  await loginAs(rt.admin)
+  const scanner = page.getByPlaceholder('Enfoca aquí; el lector confirma con Enter')
+  const scan = async code => {
+    await scanner.fill(code)
+    await Promise.all([page.waitForResponse(response => response.url().includes('/inventory/lookup') && response.request().method() === 'GET'), scanner.press('Enter')])
+  }
+  await scan('0012345678905')
+  await page.getByText('Stock actual: 7', { exact: false }).waitFor()
+  assert.equal(await rt.db.inventoryMovement.count({ where: { status: 'DRAFT' } }), 0)
+  await scan('0012345678905')
+  await page.waitForFunction(() => document.querySelector('input[type=number][min="1"]')?.value === '2')
+  assert.equal((await rt.db.product.findUnique({ where: { id: p.id } })).stock, 7)
+  results.checks.push('Enter identifica sin confirmar; escaneo repetido acumula cantidad de compra'); console.log(results.checks.at(-1))
+  await page.getByLabel('Motivo', { exact: true }).fill('Compra sintética para revisión visual')
+  await page.getByRole('button', { name: 'Guardar borrador', exact: true }).click()
+  await page.getByRole('button', { name: 'Confirmar', exact: true }).waitFor()
+  assert.equal((await rt.db.product.findUnique({ where: { id: p.id } })).stock, 7)
+  await page.reload()
+  await page.getByRole('button', { name: 'Confirmar', exact: true }).waitFor()
+  results.checks.push('Borrador persiste al recargar sin cambiar stock'); console.log(results.checks.at(-1))
+  page.once('dialog', dialog => dialog.accept())
+  await Promise.all([page.waitForResponse(response => response.url().includes('/confirm') && response.status() === 200), page.getByRole('button', { name: 'Confirmar', exact: true }).click()])
+  await page.reload()
+  await page.getByRole('heading', { name: 'Kardex', exact: true }).waitFor()
+  assert.equal((await rt.db.product.findUnique({ where: { id: p.id } })).stock, 9)
+  assert.equal(await page.getByRole('button', { name: 'Confirmar', exact: true }).count(), 0)
+  results.checks.push('Confirmación y Kardex persisten al recargar'); console.log(results.checks.at(-1))
+  await scan('NO-EXISTE-QA')
+  await page.getByText('Código desconocido.', { exact: false }).waitFor()
+  results.checks.push('Código desconocido muestra error y búsqueda manual'); console.log(results.checks.at(-1))
+  await page.getByPlaceholder('Buscar nombre o SKU').fill('Cable')
+  await productPanel.getByText(p.name, { exact: true }).first().click()
+  await page.getByText('Stock actual: 9', { exact: false }).waitFor()
+  // Escanear no debe capturar teclas ni robar foco a otros campos.
+  const reason = page.getByLabel('Motivo', { exact: true })
+  await reason.fill('Texto manual QA')
+  await reason.press('a')
+  assert.equal(await reason.inputValue(), 'Texto manual QAa')
+  results.checks.push('Teclado normal de otros formularios no se captura globalmente'); console.log(results.checks.at(-1))
+  await page.getByRole('checkbox', { name: 'Seleccionar etiqueta de ' + p.name }).check()
+  const popupPromise = page.waitForEvent('popup')
+  await page.getByRole('button', { name: /Imprimir etiquetas/ }).click()
+  const popup = await popupPromise
+  await popup.waitForLoadState('domcontentloaded')
+  assert.equal(await popup.locator('svg rect').count() > 10, true)
+  assert.equal(await popup.locator('.code').textContent(), '0012345678905')
+  assert.equal(await popup.locator('.price').count(), 1)
+  const svg = popup.locator('svg').first()
+  const originalStyle = await svg.getAttribute('style')
+  await svg.evaluate(el => { el.style.width = (Number(el.getAttribute('viewBox').split(' ')[2]) * 3) + 'px'; el.style.height = '144px'; el.style.maxWidth = 'none'; el.style.flexShrink = '0' })
+  const png = PNG.sync.read(await svg.screenshot())
+  const luminances = new Uint8ClampedArray(png.width * png.height)
+  for (let i = 0; i < luminances.length; i++) luminances[i] = (png.data[i * 4] + 2 * png.data[i * 4 + 1] + png.data[i * 4 + 2]) / 4
+  const reader = new zxing.MultiFormatReader()
+  const bitmap = new zxing.BinaryBitmap(new zxing.HybridBinarizer(new zxing.RGBLuminanceSource(luminances, png.width, png.height)))
+  assert.equal(reader.decode(bitmap, new Map([[zxing.DecodeHintType.POSSIBLE_FORMATS, [zxing.BarcodeFormat.CODE_128]]])).getText(), '0012345678905')
+  await svg.evaluate((el, style) => el.setAttribute('style', style), originalStyle)
+  results.checks.push('ZXing decodifica el código de la etiqueta renderizada conservando ceros'); console.log(results.checks.at(-1))
+  await popup.screenshot({ path: join(evidence, 'etiqueta-code128.png'), fullPage: true })
+  await popup.close()
+  results.checks.push('Etiqueta imprimible con Code128, ceros iniciales, nombre y precio'); console.log(results.checks.at(-1))
+  await page.getByLabel('Incluir precio en etiqueta').uncheck()
+  const noPricePromise = page.waitForEvent('popup')
+  await page.getByRole('button', { name: /Imprimir etiquetas/ }).click()
+  const noPrice = await noPricePromise; await noPrice.waitForLoadState('domcontentloaded')
+  assert.equal(await noPrice.locator('.price').count(), 0); await noPrice.close()
+  results.checks.push('Precio opcional en etiqueta'); console.log(results.checks.at(-1))
+  const capture = async name => {
+    await page.waitForTimeout(250)
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, name + ' overflow')
+    await page.screenshot({ path: join(evidence, name + '.png'), fullPage: true, animations: 'disabled' })
+    results.captures.push(name)
+    console.log('Captura: ' + name)
+  }
+  for (const [device, viewport] of [['desktop', { width: 1440, height: 1000 }], ['tablet', { width: 834, height: 1112 }]]) {
+    await page.setViewportSize(viewport)
+    for (const theme of ['light','dark']) {
+      await page.evaluate(theme => localStorage.setItem('tecruta:theme', JSON.stringify(theme)), theme)
+      await page.reload(); await page.getByRole('heading', { name: 'Kardex', exact: true }).waitFor()
+      await page.waitForFunction(dark => document.documentElement.classList.contains('dark') === dark, theme === 'dark')
+      await capture(device + '-' + theme)
+    }
+  }
+  for (const [role, user] of [['warehouse', rt.warehouse], ['cashier', rt.cashier]]) {
+    await loginAs(user)
+    assert.equal(await page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link', { name: 'Productos', exact: true }).count(), 0)
+    assert.equal(await page.getByRole('button', { name: 'Guardar borrador', exact: true }).count(), role === 'warehouse' ? 1 : 0)
+    await capture(role + '-tablet')
+    await page.goto('http://127.0.0.1:5178/admin/productos')
+    await page.waitForURL(role === 'warehouse' ? '**/inventario' : '**/pos')
+    results.checks.push(role + ': navegación y permisos de interfaz'); console.log(results.checks.at(-1))
+  }
+  await page.evaluate(() => localStorage.removeItem('tecruta:token'))
+  await Promise.all([page.waitForResponse(response => response.url().includes('/api/home') && response.status() === 200), page.goto('http://127.0.0.1:5188')])
+  await capture('tienda-publica')
+  results.checks.push('Tienda pública responde con API real aislada'); console.log(results.checks.at(-1))
+  assert.deepEqual(results.errors, [])
+  writeFileSync(join(evidence, 'resultados.json'), JSON.stringify(results, null, 2))
+  console.log(JSON.stringify(results, null, 2))
+} finally {
+  if (browser) await browser.close()
+  if (vite) await vite.close()
+  if (store) await store.close()
+  await rt.close()
+}

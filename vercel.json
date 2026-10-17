@@ -26,6 +26,111 @@
           "value": "strict-origin-when-cross-origin"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "admin.tecruta.com"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/admin",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/pos",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/pos",
+      "permanent": false
+    },
+    {
+      "source": "/pos/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/pos/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/admin",
+      "has": [
+        {
+          "type": "host",
+          "value": "tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/pos",
+      "has": [
+        {
+          "type": "host",
+          "value": "tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/pos",
+      "permanent": false
+    },
+    {
+      "source": "/pos/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "tecruta.com"
+        }
+      ],
+      "destination": "https://admin.tecruta.com/pos/:path*",
+      "permanent": false
     }
   ]
 }

@@ -16,7 +16,7 @@ export default function RequireAdmin({ children }) {
     )
   }
 
-  if (!user || user.role !== 'ADMIN') {
+  if (!user || !['ADMIN', 'WAREHOUSE', 'CASHIER'].includes(user.role)) {
     return <Navigate to="/" replace />
   }
 
