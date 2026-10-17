@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Login existente: ADMIN autorizado y cliente rechazado; funciones excluidas ausentes",
+    "Ajustes persisten, Home conserva su vista previa y rutas antiguas/recarga funcionan",
+    "Escritorio y tablet: navegación y ambos temas sin desbordamiento",
+    "Tienda: catálogo, carrito persistente, checkout, sesión independiente y redirección al panel",
+    "Pérdida temporal de conexión: sesión conservada y recuperación con Reintentar"
+  ],
+  "errors": [],
+  "database": "PostgreSQL local desechable; esquema de main, datos sintéticos"
+}

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import FloatingPanel from './header/FloatingPanel.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
+import { PANEL_ORIGIN } from '../../app/urls.js'
 
 export const ACCOUNT_LINKS = [
   { to: '/mi-cuenta', label: 'Cuenta', Icon: UserCircle },
@@ -86,10 +87,10 @@ export function AccountPanelBody({ onNavigate }) {
         ))}
         {isAuthenticated && user.role === 'ADMIN' && (
           <li>
-            <Link to="/admin" onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 text-[15px] font-medium text-header hover:bg-gray-100 dark:text-sky-300 dark:hover:bg-white/10">
+            <a href={PANEL_ORIGIN} onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 text-[15px] font-medium text-header hover:bg-gray-100 dark:text-sky-300 dark:hover:bg-white/10">
               <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
               Panel de administración
-            </Link>
+            </a>
           </li>
         )}
         {isAuthenticated && (

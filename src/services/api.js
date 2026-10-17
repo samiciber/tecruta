@@ -12,8 +12,9 @@
 // como mensaje de error al usuario.
 
 import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
+import { apiBase } from '../app/urls.js'
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+export const API_URL = apiBase(import.meta.env.VITE_API_URL || 'http://localhost:4000')
 
 async function request(path, { method = 'GET', body, token, headers = {}, signal, cache } = {}) {
   const res = await fetch(`${API_URL}${path}`, {

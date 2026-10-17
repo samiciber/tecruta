@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { storeOrigin } from '../lib/runtimeConfig.js'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
 import { signSession } from '../lib/token.js'
@@ -22,7 +23,7 @@ function dateValue(value) {
   if (!Number.isFinite(date.getTime())) throw new AuthError(400, 'Ingresa una fecha válida.')
   return date
 }
-function frontendUrl() { return (process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/$/, '') }
+function frontendUrl() { return storeOrigin() }
 
 export function createAuthRouter({ db = prisma, now = () => new Date(),
   mailer = { verification: sendVerificationEmail, reset: sendPasswordResetEmail },

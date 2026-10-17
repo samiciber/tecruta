@@ -6,7 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:store": "vite --mode store",
+    "dev:panel": "vite --mode panel",
+    "build:store": "vite build --mode store",
+    "build:panel": "vite build --mode panel",
+    "build:all": "npm run build:store && npm run build:panel",
+    "preview:panel": "vite preview --mode panel --port 5180",
+    "test:separation": "node --test server/prisma/tests/separation.test.mjs",
+    "qa:separation-ui": "node scripts/verify-separation-ui.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

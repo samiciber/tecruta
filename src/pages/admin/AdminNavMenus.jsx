@@ -55,7 +55,7 @@ function ItemRow({ item, siblings, index, token, onSaved, onDeleted, onMove, onA
           <span className="min-w-[120px] flex-1 text-sm text-ink-soft dark:text-paper/60">— línea separadora —</span>
         ) : item.type === 'PROMO' ? (
           <span className="min-w-[160px] flex-1 text-sm text-ink-soft dark:text-paper/60">
-            Texto y enlace se editan en <Link to="/admin/ajustes" className="text-route underline">Ajustes del sitio</Link>.
+            Texto y enlace se editan en <Link to="/ajustes" className="text-route underline">Ajustes del sitio</Link>.
           </span>
         ) : (
           <>

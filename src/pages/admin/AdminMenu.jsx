@@ -157,7 +157,7 @@ export default function AdminMenu() {
                     {r.type === 'category' && cat && (
                       <p className="mt-2 text-[11px] text-ink-soft dark:text-paper/60">
                         {cat.childCount ? `${cat.childCount} subcategoría(s). ` : 'Sin subcategorías: la fila navega directo al destino. '}
-                        <Link to="/admin/categorias" className="inline-flex items-center text-route underline">Editar subniveles <ChevronRight size={12} aria-hidden="true" /></Link>
+                        <Link to="/categorias" className="inline-flex items-center text-route underline">Editar subniveles <ChevronRight size={12} aria-hidden="true" /></Link>
                       </p>
                     )}
                     {r.type === 'brands' && <p className="mt-2 text-[11px] text-ink-soft dark:text-paper/60">Abre las marcas destacadas. Su destino no cambia; «Todas las marcas» lleva a /marcas.</p>}
@@ -200,7 +200,7 @@ export default function AdminMenu() {
               {featured.length === 0 ? <p className="text-xs text-ink-soft dark:text-paper/60">Ninguna marca destacada.</p> : (
                 <ol className="mb-2 list-decimal pl-5 text-xs text-ink dark:text-paper">{featured.map((b) => <li key={b.id}>{b.name}</li>)}</ol>
               )}
-              <Link to="/admin/marcas" className="text-xs text-route underline">Editar en Marcas</Link>
+              <Link to="/marcas" className="text-xs text-route underline">Editar en Marcas</Link>
             </div>
           </aside>
         </div>

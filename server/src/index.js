@@ -3,7 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { validateRuntimeEnv } from './lib/runtimeConfig.js'
+import { validateRuntimeEnv, corsOrigins } from './lib/runtimeConfig.js'
 import { apiSecurityHeaders } from './middleware/securityHeaders.js'
 import { categoriesRouter } from './routes/categories.routes.js'
 import { productsRouter } from './routes/products.routes.js'
@@ -30,7 +30,9 @@ export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
   app.disable('x-powered-by')
   app.use(apiSecurityHeaders())
 
-  app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }))
+  const origins = corsOrigins()
+  app.use(cors({ origin(origin, callback) { callback(null, !origin || origins.includes(origin)) },
+    allowedHeaders: ['content-type', 'authorization', 'idempotency-key'], methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] }))
   app.use(defaultJson)
 
   // Verificación rápida de que el servidor está vivo (útil para monitoreo
