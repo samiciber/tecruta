@@ -1,6 +1,9 @@
 # Publicación y recuperación del sistema integrado
 
-**Pendiente de revisión y autorización específica de publicación.** No ejecutar
+**Publicación solicitada; ventana de escrituras pospuesta por el titular.** El
+18 de octubre el titular eligió «Prepara todo y acordamos otro horario». No
+publicar ni migrar hasta acordar esa ventana. Ver [preparación comprobada](preparacion-publicacion.md).
+No ejecutar
 este procedimiento como parte de las pruebas locales. No copiar fixtures QA a
 Neon ni generar ventas para comprobar accesos. El despliegue actual permanece
 operativo y no fue modificado durante esta etapa.
@@ -55,7 +58,16 @@ editor de productos, scripts y todas las instancias viejas que puedan escribir.
 
 Con la ventana autorizada y escritores coordinados:
 
-1. Tomar respaldo final consistente y registrar el corte.
+1. Ejecutar `scripts/deploy/pause-inventory-writes.sql` mediante una conexión
+   directa y con `ON_ERROR_STOP`. Sus disparadores bloquean en PostgreSQL las
+   altas/bajas de productos, cambios de stock y escrituras en pedidos/detalles,
+   incluso desde instancias antiguas. No bloquean las consultas del catálogo.
+   La instalación es atómica; si vence el límite de bloqueo, abortar sin migrar.
+   Las escrituras afectadas fallan y revierten sus transacciones; no quedan
+   compras en cola que se confirmen automáticamente al reabrir. La API antigua
+   puede mostrar un error genérico: avisar de la ventana antes del corte.
+   Tomar entonces un respaldo final consistente y registrar el corte. El
+   respaldo de preparación no sustituye este respaldo final.
 2. Desde el checkout aprobado y una conexión directa al mismo Neon, ejecutar
    `prisma migrate status` y después `prisma migrate deploy` con el CLI fijado.
    Definir límites de espera de bloqueo y tiempo acordes al tamaño de la base.
@@ -71,7 +83,10 @@ Con la ventana autorizada y escritores coordinados:
    (`npm run build:store`, `dist`) con el mismo commit. Conservar los orígenes
    exactos de CORS, `STORE_ORIGIN`, `PANEL_ORIGIN`, `VITE_API_URL`,
    `VITE_STORE_ORIGIN` y `VITE_PANEL_ORIGIN`. No permitir comodines de Vercel.
-6. Reabrir escrituras únicamente cuando toda la API compatible esté activa.
+6. Reabrir escrituras con `scripts/deploy/resume-inventory-writes.sql` únicamente
+   cuando toda la API compatible esté activa y verificada. Comprobar que no
+   quedan disparadores `tecruta_cutover_%`. Antes de migrar puede usarse el mismo
+   SQL para abortar el corte; después de migrar no reabrir con la API antigua.
    Vigilar rechazos de stock, idempotencia, errores Prisma y conciliación del
    Kardex. El titular cambia su contraseña y prepara las cuentas de trabajadores.
 7. Conectar `admin.tecruta.com` solo en un paso posterior autorizado con acceso
