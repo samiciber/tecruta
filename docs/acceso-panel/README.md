@@ -1,5 +1,10 @@
 # Acceso al panel: Google y alias ADMIN
 
+> **Actualización:** la corrección fue publicada con autorización posterior.
+> Consulta [Publicación del 18 de octubre](publicacion-20261018.md) para conocer
+> despliegues, cuenta creada, verificaciones y pendientes reales. El documento
+> siguiente conserva el estado y procedimiento entregados antes de publicar.
+
 Corrección local en `correccion/acceso-panel-google-alias`, basada en `fae9594`
 (separación sin inventario). La tienda, las cuentas y los roles existentes se
 conservan. No se publicó, no se consultó ni modificó producción, no se cambió DNS
