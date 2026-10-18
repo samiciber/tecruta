@@ -15,3 +15,12 @@
 .pos-app .pos-input.pl-11{padding-left:2.75rem}
 .pos-app .pos-input.pl-10{padding-left:2.5rem}
 .pos-app .pos-input.w-20{width:5rem}
+.pos-app .pos-checkout{scroll-margin-top:155px}
+@media(min-width:1024px){.pos-app .pos-checkout{position:sticky;top:calc(var(--workspace-header) + 12px);display:flex;flex-direction:column;max-height:calc(100dvh - var(--workspace-header) - 28px);overflow:hidden}.pos-app .pos-checkout>div:not(.pos-payment-scroll){flex-shrink:0}.pos-app .pos-payment-scroll{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 4px 2px 2px;margin:-2px -4px -2px -2px}.pos-app .pos-checkout-actions{padding-top:10px}}
+.pos-app .pos-mobile-checkout{@apply fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-3 shadow-lg dark:border-slate-700 dark:bg-slate-900 lg:hidden;}
+.pos-app .pos-mobile-checkout small,.pos-app .pos-mobile-checkout strong{display:block}
+.pos-app .pos-mobile-checkout small{@apply text-xs text-slate-500 dark:text-slate-400;}
+.pos-app .pos-mobile-checkout strong{@apply text-xl;}
+@media(max-width:1023px){.pos-app{padding-bottom:80px}}
+.pos-app .pos-table td:first-child{min-width:160px}
+.pos-app .pos-table td{overflow-wrap:anywhere}

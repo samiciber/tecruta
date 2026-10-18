@@ -1,5 +1,9 @@
 # Sistema integrado de TecRuta: entrega para revisión
 
+> Nueva organización visual preparada localmente en `mejora/panel-operacion-clara`:
+> [diseño, rutas y capturas](../interfaz/README.md). Esta mejora todavía no se publicó;
+> no modifica la base del sistema integrado ya publicado.
+
 > **Actualización: publicado el 18 de octubre de 2026.** El estado local descrito
 > en la entrega original de abajo es histórico. Consulta la
 > [publicación verificada](publicacion-20261018.md) para rutas reales, migraciones,

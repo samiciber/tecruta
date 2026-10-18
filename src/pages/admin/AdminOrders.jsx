@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp, FileText, Upload, ExternalLink } from 'lucide-react'
+import { ChevronDown, ChevronUp, FileText, Upload, ExternalLink, RefreshCw, Search } from 'lucide-react'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { formatCurrency } from '../../utils/formatCurrency.js'
 import { canTransition, ORDER_STATUSES } from '../../utils/orderStatus.js'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 
 // Mismo límite que valida el backend (ver RECEIPT_MAX_BYTES en
 // server/src/routes/orders.routes.js).
@@ -133,11 +133,12 @@ function OrderRow({ order, token, onUpdated }) {
     <div className="rounded-xl2 border border-paper-line dark:border-night-line">
       <div className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
+          <p className="mb-1 font-mono text-xs text-ink-soft dark:text-paper/60">Pedido {order.id}</p>
           <p className="text-sm font-medium text-ink dark:text-paper">
             {order.customerNombre} {order.customerApellido}
           </p>
           <p className="text-xs text-ink-soft dark:text-paper/50">
-            {new Date(order.createdAt).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            {new Date(order.createdAt).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' })}
             {' · '}
             {order.distrito}, {order.provincia}
           </p>
@@ -146,6 +147,7 @@ function OrderRow({ order, token, onUpdated }) {
         <div className="flex items-center gap-3">
           <span className="font-mono text-sm font-semibold text-ink dark:text-paper">{formatCurrency(order.total)}</span>
           <select
+            aria-label={`Estado del pedido ${order.id}`}
             value={order.status}
             onChange={handleStatusChange}
             disabled={updating}
@@ -206,22 +208,18 @@ export default function AdminOrders() {
   const { token } = useAuth()
   const toast = useContext(ToastContext)
   const [orders, setOrders] = useState([])
-  const [statusFilter, setStatusFilter] = useState('')
-  const [loading, setLoading] = useState(true)
-
-  const load = (status) => {
-    setLoading(true)
-    api.admin
-      .getOrders(status ? { status } : {}, token)
-      .then(setOrders)
-      .catch((err) => toast?.showToast(err.message, 'error'))
-      .finally(() => setLoading(false))
-  }
-
+  const [params, setParams] = useSearchParams()
+  const statusFilter = STATUSES.includes(params.get('estado')) ? params.get('estado') : ''
+  const query = params.get('buscar') || ''
+  const [loading, setLoading] = useState(true), [error, setError] = useState(''), [reload, setReload] = useState(0)
+  const filter = (key, value) => setParams(current => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next }, { replace: true })
   useEffect(() => {
-    load(statusFilter)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter])
+    let active = true
+    setLoading(true); setError('')
+    api.admin.getOrders(statusFilter ? { status: statusFilter } : {}, token).then(rows => { if (active) setOrders(rows) }).catch(err => { if (active) setError(err.message) }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [statusFilter, token, reload])
+  const visible = orders.filter(order => (!statusFilter || order.status === statusFilter) && [order.id, order.customerNombre, order.customerApellido, order.customerCorreo].join(' ').toLocaleLowerCase('es-PE').includes(query.trim().toLocaleLowerCase('es-PE')))
 
   const handleUpdated = (updated) => {
     setOrders((list) => list.map((o) => (o.id === updated.id ? updated : o)))
@@ -229,23 +227,15 @@ export default function AdminOrders() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input-tr max-w-xs">
-          <option value="">Todos los estados</option>
-          {STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {STATUS_LABELS[s]}
-            </option>
-          ))}
-        </select>
-        <span className="text-sm text-ink-soft dark:text-paper/60">{orders.length} pedidos</span>
-      </div>
-
-      {loading && <p className="text-sm text-ink-soft dark:text-paper/60">Cargando pedidos…</p>}
-      {!loading && orders.length === 0 && <p className="text-sm text-ink-soft dark:text-paper/60">No hay pedidos con ese filtro.</p>}
+      <div className="workspace-section-heading"><div><p className="workspace-eyebrow">Atención y entrega</p><h1 className="text-3xl font-bold">Pedidos web</h1><p className="mt-2 text-sm text-ink-soft dark:text-paper/60">Revisa el estado, abre el detalle y realiza la siguiente acción autorizada.</p></div><Link to="/pos/pedidos" className="btn-primary">Ir a cobrar pedidos</Link></div>
+      <nav aria-label="Filtrar pedidos por estado" className="flex flex-wrap gap-2">{[['','Todos'], ['PENDING','Pendientes'], ['CONFIRMED','Confirmados'], ['PAID','Pagados'], ['SHIPPED','Enviados'], ['DELIVERED','Entregados'], ['CANCELLED','Cancelados']].map(([value,label])=><button key={value} aria-pressed={statusFilter===value} onClick={()=>filter('estado',value)} className={`min-h-11 rounded-xl border px-4 text-sm font-semibold ${statusFilter===value?'border-route bg-route text-white':'border-paper-line bg-white dark:border-night-line dark:bg-night-surface'}`}>{label}</button>)}</nav>
+      <div className="flex flex-wrap items-center justify-between gap-3"><label className="relative w-full sm:max-w-md"><span className="sr-only">Buscar en los pedidos cargados</span><Search size={17} aria-hidden="true" className="absolute left-3 top-3.5 text-ink-soft"/><input type="search" value={query} onChange={e=>filter('buscar',e.target.value)} className="input-tr min-h-12 w-full pl-10" placeholder="Buscar en esta lista por cliente o referencia"/></label><button className="btn-secondary inline-flex items-center gap-2" onClick={()=>setReload(value=>value+1)}><RefreshCw size={16}/>Actualizar pedidos</button><span role="status" className="text-sm text-ink-soft dark:text-paper/60">{loading?'Cargando pedidos…':error?'No se pudo actualizar':visible.length+' pedidos en esta lista'}</span></div>
+      <p className="text-xs text-ink-soft dark:text-paper/60">Los estados son los del pedido original. Una imagen de pago requiere verificación; registra el cobro en el POS antes de marcarlo como pagado.</p>
+      {error && <p role="alert" className="rounded-xl border border-red-300 p-4 text-signal-red">{error} <button className="underline" onClick={()=>setReload(value=>value+1)}>Reintentar</button></p>}
+      {!loading && !error && visible.length===0 && <p className="rounded-xl border border-dashed border-paper-line p-8 text-center dark:border-night-line">No hay pedidos con estos filtros.</p>}
 
       <div className="flex flex-col gap-3">
-        {orders.map((order) => (
+        {!loading && !error && visible.map((order) => (
           <OrderRow key={order.id} order={order} token={token} onUpdated={handleUpdated} />
         ))}
       </div>

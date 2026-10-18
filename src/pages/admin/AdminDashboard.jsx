@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { STORE_ORIGIN } from '../../app/urls.js'
-import { AlertTriangle, ClipboardList, Package, Users, Wallet } from 'lucide-react'
+import { AlertTriangle, ArrowRight, ClipboardList, Package, ShoppingBag, Users, Wallet } from 'lucide-react'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { formatCurrency } from '../../utils/formatCurrency.js'
-import { SectionHeader } from '../../components/admin/adminUi.jsx'
 
 const STATUS_LABEL = { PENDING: 'Pendiente', CONFIRMED: 'Confirmado', PAID: 'Pagado', SHIPPED: 'Enviado', DELIVERED: 'Entregado', CANCELLED: 'Cancelado' }
 
@@ -22,7 +21,7 @@ function Stat({ icon: Icon, label, value, to, tone = 'default', hint }) {
 }
 
 export default function AdminDashboard() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
 
@@ -34,15 +33,21 @@ export default function AdminDashboard() {
 
   return (
     <section aria-labelledby="dash-title">
-      <SectionHeader id="dash-title" title="Resumen" description="Lo que necesita tu atención hoy." />
+      <div className="workspace-section-heading"><div><p className="workspace-eyebrow">Tu jornada en TecRuta</p><h1 id="dash-title" className="text-3xl font-bold">Resumen</h1><p className="mt-2 text-ink-soft dark:text-paper/60">Hola, {user.nombre}. Elige una tarea para empezar.</p></div><Link to="/mas" className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-route dark:text-blue-300">Todas las herramientas <ArrowRight size={16} /></Link></div>
+      <div className="mb-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{[
+        ['/pos', ShoppingBag, 'Nueva venta', 'Escanear productos y cobrar.'],
+        ['/pedidos', ClipboardList, 'Atender pedidos', 'Revisar pagos y preparar entregas.'],
+        ['/inventario', Package, 'Ir a almacén', 'Existencias, entradas y salidas.'],
+        ['/pos/caja', Wallet, 'Gestionar caja', 'Abrir, consultar o cerrar tu turno.'],
+      ].map(([to, Icon, label, hint], index) => <Link key={to} to={to} className={`workspace-action ${index === 0 ? 'workspace-action-primary' : ''}`}><span className="workspace-action-icon"><Icon size={24} aria-hidden="true" /></span><span className="font-semibold">{label}<small>{hint}</small></span></Link>)}</div>
       {error && <p role="alert" className="mb-3 text-sm text-signal-red">{error} <button type="button" onClick={load} className="underline">Reintentar</button></p>}
       {!data && !error && <p role="status" className="text-sm text-ink-soft dark:text-paper/60">Cargando resumen…</p>}
       {data && (
         <>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Stat icon={ClipboardList} label="Pedidos pendientes" value={data.orders.pending} to="/pedidos" tone={data.orders.pending > 0 ? 'warn' : 'default'} hint={`${data.orders.last7Days} en los últimos 7 días`} />
-            <Stat icon={Wallet} label="Ventas cobradas (30 días)" value={formatCurrency(data.revenue30Days)} hint="Pagados, enviados y entregados" />
-            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/productos" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
+            <Stat icon={Wallet} label="Pedidos web cobrados (30 días)" value={formatCurrency(data.revenue30Days)} hint="Pedidos pagados, enviados y entregados. Consulta ventas POS en Reportes." />
+            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/inventario" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
             <Stat icon={Users} label="Clientes" value={data.customers} to="/clientes" />
           </div>
 
@@ -63,7 +68,7 @@ export default function AdminDashboard() {
                 <ul className="divide-y divide-paper-line rounded-xl2 border border-paper-line dark:divide-night-line dark:border-night-line">
                   {data.recentOrders.map((o) => (
                     <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <span className="min-w-0"><span className="block truncate font-medium text-ink dark:text-paper">{o.customer}</span><span className="text-xs text-ink-soft dark:text-paper/50">{new Date(o.createdAt).toLocaleString('es-PE')}</span></span>
+                      <span className="min-w-0"><Link to="/pedidos" className="block truncate font-medium text-route dark:text-blue-300">{o.customer}</Link><span className="text-xs text-ink-soft dark:text-paper/50">{new Date(o.createdAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</span></span>
                       <span className="shrink-0 text-right"><span className="block font-mono font-semibold text-ink dark:text-paper">{formatCurrency(o.total)}</span><span className="text-xs text-ink-soft dark:text-paper/60">{STATUS_LABEL[o.status] ?? o.status}</span></span>
                     </li>
                   ))}

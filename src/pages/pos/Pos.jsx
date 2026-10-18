@@ -1,13 +1,12 @@
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { Banknote, BarChart3, Barcode, CheckCircle2, CreditCard, Moon, Package, Plus, Printer, RefreshCw, Search, ShoppingBag, Sun, Trash2 } from 'lucide-react'
+import { Banknote, BarChart3, Barcode, CheckCircle2, CreditCard, Package, Plus, Printer, RefreshCw, Search, ShoppingBag, Trash2 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
-import { ThemeContext } from '../../context/ThemeContext.jsx'
 import { api } from '../../services/api.js'
 import { cents, amount, returnCents } from '../../utils/posMoney.js'
 import { printPosTicket, methodLabel } from './posTicket.js'
 import SessionUnavailable from '../../components/auth/SessionUnavailable.jsx'
-import { STORE_ORIGIN } from '../../app/urls.js'
+import WorkspaceShell from '../../components/admin/WorkspaceShell.jsx'
 import './pos.css'
 import WebOrdersQueue from './WebOrdersQueue.jsx'
 import SuspendedCash from './SuspendedCash.jsx'
@@ -20,8 +19,8 @@ const reportLabels = { id: 'Referencia', saleId: 'Venta', userId: 'Responsable',
 const monetaryColumns = new Set(['subtotal', 'discount', 'total', 'refunded', 'net', 'amount', 'received', 'change', 'gross', 'opening', 'expected', 'counted', 'difference'])
 const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const newPayment = (method = 'cashOnDelivery') => ({ method, amount: '', received: '', reference: '', verified: false })
-function Panel({ title, children, subtitle, className = '' }) {
-  return <section className={`pos-panel ${className}`}><div className="mb-4"><h2 className="text-lg font-bold">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}</div>{children}</section>
+function Panel({ title, children, subtitle, className = '', id }) {
+  return <section id={id} className={`pos-panel ${className}`}><div className="mb-4"><h2 className="text-lg font-bold">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}</div>{children}</section>
 }
 function PaymentEditor({ rows, setRows, config, total }) {
   const update = (index, field, value) => setRows(current => current.map((row, i) => i === index ? { ...row, [field]: value } : row))
@@ -50,9 +49,7 @@ export default function Pos() {
   return <PosWorkspace user={auth.user} token={auth.token} />
 }
 function PosWorkspace({ user, token }) {
-  const auth = useAuth()
   const isAdmin = user.role === 'ADMIN'
-  const theme = useContext(ThemeContext)
   const navigate = useNavigate(), location = useLocation()
   const section = location.pathname.split('/')[2] || 'venta'
   const scanner = useRef(null), scanQueue = useRef(Promise.resolve()), busyRef = useRef(false)
@@ -66,13 +63,17 @@ function PosWorkspace({ user, token }) {
   const [lastSale, setLastSale] = useState(null), [selectedSale, setSelectedSale] = useState(null)
   const [message, setMessage] = useState(null), [busy, setBusy] = useState(false), [connected, setConnected] = useState(navigator.onLine)
   const [scanning, setScanning] = useState(0)
+  const [loadingWeb, setLoadingWeb] = useState(false)
+  const loadingWebRef = useRef(false)
+  const [lastIdentified, setLastIdentified] = useState(null)
+  const [customerOpen, setCustomerOpen] = useState(Boolean(new URLSearchParams(location.search).get('order')))
   const [attempt, setAttempt] = useState(() => { try { return JSON.parse(sessionStorage.getItem(`tecruta:pos-attempt:${user.id}`)) } catch { return null } })
   const [opening, setOpening] = useState('0.00'), [counted, setCounted] = useState(''), [closeReason, setCloseReason] = useState('')
   const [manual, setManual] = useState({ direction: 'IN', amount: '', reason: '' }), [entries, setEntries] = useState([])
   const [refund, setRefund] = useState({ kind: 'RETURN', method: 'cashOnDelivery', reason: '', reference: '', verified: false, lines: {} })
   const [filters, setFilters] = useState({ type: 'sales', from: today(), to: today(), userId: '', method: '', productId: '' }), [report, setReport] = useState(null), [fiscal, setFiscal] = useState(null)
   const cash = sessions.find(session => session.userId === user.id && session.status === 'OPEN')
-  const frozen = busy || Boolean(attempt)
+  const frozen = busy || Boolean(attempt) || loadingWeb
   const subtotal = cart.reduce((sum, line) => sum + safe(line.price) * BigInt(Number.isInteger(line.quantity) ? line.quantity : 0), 0n)
   const total = pendingSale ? safe(pendingSale.total) : webOrder ? safe(webOrder.total) : subtotal >= safe(discount) ? subtotal - safe(discount) : 0n
   const paid = payments.reduce((sum, row) => sum + safe(row.amount), 0n)
@@ -83,6 +84,7 @@ function PosWorkspace({ user, token }) {
     if (Number.isSafeInteger(quantity) && quantity >= 0 && quantity + returned <= line.quantity) expectedRefund += returnCents(line.lineTotal, line.quantity, returned, quantity)
   }
   const notify = (text, kind = 'info') => setMessage({ text, kind })
+  useEffect(() => { setMessage(null) }, [section])
   const refresh = useCallback(async () => {
     const [nextConfig, nextCash, nextSales, nextFiscal, nextOperators] = await Promise.all([api.pos.config(token), api.pos.cash(token), api.pos.sales(token), api.pos.fiscal(token), api.inventory.listOperators(token)])
     setConfig(nextConfig); setSessions(nextCash); setSales(nextSales); setFiscal(nextFiscal)
@@ -98,6 +100,7 @@ function PosWorkspace({ user, token }) {
   }, [query, token])
   const addProduct = product => {
     if (webOrder || pendingSale) return notify('Este registro conserva sus líneas originales. Inicia una venta nueva para cambiar productos.', 'error')
+    setLastIdentified(product)
     setCart(current => {
       const line = current.find(row => row.id === product.id)
       if ((line?.quantity ?? 0) >= product.stock) { notify('No hay más unidades disponibles.', 'error'); return current }
@@ -113,7 +116,7 @@ function PosWorkspace({ user, token }) {
       finally { setScanning(count => count - 1) }
     })
   }
-  const reset = () => { setCart([]); setWebOrder(null); setPendingSale(null); setDiscount('0.00'); setDiscountReason(''); setCustomer({ name: '', document: '' }); setPayments([newPayment(config.methods.some(method => method.key === 'cashOnDelivery') ? 'cashOnDelivery' : config.methods[0]?.key)]); setLastSale(null) }
+  const reset = () => { setCart([]); setLastIdentified(null); setCustomerOpen(false); setWebId(''); setWebOrder(null); setPendingSale(null); setDiscount('0.00'); setDiscountReason(''); setCustomer({ name: '', document: '' }); setPayments([newPayment(config.methods.some(method => method.key === 'cashOnDelivery') ? 'cashOnDelivery' : config.methods[0]?.key)]); setLastSale(null) }
   const run = async (path, body, recovery = false) => {
     if (busyRef.current || (attempt && !recovery)) return
     busyRef.current = true; setBusy(true)
@@ -140,18 +143,21 @@ function PosWorkspace({ user, token }) {
   }
   const openPending = sale => {
     if (frozen) return
-    reset(); setPendingSale(sale); setCart(sale.items.map(line => ({ id: line.productId, name: line.name, sku: line.sku, price: String(line.unitPrice), quantity: line.quantity, stock: null })))
+    reset(); setCustomerOpen(true); setPendingSale(sale); setCart(sale.items.map(line => ({ id: line.productId, name: line.name, sku: line.sku, price: String(line.unitPrice), quantity: line.quantity, stock: null })))
     setPayments(sale.payments.map(payment => ({ ...newPayment(payment.method), amount: String(payment.amount), received: String(payment.received), reference: payment.reference || '' })))
     setCustomer({ name: sale.customerName || '', document: sale.customerDocument || '' }); navigate('/pos')
   }
   const ticket = sale => { try { printPosTicket(sale) } catch (error) { notify(error.message, 'error') } }
   const loadWeb = async (selectedId = webId) => {
+    if (frozen || loadingWebRef.current) return
+    loadingWebRef.current = true; setLoadingWeb(true)
     try {
       const order = await api.pos.webOrder((typeof selectedId === 'string' ? selectedId : webId).trim(), token)
       if (order.posSale) { const sale = await api.pos.sale(order.posSale.id, token); if (sale.status === 'PENDING') openPending(sale); else { setSelectedSale(sale); navigate('/pos/ventas') }; return }
       if (!['PENDING', 'CONFIRMED'].includes(order.status)) return notify('Este pedido ya no está pendiente de pago.', 'error')
-      reset(); setWebOrder(order); setCustomer({ name: `${order.customerNombre} ${order.customerApellido}`, document: '' }); setPayments([{ ...newPayment(config.methods[0]?.key), amount: String(order.total) }])
+      reset(); navigate('/pos', { replace: true }); setWebId(order.id); setCustomerOpen(true); setWebOrder(order); setCustomer({ name: `${order.customerNombre} ${order.customerApellido}`, document: '' }); setPayments([{ ...newPayment(config.methods[0]?.key), amount: String(order.total) }])
     } catch (error) { notify(error.message, 'error') }
+    finally { loadingWebRef.current = false; setLoadingWeb(false) }
   }
   const submitRefund = () => {
     if (!cash || !selectedSale) return notify('Abre tu caja para registrar el reembolso.', 'error')
@@ -165,45 +171,43 @@ function PosWorkspace({ user, token }) {
   }
   const showReport = async () => { try { setReport(await api.pos.reports(filters, token)) } catch (error) { notify(error.message, 'error') } }
   const exportReport = async () => { try { const blob = await api.pos.export(filters, token); const href = URL.createObjectURL(blob), link = document.createElement('a'); link.href = href; link.download = `tecruta-${filters.type}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(href), 1000) } catch (error) { notify(error.message, 'error') } }
-  const tabs = [['venta', ShoppingBag, 'Venta'], ['caja', Banknote, 'Caja'], ['ventas', CreditCard, 'Ventas y devoluciones'], ['reportes', BarChart3, 'Reportes']]
-  return <div className="pos-app min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-    <header className="sticky top-0 z-30 flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-5 py-3 dark:border-slate-800 dark:bg-slate-900">
-      <div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-black text-white">TR</span><div><p className="text-xl font-black tracking-tight">TecRuta <span className="font-medium text-slate-400">/ POS</span></p><p className="text-xs text-slate-500 dark:text-slate-400">Almacén principal · ventas presenciales</p></div></div>
-      <div className="flex flex-wrap items-center gap-3 text-sm"><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${cash ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'}`}>{cash ? '● Caja abierta' : '● Caja cerrada'}</span><span>{user.nombre} · {isAdmin ? 'Administrador' : 'Cajero'}</span><button aria-label="Cambiar tema" onClick={theme.toggleTheme} className="pos-icon">{theme.theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button><Link className="pos-secondary" to="/inventario">Inventario</Link><Link className="text-xs text-slate-500 dark:text-slate-400" to="/">Panel</Link><a className="text-xs text-slate-500 dark:text-slate-400" href={STORE_ORIGIN}>Tienda ↗</a><button className="pos-secondary" onClick={() => { auth.logout(); navigate('/iniciar-sesion') }}>Cerrar sesión</button></div>
-    </header>
-    <div className="mx-auto grid max-w-[1700px] gap-5 p-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:p-6">
-      <aside><nav aria-label="Punto de venta" className="flex gap-2 overflow-x-auto lg:sticky lg:top-28 lg:flex-col">{tabs.map(([key, Icon, label]) => <NavLink key={key} to={key === 'venta' ? '/pos' : `/pos/${key}`} end className={({ isActive }) => `flex shrink-0 items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:bg-white dark:text-slate-400 dark:hover:bg-slate-900'}`}><Icon size={18} />{label}</NavLink>)}</nav><p className="mt-6 hidden text-xs leading-6 text-slate-400 lg:block">Cada operación queda<br />vinculada a tu cuenta.<br />Hora: America/Lima.</p></aside>
-      <main className="min-w-0 space-y-4">
+  const leave = to => to.startsWith('/pos') || !(cart.length || webOrder || pendingSale || attempt) || window.confirm(attempt ? 'Hay un cobro por recuperar. Podrás recuperarlo al regresar; no inicies otro cobro. ¿Salir de esta pantalla?' : 'La venta actual no está guardada. Si sales se perderá su contenido. ¿Salir de esta pantalla?')
+  const cashBadge = <span className={`rounded-full px-3 py-2 text-xs font-bold ${cash ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'}`}>{cash ? '● Caja abierta' : '● Caja cerrada'}</span>
+  return <WorkspaceShell beforeLeave={leave}><div className="pos-app">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><nav aria-label="Punto de venta" className="flex flex-wrap gap-2">{[['/pos', ShoppingBag, 'Venta actual'], ['/pos/ventas', CreditCard, 'Ventas y devoluciones'], ['/pos/reportes', BarChart3, 'Reportes']].map(([to, Icon, label])=><NavLink key={to} to={to} end className={({isActive})=>`pos-secondary ${isActive ? 'border-blue-500 text-blue-700 dark:text-blue-300' : ''}`}><Icon size={16} aria-hidden="true" />{label}</NavLink>)}</nav><Link to="/pos/caja" aria-label="Consultar mi turno de caja">{cashBadge}</Link></div>
+      <main id="contenido-panel" className="min-w-0 space-y-4">
         {message && <div role="status" className={`flex items-start justify-between gap-3 rounded-xl border p-4 text-sm ${message.kind === 'error' ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200'}`}>{message.text}<button aria-label="Cerrar aviso" onClick={() => setMessage(null)}>×</button></div>}
         {!connected && <div role="alert" className="rounded-xl bg-amber-100 p-4 text-sm text-amber-900">Sin conexión. Los cobros están bloqueados hasta verificar precios, stock y pagos con el servidor.</div>}
         {attempt && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><div><strong>Hay una operación por recuperar.</strong><p>No repitas el cobro con una clave nueva. Este intento conserva su identificador al recargar.</p></div><button disabled={busy || !connected} className="pos-primary" onClick={() => run(attempt.path, attempt.body, true)}>Recuperar mismo intento</button></div>}
         {section === 'venta' && <>
-          <div className="flex items-end justify-between gap-3"><div><p className="pos-eyebrow">PUNTO DE VENTA</p><h1 className="text-2xl font-bold">{pendingSale ? 'Cobrar venta pendiente' : webOrder ? 'Cobrar pedido web' : 'Nueva venta'}</h1></div><button disabled={frozen} onClick={reset} className="pos-secondary"><Plus size={16} /> Nueva venta</button></div>
+          <div className="flex items-end justify-between gap-3"><div><p className="pos-eyebrow">PUNTO DE VENTA</p><h1 className="text-2xl font-bold">{pendingSale ? 'Cobrar venta pendiente' : webOrder ? 'Cobrar pedido web' : 'Nueva venta'}</h1></div><button disabled={frozen} onClick={() => { if ((cart.length || webOrder || pendingSale) && !window.confirm('Descartar la venta sin guardar e iniciar una nueva?')) return; reset(); scanner.current?.focus() }} className="pos-secondary"><Plus size={16} /> Nueva venta</button></div>
           {!cash && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Abre tu turno en <Link to="/pos/caja" className="font-bold underline">Caja</Link> antes de cobrar o guardar una venta.</div>}
           {lastSale && <Panel title={statusLabel[lastSale.status]} subtitle={`Registro ${lastSale.id}`}><div className="flex flex-wrap items-center gap-3"><span className="text-2xl font-bold">{sol(lastSale.total)}</span>{lastSale.confirmedAt ? <button className="pos-primary" onClick={() => ticket(lastSale)}><Printer size={16} /> Imprimir ticket interno</button> : <button className="pos-primary" onClick={() => openPending(lastSale)}>Abrir para cobrar</button>}<Link to="/pos/ventas" className="pos-secondary">Ver historial</Link></div></Panel>}
-          <WebOrdersQueue token={token} onSelect={id=>{setWebId(id);loadWeb(id)}} />
-          <Link className="text-sm text-blue-600 underline" to="/seguridad">Contraseña y seguridad</Link>
-          <fieldset disabled={frozen} className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_370px]">
+
+          <fieldset disabled={frozen} className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_350px]">
             <div className="min-w-0 space-y-5">
               <Panel title="Productos" subtitle="Escanea para agregar. Repite el código para sumar una unidad.">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs text-slate-500 dark:text-slate-400">{lastIdentified ? 'Último producto identificado: ' + lastIdentified.name : 'Listo para identificar productos'}</span><button type="button" className="text-sm font-semibold text-blue-600 dark:text-blue-300" disabled={Boolean(webOrder || pendingSale)} onClick={()=>scanner.current?.focus()}>Volver al lector</button></div>
                 <form onSubmit={e => { e.preventDefault(); scan() }} className="mb-3 flex gap-2"><div className="relative min-w-0 flex-1"><Barcode size={21} className="absolute left-3 top-3 text-blue-600" /><input ref={scanner} aria-label="Escanear código" className="pos-input pl-11 font-mono" value={code} onChange={e => setCode(e.target.value)} autoComplete="off" autoCapitalize="off" placeholder="SKU o código de barras + Enter" disabled={Boolean(webOrder || pendingSale)} /></div><button type="submit" className="pos-primary" disabled={Boolean(webOrder || pendingSale)}>Agregar</button></form>
                 <div className="relative"><Search size={17} className="absolute left-3 top-3 text-slate-400" /><input aria-label="Buscar productos" className="pos-input pl-10" placeholder="Buscar nombre, SKU o código (mín. 2 caracteres)" value={query} onChange={e => setQuery(e.target.value)} disabled={Boolean(webOrder || pendingSale)} /></div>
                 {found.length > 0 && !webOrder && !pendingSale && <div className="mt-2 max-h-48 overflow-auto rounded-lg border border-slate-200 dark:border-slate-700">{found.map(product => <button key={product.id} type="button" onClick={() => addProduct(product)} className="flex w-full items-center justify-between gap-2 border-b border-slate-100 p-3 text-left text-sm last:border-0 hover:bg-blue-50 dark:border-slate-800 dark:hover:bg-slate-800"><span><strong>{product.name}</strong><small className="block text-slate-500">{product.sku} · stock {product.stock}</small></span><span className="whitespace-nowrap font-semibold">{sol(product.price)}</span></button>)}</div>}
-                <div className="mt-5 overflow-x-auto"><table className="pos-table"><thead><tr><th>Producto</th><th>Precio</th><th>Cantidad</th><th>Importe</th><th /></tr></thead><tbody>{(webOrder ? webOrder.items.map(line => ({ ...line, id: line.productId, price: String(line.unitPrice), stock: null })) : cart).map(line => <tr key={line.id}><td><strong>{line.name}</strong><small className="block font-mono text-xs text-slate-500 dark:text-slate-400">{line.sku}</small><small className="text-slate-500 dark:text-slate-400">{line.stock === null ? webOrder || pendingSale?.orderId ? 'Reservado en pedido web' : 'Se revalidará al cobrar' : `${line.stock} disponibles`}</small></td><td>{sol(line.price)}</td><td><input aria-label={`Cantidad ${line.name}`} type="number" min={1} max={1000000} className="pos-input w-20" disabled={Boolean(webOrder || pendingSale)} value={line.quantity} onChange={e => setCart(current => current.map(row => row.id === line.id ? { ...row, quantity: Math.max(1, Math.min(1000000, Number(e.target.value) || 1)) } : row))} /></td><td className="font-semibold">{sol(amount(safe(line.price) * BigInt(line.quantity)))}</td><td><button type="button" aria-label={`Retirar ${line.name}`} disabled={Boolean(webOrder || pendingSale)} className="pos-icon text-red-500" onClick={() => setCart(current => current.filter(row => row.id !== line.id))}><Trash2 size={16} /></button></td></tr>)}</tbody></table>{!cart.length && !webOrder && <div className="flex flex-col items-center gap-2 py-12 text-center text-slate-400"><Package size={38} strokeWidth={1.2} /><p className="font-semibold">Tu venta empieza con un producto</p><p className="text-xs">Usa el lector o la búsqueda manual.</p></div>}</div>
+                <div className="mt-5 overflow-x-auto"><table className="pos-table"><thead><tr><th>Producto</th><th>Precio</th><th>Cantidad</th><th>Importe</th><th /></tr></thead><tbody>{(webOrder ? webOrder.items.map(line => ({ ...line, id: line.productId, price: String(line.unitPrice), stock: null })) : cart).map(line => <tr key={line.id} className={lastIdentified?.id === line.id ? 'bg-blue-50 dark:bg-blue-950/40' : ''}><td><strong>{line.name}</strong><small className="block font-mono text-xs text-slate-500 dark:text-slate-400">{line.sku}</small><small className="text-slate-500 dark:text-slate-400">{line.stock === null ? webOrder || pendingSale?.orderId ? 'Reservado en pedido web' : 'Se revalidará al cobrar' : `${line.stock} disponibles`}</small></td><td>{sol(line.price)}</td><td><input aria-label={`Cantidad ${line.name}`} type="number" min={1} max={1000000} className="pos-input w-20" disabled={Boolean(webOrder || pendingSale)} value={line.quantity} onChange={e => setCart(current => current.map(row => row.id === line.id ? { ...row, quantity: Math.max(1, Math.min(1000000, Number(e.target.value) || 1)) } : row))} /></td><td className="font-semibold">{sol(amount(safe(line.price) * BigInt(line.quantity)))}</td><td><button type="button" aria-label={`Retirar ${line.name}`} disabled={Boolean(webOrder || pendingSale)} className="pos-icon text-red-500" onClick={() => setCart(current => current.filter(row => row.id !== line.id))}><Trash2 size={16} /></button></td></tr>)}</tbody></table>{!cart.length && !webOrder && <div className="flex flex-col items-center gap-2 py-12 text-center text-slate-400"><Package size={38} strokeWidth={1.2} /><p className="font-semibold">Tu venta empieza con un producto</p><p className="text-xs">Usa el lector o la búsqueda manual.</p></div>}</div>
                 {!!cart.length && !pendingSale && !webOrder && <button type="button" className="pos-secondary mt-3" onClick={async () => { try { const fresh = await Promise.all(cart.map(line => api.inventory.lookup(line.sku, token))); setCart(current => current.map(line => { const product = fresh.find(row => row.id === line.id); return { ...line, price: String(product.price), stock: product.stock } })); notify('Precios y existencias actualizados. Revisa el total y los pagos.') } catch (error) { notify(error.message, 'error') } }}><RefreshCw size={14} /> Actualizar precios y stock</button>}
               </Panel>
-              <Panel title="Cliente y pedido web" subtitle="Consumidor final no requiere una cuenta ni datos ficticios."><div className="grid gap-3 sm:grid-cols-2"><label className="pos-label">Nombre (opcional)<input className="pos-input" value={customer.name} maxLength={120} disabled={Boolean(webOrder || pendingSale)} onChange={e => setCustomer(current => ({ ...current, name: e.target.value }))} placeholder="Consumidor final" /></label><label className="pos-label">Documento (opcional)<input className="pos-input" value={customer.document} maxLength={120} disabled={Boolean(webOrder || pendingSale)} onChange={e => setCustomer(current => ({ ...current, document: e.target.value }))} /></label></div><div className="mt-4 flex flex-wrap gap-2"><input aria-label="ID de pedido web" className="pos-input min-w-0 flex-1" value={webId} onChange={e => setWebId(e.target.value)} placeholder="ID de pedido web existente" /><button type="button" onClick={loadWeb} disabled={!webId.trim()} className="pos-secondary">Cargar pedido</button></div>{webOrder && <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">Pedido {webOrder.id}: stock ya reservado. Este cobro no vuelve a descontarlo.</p>}</Panel>
+              <details className="pos-panel" open={customerOpen} onToggle={e=>setCustomerOpen(e.currentTarget.open)}><summary className="cursor-pointer font-semibold">Cliente o pedido por referencia</summary><p className="my-3 text-sm text-slate-500 dark:text-slate-400">Consumidor final no requiere datos. Completa estos campos solo si necesitas identificar al cliente o cargar una referencia.</p><div className="grid gap-3 sm:grid-cols-2"><label className="pos-label">Nombre (opcional)<input className="pos-input" value={customer.name} maxLength={120} disabled={Boolean(webOrder || pendingSale)} onChange={e => setCustomer(current => ({ ...current, name: e.target.value }))} placeholder="Consumidor final" /></label><label className="pos-label">Documento (opcional)<input className="pos-input" value={customer.document} maxLength={120} disabled={Boolean(webOrder || pendingSale)} onChange={e => setCustomer(current => ({ ...current, document: e.target.value }))} /></label></div><div className="mt-4 flex flex-wrap gap-2"><input aria-label="ID de pedido web" className="pos-input min-w-0 flex-1" value={webId} onChange={e => setWebId(e.target.value)} placeholder="ID de pedido web existente" /><button type="button" onClick={loadWeb} disabled={!webId.trim()} className="pos-secondary">Cargar pedido</button></div>{webOrder && <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">Pedido {webOrder.id}: stock ya reservado. Este cobro no vuelve a descontarlo.</p>}</details>
             </div>
-            <Panel title="Cobro" subtitle={pendingSale ? `Pendiente ${pendingSale.id}` : 'Revisión y confirmación de pagos'} className="h-fit xl:sticky xl:top-28">
+            <Panel id="pos-checkout" title="Cobro" subtitle={pendingSale ? `Pendiente ${pendingSale.id}` : 'Revisión y confirmación de pagos'} className="pos-checkout h-fit">
               <div className="mb-4 space-y-2 border-b border-slate-200 pb-4 dark:border-slate-700"><p className="flex justify-between text-sm text-slate-500 dark:text-slate-400"><span>Subtotal</span><span>{sol(pendingSale?.subtotal || webOrder?.total || amount(subtotal))}</span></p>{isAdmin && !webOrder && !pendingSale && <div className="grid grid-cols-2 gap-2"><label className="pos-label">Descuento S/<input aria-label="Descuento autorizado" className="pos-input" value={discount} onChange={e => setDiscount(e.target.value)} inputMode="decimal" /></label><label className="pos-label">Motivo del descuento<input className="pos-input" value={discountReason} onChange={e => setDiscountReason(e.target.value)} maxLength={240} /></label></div>}<p className="flex items-center justify-between pt-2"><span className="font-semibold">Total a cobrar</span><strong data-testid="pos-total" className="text-3xl tracking-tight">{sol(amount(total))}</strong></p></div>
-              <PaymentEditor rows={payments} setRows={setPayments} config={config} total={total} />
+              <div className="pos-payment-scroll"><PaymentEditor rows={payments} setRows={setPayments} config={config} total={total} />
               <p className="my-4 flex justify-between border-t border-slate-200 pt-3 text-sm dark:border-slate-700"><span>Asignado a pagos</span><strong>{sol(amount(paid))}</strong></p>
-              <button type="button" onClick={() => sell('CONFIRM')} disabled={!ready} className="pos-primary w-full py-3.5"><CheckCircle2 size={18} /> Confirmar venta y cobro</button>
+              </div><div className="pos-checkout-actions"><button type="button" onClick={() => sell('CONFIRM')} disabled={!ready} className="pos-primary w-full py-3.5"><CheckCircle2 size={18} /> Confirmar venta y cobro</button>
               {!pendingSale && <button type="button" disabled={!cash || !connected || frozen || scanning > 0 || (!cart.length && !webOrder)} onClick={() => sell('PENDING')} className="pos-secondary mt-2 w-full">Guardar pago pendiente</button>}
               <p className="mt-3 text-center text-[11px] leading-5 text-slate-400">Ticket interno · sin emisión fiscal SUNAT.<br />El servidor verifica precios y stock al confirmar.</p>
+              </div>
             </Panel>
           </fieldset>
         </>}
+        {section === 'pedidos' && <><div><p className="pos-eyebrow">Atención de pedidos</p><h1 className="text-2xl font-bold">Pedidos web por cobrar</h1><p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Elige el pedido y verifica el pago antes de confirmar el cobro.</p></div><WebOrdersQueue token={token} disabled={frozen} onSelect={id=>{if(cart.length && !window.confirm('Cargar este pedido reemplazará la venta sin guardar. ¿Continuar?'))return;setWebId(id);loadWeb(id)}} /></>}
         {section === 'caja' && <>
           {isAdmin && <SuspendedCash sessions={sessions} token={token} onDone={refresh} />}
           <div><p className="pos-eyebrow">CONTROL DE EFECTIVO</p><h1 className="text-2xl font-bold">Mi turno de caja</h1></div>
@@ -230,6 +234,6 @@ function PosWorkspace({ user, token }) {
           <Panel title="Comprobantes electrónicos" subtitle="El ticket interno no es boleta ni factura electrónica SUNAT."><p className="mb-3 text-sm">Estado: <strong>{fiscal?.enabled ? 'Adaptador configurado' : 'Sin proveedor configurado'}</strong>. No se envían ni aceptan documentos fiscales desde esta entrega.</p><ul className="list-disc space-y-1 pl-5 text-sm text-slate-500 dark:text-slate-400">{fiscal?.missing?.map(item => <li key={item}>{item}</li>)}</ul>{isAdmin && <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={config.allowMixed} onChange={e => api.pos.setConfig({ allowMixed: e.target.checked }, token).then(() => refresh()).catch(error => notify(error.message, 'error'))} />Permitir pagos combinados (métodos activos en Admin → Métodos de pago).</label>}</Panel>
         </>}
       </main>
-    </div>
-  </div>
+      {section === 'venta' && (cart.length > 0 || webOrder) && <div className="pos-mobile-checkout"><span><small>Total a cobrar</small><strong>{sol(amount(total))}</strong></span><a href="#pos-checkout" className="pos-primary">Ir al cobro</a></div>}
+  </div></WorkspaceShell>
 }

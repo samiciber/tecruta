@@ -1,0 +1,35 @@
+.workspace{--workspace-header:132px}
+.workspace-header{@apply sticky top-0 z-30 border-b border-paper-line bg-white dark:border-night-line dark:bg-night-surface;}
+.workspace-top{@apply mx-auto flex max-w-[1560px] items-center justify-between gap-3 px-4 py-3 sm:px-6;}
+.workspace-brand{@apply flex shrink-0 items-center gap-3 text-lg font-bold tracking-tight;}
+.workspace-brand small{@apply block text-[11px] font-medium tracking-normal text-ink-soft dark:text-paper/60;}
+.workspace-mark{@apply flex h-10 w-10 items-center justify-center rounded-xl bg-route text-base font-black text-white;}
+.workspace-account{@apply flex items-center gap-3;}
+.workspace-account details{position:relative}
+.workspace-account-trigger{@apply flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-xl px-2 text-sm hover:bg-paper dark:hover:bg-night;}
+.workspace-account-trigger::-webkit-details-marker{display:none}
+.workspace-account-trigger strong,.workspace-account-trigger small{display:block;text-align:left}
+.workspace-account-trigger small{@apply text-xs text-ink-soft dark:text-paper/60;}
+.workspace-avatar{@apply flex h-9 w-9 items-center justify-center rounded-full bg-route/10 font-bold text-route dark:bg-route-softDark dark:text-blue-200;}
+.workspace-account-menu{@apply absolute right-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-paper-line bg-white p-2 shadow-xl dark:border-night-line dark:bg-night-surface;}
+.workspace-account-menu p{@apply border-b border-paper-line px-3 py-3 text-sm font-semibold dark:border-night-line;}
+.workspace-account-menu small{@apply mt-1 block text-xs font-normal text-ink-soft dark:text-paper/60;}
+.workspace-account-menu a,.workspace-account-menu button{@apply flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm hover:bg-paper dark:hover:bg-night;}
+.workspace-navigation{@apply mx-auto grid max-w-[1560px] grid-flow-col auto-cols-fr gap-1 px-3 pb-2 sm:px-6;}
+.workspace-navigation a{@apply flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-semibold text-ink-soft transition-colors hover:bg-paper dark:text-paper/70 dark:hover:bg-night sm:flex-row sm:gap-2 sm:px-4 sm:text-sm;}
+.workspace-navigation a[aria-current=page]{@apply bg-route text-white shadow-sm;}
+.workspace-content{@apply mx-auto max-w-[1560px] px-4 py-6 sm:px-6 sm:py-8;}
+.workspace :is(a,button,summary,input,select,textarea):focus-visible{@apply outline outline-2 outline-offset-2 outline-route;}
+.workspace :is(input,textarea)::placeholder{@apply text-ink-soft/70 dark:text-paper/50;}
+.workspace-skip{@apply fixed left-4 top-2 z-50 -translate-y-20 rounded-lg bg-route p-3 text-white focus:translate-y-0;}
+.workspace :is(section,[id]){scroll-margin-top:160px}
+.workspace-section-heading{@apply mb-5 flex flex-wrap items-start justify-between gap-4;}
+.workspace-eyebrow{@apply mb-2 text-xs font-bold uppercase tracking-widest text-route dark:text-blue-300;}
+.workspace-action{@apply flex min-h-24 items-center gap-4 rounded-2xl border border-paper-line bg-white p-5 transition hover:border-route hover:shadow-sm dark:border-night-line dark:bg-night-surface;}
+.workspace-action-icon{@apply flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-route/10 text-route dark:bg-route-softDark dark:text-blue-200;}
+.workspace-action small{@apply mt-1 block text-sm font-normal leading-5 text-ink-soft dark:text-paper/60;}
+.workspace-action-primary{@apply border-route bg-route text-white hover:bg-route/90 dark:border-route dark:bg-route;}
+.workspace-action-primary .workspace-action-icon{@apply bg-white/15 text-white;}
+.workspace-action-primary small{@apply text-white/80;}
+.workspace-hub-grid{@apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;}
+@media(max-width:639px){.workspace{--workspace-header:145px}.workspace-content{padding-bottom:2rem}}

@@ -1,0 +1,127 @@
+import assert from 'node:assert/strict'
+import { createRequire } from 'node:module'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+import { createPanelPreview } from './lib/panel-preview-runtime.mjs'
+const require = createRequire(import.meta.url)
+const { chromium } = require(join(process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-final-tools/node_modules'), 'playwright-core'))
+const rt = await createPanelPreview({ panelPort: 5196, storePort: 5197 })
+const evidence = join(rt.root, 'docs/interfaz/evidencia')
+mkdirSync(evidence, { recursive: true })
+const checks = [], errors = [], captures = []
+let browser, page
+try {
+  browser = await chromium.launch({ executablePath: process.env.TECRUTA_QA_BROWSER || 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', headless: true })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, timezoneId: 'America/Lima' })
+  await context.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort())
+  page = await context.newPage(); page.setDefaultTimeout(20000); page.on('pageerror', e => errors.push(e.message))
+  const check = text => { checks.push(text); console.log(text) }
+  const nav = name => page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link', { name, exact: true })
+  const capture = async name => {
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, name + ': sin desbordamiento horizontal')
+    await page.screenshot({ path: join(evidence, name + '.png'), fullPage: true, animations: 'disabled' }); captures.push(name + '.png')
+  }
+  const login = async username => {
+    await page.goto(rt.panel + '/iniciar-sesion'); await page.evaluate(() => { localStorage.clear(); sessionStorage.clear() }); await page.reload()
+    await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill(username)
+    await page.getByLabel('Contraseña', { exact: true }).fill(rt.password)
+    await page.getByRole('button', { name: 'Ingresar al panel', exact: true }).click()
+  }
+  const themes = async (name, ready) => {
+    for (const [device, width, height] of [['escritorio', 1440, 1000], ['tablet', 834, 1112]]) {
+      await page.setViewportSize({ width, height })
+      for (const theme of ['light', 'dark']) {
+        await page.evaluate(theme => document.documentElement.classList.toggle('dark', theme === 'dark'), theme)
+        if (ready) await ready()
+        await capture(`${name}-${device}-${theme}`)
+      }
+    }
+  }
+  await login('adminlocal'); await page.getByRole('heading', { name: 'Resumen', exact: true }).waitFor()
+  assert.deepEqual(await page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link').allTextContents(), ['Inicio', 'Vender', 'Pedidos', 'Inventario', 'Caja', 'Más'])
+  await page.getByText('Pedidos web cobrados (30 días)', { exact: true }).waitFor()
+  await themes('inicio')
+  await page.setViewportSize({ width: 390, height: 844 }); await capture('inicio-movil')
+  check('Inicio ADMIN con seis áreas, acciones directas y cifras reales; escritorio/tablet en ambos temas y móvil')
+  await page.setViewportSize({ width: 1440, height: 1000 }); await nav('Más').click()
+  await page.getByRole('heading', { name: 'Más herramientas', exact: true }).waitFor()
+  const hrefs = await page.locator('main a').evaluateAll(nodes => nodes.map(node => node.getAttribute('href')))
+  for (const path of ['/usuarios','/clientes','/pos/reportes','/pos/ventas','/auditoria','/productos','/categorias','/marcas','/asignar','/home-layout','/banners','/circulos','/menu','/menus','/footer','/pagos','/tiendas','/busquedas','/suscriptores','/ajustes']) assert(hrefs.includes(path), path + ' sigue disponible')
+  await themes('herramientas')
+  await page.getByRole('searchbox', { name: 'Buscar herramienta' }).fill('categorias')
+  await page.getByRole('link', { name: /Menú de categorías/ }).waitFor()
+  await page.getByRole('searchbox', { name: 'Buscar herramienta' }).fill('banners')
+  assert.equal(await page.locator('main a').count(), 1)
+  await page.getByRole('link', { name: /^Banners/ }).click()
+  assert.equal(new URL(page.url()).pathname, '/banners')
+  assert.equal(await nav('Más').getAttribute('aria-current'), 'page')
+  await nav('Más').click(); await page.getByRole('searchbox', { name: 'Buscar herramienta' }).fill('inexistenteqa')
+  await page.getByRole('button', { name: 'Ver todas las herramientas' }).click()
+  assert.equal(await page.locator('main a').count(), 20)
+  check('Todas las herramientas anteriores siguen accesibles; búsqueda sin acentos y estado vacío recuperable')
+  await page.locator('summary[aria-label="Mi cuenta"]').click()
+  await page.getByRole('link', { name: 'Contraseña y seguridad', exact: true }).waitFor()
+  await page.locator('summary[aria-label="Mi cuenta"]').press('Escape')
+  assert.equal(await page.getByRole('link', { name: 'Contraseña y seguridad', exact: true }).isVisible(), false)
+  await nav('Pedidos').click(); await page.getByRole('heading', { name: 'Pedidos web', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Pagados', exact: true }).click()
+  await page.getByRole('searchbox', { name: 'Buscar en los pedidos cargados' }).fill('Sintético')
+  await nav('Inicio').click(); await nav('Pedidos').click() // Explicit nav starts the default list.
+  await page.getByRole('button', { name: 'Pagados', exact: true }).click()
+  await page.getByRole('searchbox', { name: 'Buscar en los pedidos cargados' }).fill('Sintético')
+  await page.reload(); assert.equal(await page.getByRole('button', { name: 'Pagados', exact: true }).getAttribute('aria-pressed'), 'true')
+  assert.equal(await page.getByRole('searchbox', { name: 'Buscar en los pedidos cargados' }).inputValue(), 'Sintético')
+  await capture('pedidos-filtros'); check('Cuenta accesible con Escape; filtros de pedidos conservados en URL y al recargar')
+  await login('cajerolocal'); await page.getByRole('heading', { name: 'Nueva venta', exact: true }).waitFor()
+  assert.deepEqual(await page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link').allTextContents(), ['Vender','Pedidos','Inventario','Mi caja'])
+  await nav('Mi caja').click(); await page.getByLabel('Saldo inicial', { exact: true }).fill('50.00'); await page.getByRole('button', { name: 'Abrir turno', exact: true }).click()
+  await page.getByText('● Caja abierta', { exact: true }).waitFor(); await nav('Vender').click()
+  const scanner = page.getByLabel('Escanear código', { exact: true })
+  for (let i=0;i<2;i++) { await scanner.fill('0000123456789'); await scanner.press('Enter'); await page.waitForFunction(quantity => document.querySelector('[aria-label="Cantidad Cable USB-C de prueba"]')?.value === String(quantity), i + 1) }
+  assert.equal(await page.getByRole('button', { name: 'Confirmar venta y cobro', exact: true }).isEnabled(), false)
+  await page.getByRole('button', { name: 'Volver al lector', exact: true }).click(); assert.equal(await scanner.evaluate(node => node === document.activeElement), true)
+  page.once('dialog', dialog => dialog.dismiss()); await nav('Inventario').click(); assert.equal(new URL(page.url()).pathname, '/pos')
+  assert.equal(await page.getByLabel('Cantidad Cable USB-C de prueba').inputValue(), '2')
+  await page.getByText('Cliente o pedido por referencia', { exact: true }).click(); const name = page.getByLabel('Nombre (opcional)', { exact: true }); await name.fill('Prueba'); await name.press('Enter'); assert.equal(await rt.db.posSale.count(), 0)
+  await page.getByText('Cliente o pedido por referencia', { exact: true }).click()
+  await themes('venta', async () => { await page.getByTestId('pos-total').waitFor() })
+  await page.setViewportSize({ width: 1024, height: 768 }); await capture('venta-tablet-horizontal')
+  // At desktop/tablet landscape the checkout has its own scroll; total and confirm remain reachable without the product list.
+  assert.equal(await page.locator('.pos-checkout').evaluate(node => getComputedStyle(node).position), 'sticky')
+  await page.locator('.pos-checkout').scrollIntoViewIfNeeded()
+  assert.equal(await page.getByRole('button', { name: 'Confirmar venta y cobro', exact: true }).evaluate(node => { const box=node.getBoundingClientRect(); return box.top >= 132 && box.bottom <= innerHeight }), true, 'Cobrar permanece visible en tablet horizontal')
+  await page.setViewportSize({ width: 390, height: 844 }); await capture('venta-movil')
+  await page.getByRole('link', { name: 'Ir al cobro', exact: true }).click()
+  assert.equal(new URL(page.url()).hash, '#pos-checkout')
+  await page.setViewportSize({ width: 1440, height: 1000 }); await page.getByLabel('Importe pago 1', { exact: true }).fill('39.80'); await page.getByLabel('Efectivo recibido', { exact: true }).fill('50.00'); await page.getByLabel('Conté y recibí este efectivo.').check()
+  page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Confirmar venta y cobro', exact: true }).click(); await page.getByRole('button', { name: 'Imprimir ticket interno', exact: true }).waitFor()
+  assert.equal(await rt.db.posSale.count(), 1); assert.equal((await rt.db.product.findUnique({ where: { id: rt.products[0].id } })).stock, 18)
+  check('POS simplificado: doble escaneo, foco dedicado, salida cancelable sin perder carrito y cobro real sintético una sola vez')
+  const { createOrder } = await rt.load('server/src/lib/orderService.js')
+  const order = await createOrder(rt.db, { customer: { nombre: 'Cliente', apellido: 'Sintético', correo: 'qa@example.test', celular: '999999999' }, delivery: { tipoEntrega: 'recojo', departamento: 'Lima', provincia: 'Lima', distrito: 'Lima' }, items: [{ productId: rt.products[1].id, quantity: 1 }] }, null, crypto.randomUUID(), 'synthetic-only-secret')
+  const stock = (await rt.db.product.findUnique({ where: { id: rt.products[1].id } })).stock
+  await nav('Pedidos').click(); await page.getByRole('button', { name: 'Atender pedido', exact: true }).waitFor(); await capture('pedidos-cajero')
+  await page.getByRole('button', { name: 'Atender pedido', exact: true }).click(); await page.getByRole('heading', { name: 'Cobrar pedido web', exact: true }).waitFor()
+  assert.equal(new URL(page.url()).pathname, '/pos'); assert.equal((await rt.db.product.findUnique({ where: { id: rt.products[1].id } })).stock, stock)
+  assert.equal(await rt.db.posSale.count({ where: { orderId: order.order.id } }), 0)
+  await page.goto(rt.panel + '/mas'); await page.getByRole('heading', { name: 'Nueva venta', exact: true }).waitFor()
+  check('Cajero separado de configuración: bandeja propia de pedidos, selección conserva reserva y acceso directo a Más rechazado')
+  await login('almacenlocal'); await page.getByRole('heading', { name: 'Inventario', exact: true }).waitFor()
+  assert.equal(await page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link').count(), 1)
+  await page.getByRole('button', { name: 'Registrar salida', exact: true }).click()
+  assert.equal(await page.getByPlaceholder('Enfoca aquí; el lector confirma con Enter').evaluate(node => node === document.activeElement), true)
+  assert.equal(await rt.db.inventoryMovement.count({ where: { type: 'LOSS' } }), 0)
+  await page.getByRole('link', { name: 'Consultar Kardex', exact: true }).click(); assert.equal(new URL(page.url()).hash, '#inventory-kardex')
+  await page.setViewportSize({ width: 834, height: 1112 }); await capture('almacen-tablet')
+  await page.goto(rt.panel + '/mas'); await page.getByRole('heading', { name: 'Inventario', exact: true }).waitFor()
+  check('Almacén sin administración: accesos de entrada/salida solo preparan el formulario y Kardex sigue disponible')
+  await page.goto(rt.shop); await page.getByRole('link', { name: 'TecRuta — inicio', exact: true }).waitFor(); assert.equal(await page.getByRole('navigation', { name: 'Secciones del panel' }).count(), 0)
+  assert.equal(errors.length, 0, errors.join('\n')); check('Tienda conservada y cero errores JavaScript en la revisión')
+} catch (error) {
+  if (page) await page.screenshot({ path: join(evidence, 'fallo.png'), fullPage: true }).catch(() => {})
+  throw error
+} finally {
+  writeFileSync(join(evidence, 'resultados.json'), JSON.stringify({ at: new Date().toISOString(), checks, captures, errors }, null, 2))
+  await browser?.close(); await rt.close()
+}

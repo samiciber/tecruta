@@ -11,7 +11,7 @@ const qaTools = process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-fin
 const { chromium } = require(join(qaTools, 'playwright-core'))
 process.env.CORS_ORIGIN = 'http://127.0.0.1:5199'
 const rt = await createInventoryRuntime()
-const evidence = join(rt.root, 'docs/personal/regresion-pos')
+const evidence = join(rt.root, 'docs/interfaz/regresion-pos')
 mkdirSync(evidence, { recursive: true })
 const results = { checks: [], captures: [], errors: [] }
 let browser, vite, page
@@ -41,8 +41,8 @@ try {
     await page.screenshot({ path: join(evidence, name + '.png'), fullPage: true, animations: 'disabled' })
     results.captures.push(name); console.log('Captura: ' + name)
   }
-  const theme = async dark => { if (await page.evaluate(() => document.documentElement.classList.contains('dark')) !== dark) await page.getByRole('button', { name: 'Cambiar tema', exact: true }).click() }
-  const nav = key => page.getByRole('navigation', { name: 'Punto de venta' }).getByRole('link', { name: key, exact: true }).click()
+  const theme = async dark => { if (await page.evaluate(() => document.documentElement.classList.contains('dark')) !== dark) await page.getByRole('button', { name: /Cambiar a modo/ }).click() }
+  const nav = async key => { if (key === 'Caja') return page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link', { name: /^(Mi caja|Caja)$/ }).click(); if (key === 'Venta') return page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link', { name: 'Vender', exact: true }).click(); return page.getByRole('navigation', { name: 'Punto de venta' }).getByRole('link', { name: key, exact: true }).click() }
   const scan = async () => {
     const input = page.getByRole('textbox', { name: 'Escanear código', exact: true })
     await input.fill('0000123456789')
@@ -151,6 +151,7 @@ try {
   const { createOrder } = await rt.load('server/src/lib/orderService.js')
   const { order } = await createOrder(rt.db, { customer: { nombre: 'QA', apellido: 'Web', correo: 'qa@example.test', celular: '999999999' }, delivery: { tipoEntrega: 'recojo', departamento: 'Lima', provincia: 'Lima', distrito: 'Lima' }, items: [{ productId: second.id, quantity: 1 }] }, null, randomUUID(), 'qa-secret-only')
   await page.getByRole('button', { name: 'Nueva venta', exact: true }).click()
+  await page.getByText('Cliente o pedido por referencia',{exact:true}).click()
   await page.getByRole('textbox', { name: 'ID de pedido web', exact: true }).fill(order.id)
   await page.getByRole('button', { name: 'Cargar pedido', exact: true }).click()
   await page.getByText('stock ya reservado.', { exact: false }).waitFor()

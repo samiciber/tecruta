@@ -10,6 +10,7 @@ import StaffAudit from '../pages/panel/StaffAudit.jsx'
 const AdminLayout = lazy(() => import('../pages/admin/AdminLayout.jsx'))
 const Pos = lazy(() => import('../pages/pos/Pos.jsx'))
 const pages = {
+  mas: lazy(() => import('../pages/admin/AdminMore.jsx')),
   productos: lazy(() => import('../pages/admin/AdminProducts.jsx')),
   pedidos: lazy(() => import('../pages/admin/AdminOrders.jsx')),
   pagos: lazy(() => import('../pages/admin/AdminPaymentMethods.jsx')),
@@ -37,8 +38,8 @@ function LegacyRoute() {
 }
 export default function PanelRoot() {
   const location = useLocation()
-  const isPos = location.pathname === '/pos' || location.pathname.startsWith('/pos/')
-  return <div className="min-h-screen bg-paper text-ink dark:bg-night dark:text-paper">{!isPos && <div className="fixed right-4 top-3 z-50"><ThemeToggle /></div>}<Suspense fallback={<p className="p-10" role="status">Cargando panel…</p>}><Routes>
+  const standalone = ['/iniciar-sesion', '/recuperar-contrasena', '/seguridad'].includes(location.pathname)
+  return <div className="min-h-screen bg-paper text-ink dark:bg-night dark:text-paper">{standalone && <div className="fixed right-4 top-3 z-50"><ThemeToggle /></div>}<Suspense fallback={<p className="p-10" role="status">Cargando panel…</p>}><Routes>
     <Route path="/iniciar-sesion" element={<PanelLogin />} />
     <Route path="/recuperar-contrasena" element={<div><p className="mx-auto max-w-md px-6 pt-8 text-sm">Recuperación exclusiva del administrador principal. El personal debe contactar a su administrador.</p><ForgotPassword /></div>} />
     <Route path="/seguridad" element={<PanelGate><StaffSecurity /></PanelGate>} />

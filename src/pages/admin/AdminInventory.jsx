@@ -65,8 +65,8 @@ function localDateToIso(date, end = false) {
   return new Date(`${date}T${end ? '23:59:59.999' : '00:00:00.000'}-05:00`).toISOString()
 }
 
-function Panel({ children, className = '' }) {
-  return <section className={`rounded-xl2 border border-paper-line bg-paper-surface p-4 dark:border-night-line dark:bg-night-surface sm:p-5 ${className}`}>{children}</section>
+function Panel({ children, className = '', id }) {
+  return <section id={id} className={`rounded-xl2 border border-paper-line bg-paper-surface p-4 dark:border-night-line dark:bg-night-surface sm:p-5 ${className}`}>{children}</section>
 }
 
 export default function AdminInventory() {
@@ -323,6 +323,8 @@ export default function AdminInventory() {
     <div className="space-y-5 [&_input]:placeholder:text-ink-soft/60 dark:[&_input]:placeholder:text-paper/40">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
+          <p className="workspace-eyebrow">Almacén principal</p>
+          <h1 className="mb-2 text-3xl font-bold">Inventario</h1>
           <p className="text-sm text-ink-soft dark:text-paper/60">Consulta existencias, identifica productos y conserva el historial de cada operación.</p>
           <p className="mt-1 text-xs text-ink-soft dark:text-paper/50">Perfil: {user?.role === 'ADMIN' ? 'administrador' : user?.role === 'WAREHOUSE' ? 'almacén' : 'vendedor / cajero'} · almacén principal</p>
         </div>
@@ -331,6 +333,11 @@ export default function AdminInventory() {
         </button>
       </div>
 
+      <nav aria-label="Tareas de inventario" className="flex flex-wrap gap-2">
+        <a href="#inventory-products" className="btn-secondary">Consultar productos y etiquetas</a>
+        {canManage && <><button className="btn-primary" onClick={() => { setMovementDraft(row => ({ ...row, type: 'PURCHASE' })); scannerRef.current?.focus() }}>Registrar entrada</button><button className="btn-secondary" onClick={() => { setMovementDraft(row => ({ ...row, type: 'LOSS' })); scannerRef.current?.focus() }}>Registrar salida</button><a href="#inventory-drafts" className="btn-secondary">Borradores ({summary?.drafts ?? drafts.length})</a></>}
+        <a href="#inventory-kardex" className="btn-secondary">Consultar Kardex</a>
+      </nav>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           ['Productos', summary?.productCount],
@@ -346,7 +353,7 @@ export default function AdminInventory() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
-        <Panel>
+        <Panel id="inventory-operation">
           <div className="mb-4 flex items-center gap-2">
             <ScanLine className="h-5 w-5 text-route" />
             <h2 className="font-display text-lg font-bold text-ink dark:text-paper">Lector y movimiento</h2>
@@ -454,7 +461,7 @@ export default function AdminInventory() {
           )}
         </Panel>
 
-        <Panel>
+        <Panel id="inventory-products">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <PackageSearch className="h-5 w-5 text-route" />
@@ -516,7 +523,7 @@ export default function AdminInventory() {
       </div>
 
       {canManage && (
-        <Panel>
+        <Panel id="inventory-drafts">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
               <h2 className="font-display text-lg font-bold text-ink dark:text-paper">Borradores pendientes</h2>
@@ -542,7 +549,7 @@ export default function AdminInventory() {
         </Panel>
       )}
 
-      <Panel>
+      <Panel id="inventory-kardex">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-display text-lg font-bold text-ink dark:text-paper">Kardex</h2>

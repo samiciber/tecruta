@@ -5,7 +5,7 @@ import {join} from 'node:path'
 import {tmpdir} from 'node:os'
 import {createPanelPreview} from './lib/panel-preview-runtime.mjs'
 const require=createRequire(import.meta.url),{chromium}=require(join(process.env.TECRUTA_QA_TOOLS||join(tmpdir(),'tecruta-home-final-tools/node_modules'),'playwright-core'))
-const rt=await createPanelPreview({panelPort:5194,storePort:5195}),evidence=join(rt.root,'docs/personal/evidencia')
+const rt=await createPanelPreview({panelPort:5194,storePort:5195}),evidence=join(rt.root,'docs/interfaz/regresion-personal')
 mkdirSync(evidence,{recursive:true});const checks=[],errors=[];let browser
 try{
  browser=await chromium.launch({executablePath:process.env.TECRUTA_QA_BROWSER||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true})
@@ -43,11 +43,11 @@ try{
  await login('vendedorqa',permanent);await page.getByRole('heading',{name:'Nueva venta',exact:true}).waitFor()
  await page.reload();await page.getByRole('heading',{name:'Nueva venta',exact:true}).waitFor()
  check('Cambio obligatorio bloquea el POS; contraseña definitiva permite operar y persiste al recargar')
- await page.getByRole('navigation',{name:'Punto de venta'}).getByRole('link',{name:'Caja',exact:true}).click()
+ await page.getByRole('navigation',{name:'Secciones del panel'}).getByRole('link',{name:/^(Mi caja|Caja)$/}).click()
  await page.getByLabel('Saldo inicial',{exact:true}).fill('50.00')
  await page.getByRole('button',{name:'Abrir turno',exact:true}).click()
  await page.getByText('● Caja abierta',{exact:true}).waitFor()
- await page.getByRole('link',{name:'Venta',exact:true}).click()
+ await page.getByRole('navigation',{name:'Secciones del panel'}).getByRole('link',{name:'Vender',exact:true}).click()
  await page.getByLabel('Escanear código',{exact:true}).fill('0000123456789');await page.getByLabel('Escanear código',{exact:true}).press('Enter')
  await page.getByLabel('Cantidad Cable USB-C de prueba',{exact:true}).waitFor()
  await page.getByLabel('Escanear código',{exact:true}).fill('0000123456789');await page.getByLabel('Escanear código',{exact:true}).press('Enter')
@@ -66,6 +66,7 @@ try{
  const {createOrder}=await rt.load('server/src/lib/orderService.js')
  const result=await createOrder(rt.db,{customer:{nombre:'Cliente',apellido:'Sintético',correo:'queue@example.test',celular:'999999999'},delivery:{tipoEntrega:'recojo',departamento:'Lima',provincia:'Lima',distrito:'Lima'},items:[{productId:rt.products[1].id,quantity:1}]},null,crypto.randomUUID(),'qa-only-secret')
  const reserved=(await rt.db.product.findUnique({where:{id:rt.products[1].id}})).stock
+ await page.getByRole('navigation',{name:'Secciones del panel'}).getByRole('link',{name:'Pedidos',exact:true}).click()
  await page.getByRole('button',{name:'Actualizar pedidos',exact:true}).click()
  await page.getByRole('button',{name:'Atender pedido',exact:true}).click()
  await page.getByRole('heading',{name:'Cobrar pedido web',exact:true}).waitFor()
@@ -78,7 +79,7 @@ try{
  assert.equal((await rt.db.product.findUnique({where:{id:rt.products[1].id}})).stock,reserved)
  assert.equal(await rt.db.posSale.count({where:{orderId:result.order.id}}),1)
  check('Cajero selecciona pedido web desde la lista y cobra sin volver a descontar inventario')
- await page.getByRole('navigation',{name:'Punto de venta'}).getByRole('link',{name:'Caja',exact:true}).click()
+ await page.getByRole('navigation',{name:'Secciones del panel'}).getByRole('link',{name:/^(Mi caja|Caja)$/}).click()
  await capture('caja-cajero')
  await clear();await login('adminlocal');await page.getByRole('heading',{name:'Resumen',exact:true}).waitFor()
  await page.goto(rt.panel+'/usuarios')

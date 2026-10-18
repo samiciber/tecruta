@@ -9,6 +9,7 @@ export function safePanelReturn(value, fallback = '/') {
     const url = new URL(value, 'https://panel.invalid')
     const path = legacyPanelPath(url.pathname)
     if (url.origin !== 'https://panel.invalid' || ['/iniciar-sesion', '/recuperar-contrasena'].includes(path)) return fallback
+    if (['/mas', '/seguridad', '/auditoria'].includes(path)) return path + url.search + url.hash
     // Only application routes, never a free-form external or unknown destination.
     if (!/^\/(?:$|pos(?:\/|$)|inventario(?:\/|$)|productos(?:\/|$)|pedidos(?:\/|$)|usuarios(?:\/|$)|clientes(?:\/|$)|home-layout(?:\/|$)|categorias(?:\/|$)|asignar(?:\/|$)|pagos(?:\/|$)|menu(?:\/|$)|menus(?:\/|$)|marcas(?:\/|$)|busquedas(?:\/|$)|tiendas(?:\/|$)|banners(?:\/|$)|circulos(?:\/|$)|footer(?:\/|$)|suscriptores(?:\/|$)|ajustes(?:\/|$))/.test(path)) return fallback
     return path + url.search + url.hash

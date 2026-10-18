@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-18T23:09:39.406Z",
+  "checks": [
+    "Inicio ADMIN con seis áreas, acciones directas y cifras reales; escritorio/tablet en ambos temas y móvil",
+    "Todas las herramientas anteriores siguen accesibles; búsqueda sin acentos y estado vacío recuperable",
+    "Cuenta accesible con Escape; filtros de pedidos conservados en URL y al recargar",
+    "POS simplificado: doble escaneo, foco dedicado, salida cancelable sin perder carrito y cobro real sintético una sola vez",
+    "Cajero separado de configuración: bandeja propia de pedidos, selección conserva reserva y acceso directo a Más rechazado",
+    "Almacén sin administración: accesos de entrada/salida solo preparan el formulario y Kardex sigue disponible",
+    "Tienda conservada y cero errores JavaScript en la revisión"
+  ],
+  "captures": [
+    "inicio-escritorio-light.png",
+    "inicio-escritorio-dark.png",
+    "inicio-tablet-light.png",
+    "inicio-tablet-dark.png",
+    "inicio-movil.png",
+    "herramientas-escritorio-light.png",
+    "herramientas-escritorio-dark.png",
+    "herramientas-tablet-light.png",
+    "herramientas-tablet-dark.png",
+    "pedidos-filtros.png",
+    "venta-escritorio-light.png",
+    "venta-escritorio-dark.png",
+    "venta-tablet-light.png",
+    "venta-tablet-dark.png",
+    "venta-tablet-horizontal.png",
+    "venta-movil.png",
+    "pedidos-cajero.png",
+    "almacen-tablet.png"
+  ],
+  "errors": []
+}

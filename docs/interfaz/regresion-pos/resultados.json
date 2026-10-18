@@ -1,0 +1,31 @@
+{
+  "checks": [
+    "POS separado de la tienda; cajero sin descuentos ni administración",
+    "Apertura individual con saldo inicial en efectivo",
+    "Búsqueda manual acotada, edición de cantidades y retiro de líneas",
+    "Escanear agrega y repetir incrementa; pagos combinados y vuelto calculados",
+    "Modo sin conexión bloquea cobros hasta recuperar acceso al servidor",
+    "Venta confirmada: stock -2 y caja +20, sin sumar Yape ni efectivo entregado como vuelto",
+    "Ticket térmico identifica documento interno sin emisión SUNAT y muestra vuelto",
+    "Venta pendiente persiste tras recargar sin cobrar ni reservar stock",
+    "Respuesta perdida después de COMMIT: recarga y recuperación con la misma clave sin doble venta",
+    "Cobrar pendiente revalida y descuenta una sola vez",
+    "Cobro de pedido web conserva reserva y queda vinculado al pedido pagado",
+    "Cierre conserva esperado, contado y diferencia; no reabre ni cambia el turno cerrado",
+    "Devolución dañada enlazada al original, sin aumentar stock vendible ni efectivo",
+    "Reportes por fecha de Lima, CSV y estado fiscal sin proveedor",
+    "Almacén conserva inventario y Kardex compartidos; acceso POS rechazado"
+  ],
+  "captures": [
+    "venta-escritorio-claro",
+    "venta-escritorio-oscuro",
+    "venta-tablet-claro",
+    "venta-tablet-oscuro",
+    "recuperacion-conexion",
+    "caja-cajero-antes-cierre",
+    "devolucion-administrador",
+    "reportes-y-integracion-fiscal",
+    "inventario-compartido-kardex"
+  ],
+  "errors": []
+}
