@@ -1,5 +1,8 @@
 # Publicación y recuperación del sistema integrado
 
+> La postergación descrita abajo fue revocada por «esta ahora si publica todo».
+> La publicación se ejecutó el 18 de octubre: [resultado comprobado](publicacion-20261018.md).
+
 **Publicación solicitada; ventana de escrituras pospuesta por el titular.** El
 18 de octubre el titular eligió «Prepara todo y acordamos otro horario». No
 publicar ni migrar hasta acordar esa ventana. Ver [preparación comprobada](preparacion-publicacion.md).

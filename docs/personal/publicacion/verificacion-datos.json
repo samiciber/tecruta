@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-18T22:34:54.468Z",
+  "revision": "972628acddcb2da8a6390b28d4d1e1cbe9cc0ae2",
+  "products": 148,
+  "units": 10888,
+  "orders": 6,
+  "users": 3,
+  "initialBalances": 148,
+  "mismatches": 0,
+  "posSales": 0,
+  "cashSessions": 0,
+  "qaUsers": 0,
+  "temporaryGuards": 0,
+  "pendingMigrations": 0
+}

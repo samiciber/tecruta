@@ -1,5 +1,10 @@
 # Sistema integrado de TecRuta: entrega para revisión
 
+> **Actualización: publicado el 18 de octubre de 2026.** El estado local descrito
+> en la entrega original de abajo es histórico. Consulta la
+> [publicación verificada](publicacion-20261018.md) para rutas reales, migraciones,
+> conservación de datos y pasos del titular. Las cuentas QA siguen siendo solo locales.
+
 Esta entrega integra el acceso publicado (`57e106b`) con inventario, POS y caja
 conservados en `c9116c0`, en la rama `implementacion/sistema-personal-integrado`.
 Los cambios de esta etapa son **locales**. No se publicaron, no se conectó a la
