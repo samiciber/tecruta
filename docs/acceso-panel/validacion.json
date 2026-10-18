@@ -1,0 +1,29 @@
+{
+  "fecha": "2026-10-18",
+  "base": "fae9594",
+  "rama": "correccion/acceso-panel-google-alias",
+  "produccionConsultada": false,
+  "produccionModificada": false,
+  "publicado": false,
+  "migracionNueva": "20261018000000_admin_login_alias",
+  "migracionSoloLocal": true,
+  "aliasAsignadoEnProduccion": false,
+  "pruebas": {
+    "panel-access": { "pasaron": 10, "fallaron": 0 },
+    "lote-4-autenticacion": { "pasaron": 13, "fallaron": 0 },
+    "separation": { "pasaron": 2, "fallaron": 0 },
+    "ui-acceso": { "grupos": 6, "erroresPagina": 0 },
+    "ui-regresion-separacion": { "grupos": 5, "erroresPagina": 0 },
+    "build-store-envFile-false": "correcto",
+    "build-panel-envFile-false": "correcto"
+  },
+  "entorno": "PostgreSQL local Docker desechable, cuentas sintéticas y sustitutos de Google/correo; no carga .env reales",
+  "migracionValidada": "Instalación limpia y actualización desde historial anterior con comparación completa de filas y sin drift Prisma",
+  "limitaciones": [
+    "Pendiente selección de cuenta principal para ADMIN1234",
+    "Pendiente autorización de publicación y migración en producción",
+    "Google y correo reales no validados: requieren configuración y comprobación coordinada al publicar",
+    "admin.tecruta.com pendiente de DNS",
+    "Advertencias heredadas de tamaño del visor 3D y carga mixta de ubigeo"
+  ]
+}

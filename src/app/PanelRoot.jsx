@@ -4,6 +4,7 @@ import PanelGate from './PanelGate.jsx'
 import { legacyPanelPath } from './urls.js'
 import ThemeToggle from '../components/ui/ThemeToggle.jsx'
 import PanelLogin from '../pages/panel/PanelLogin.jsx'
+import PanelGoogleCallback from '../pages/panel/PanelGoogleCallback.jsx'
 import ForgotPassword from '../pages/ForgotPassword.jsx'
 const AdminLayout = lazy(() => import('../pages/admin/AdminLayout.jsx'))
 const pages = {
@@ -33,6 +34,7 @@ function LegacyRoute() {
 export default function PanelRoot() {
   return <div className="min-h-screen bg-paper text-ink dark:bg-night dark:text-paper"><div className="fixed right-4 top-3 z-50"><ThemeToggle /></div><Suspense fallback={<p className="p-10" role="status">Cargando panel…</p>}><Routes>
     <Route path="/iniciar-sesion" element={<PanelLogin />} />
+    <Route path="/auth/google/callback" element={<PanelGoogleCallback />} />
     <Route path="/recuperar-contrasena" element={<ForgotPassword />} />
     <Route path="/admin/*" element={<LegacyRoute />} />
     <Route path="/" element={<PanelGate><AdminLayout /></PanelGate>}>

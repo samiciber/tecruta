@@ -14,10 +14,11 @@ export async function createSeparationRuntime() {
     prisma[key] = rt.db[key]
   }
   const { createApp } = await load('server/src/index.js')
+  const { createAuthRouter } = await load('server/src/routes/auth.routes.js')
   let server
   return { ...rt, load, password: 'qa-local-only',
-    start: async () => {
-      const app = createApp()
+    start: async (authOptions = {}) => {
+      const app = createApp({ auth: createAuthRouter({ db: rt.db, mailer: { verification: async () => {}, reset: async () => {} }, ...authOptions }) })
       server = await new Promise((resolve, reject) => { const s = app.listen(0, '127.0.0.1', () => resolve(s)); s.once('error', reject) })
       return `http://127.0.0.1:${server.address().port}`
     },

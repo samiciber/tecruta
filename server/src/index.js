@@ -20,7 +20,7 @@ import { defaultJson } from './middleware/bodyLimits.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { newsletterRouter } from './routes/newsletter.routes.js'
 
-export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
+export function createApp({ orders = ordersRouter, admin = adminRouter, auth = authRouter } = {}) {
   validateRuntimeEnv()
   const app = express()
   // Render has one proxy hop. Never trust every forwarded address.
@@ -42,7 +42,7 @@ export function createApp({ orders = ordersRouter, admin = adminRouter } = {}) {
   app.use('/api/categories', categoriesRouter)
   app.use('/api/products', productsRouter)
   app.use('/api/payment-methods', paymentMethodsRouter)
-  app.use('/api/auth', authRouter)
+  app.use('/api/auth', auth)
   app.use('/api/orders', orders)
   app.use('/api/admin', admin)
   app.use('/api/admin', adminContentRouter)

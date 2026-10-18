@@ -28,6 +28,11 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Ingresa tu contraseña.'),
 })
 
+export const staffLoginSchema = z.object({
+  identifier: z.string().trim().min(1, 'Ingresa tu usuario o correo.').max(254),
+  password: z.string().min(1, 'Ingresa tu contraseña.').max(1024),
+})
+
 export const verifySchema = z.object({
   email: emailField,
   code: sixDigitCode,

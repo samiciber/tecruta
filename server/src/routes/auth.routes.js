@@ -1,5 +1,6 @@
 import { Router } from 'express'
-import { storeOrigin } from '../lib/runtimeConfig.js'
+import { authFrontendOrigin } from '../lib/runtimeConfig.js'
+import { normalizeAdminUsername } from '../lib/adminUsername.js'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
 import { signSession } from '../lib/token.js'
@@ -10,7 +11,7 @@ import { asyncHandler } from '../middleware/errorHandler.js'
 import { createAuthMiddleware } from '../middleware/auth.js'
 import { loginRateLimiter, authActionRateLimiter } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
-import { registerSchema, emailOnlySchema, loginSchema, verifySchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../lib/schemas.js'
+import { registerSchema, emailOnlySchema, loginSchema, staffLoginSchema, verifySchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../lib/schemas.js'
 import { AuthError, UNIFORM_AUTH_RESPONSE, normalizeEmail, secret, challenge, signFlowCookie, readFlowCookie,
   oauthCookieName, oauthCookieOptions, randomSecret } from '../lib/authSecurity.js'
 import { lockUser, version, issueCode, consumeCode } from '../lib/authCodes.js'
@@ -23,7 +24,6 @@ function dateValue(value) {
   if (!Number.isFinite(date.getTime())) throw new AuthError(400, 'Ingresa una fecha válida.')
   return date
 }
-function frontendUrl() { return storeOrigin() }
 
 export function createAuthRouter({ db = prisma, now = () => new Date(),
   mailer = { verification: sendVerificationEmail, reset: sendPasswordResetEmail },
@@ -108,6 +108,18 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     res.json({ token: signSession(user), user: serializeUser(user) })
   }))
   router.get('/me', requireAuth, (req, res) => res.json({ user: serializeUser(req.user) }))
+  router.post('/staff-login', loginRateLimiter, validate(staffLoginSchema), asyncHandler(async (req, res) => {
+    secret()
+    const identifier = normalizeEmail(req.body.identifier)
+    let where
+    if (identifier.includes('@')) where = { email: identifier }
+    else { try { where = { adminUsername: normalizeAdminUsername(identifier) } } catch {} }
+    const user = where ? await db.user.findUnique({ where }) : null
+    const matches = await bcrypt.compare(req.body.password, user?.passwordHash ?? await dummyPasswordHash)
+    // Uniform response for unknown alias/email, invalid password and non-ADMIN.
+    if (!user || !matches || !user.verified || user.role !== 'ADMIN') return res.status(401).json({ error: 'Usuario, correo o contraseña incorrectos, o acceso no autorizado.' })
+    res.json({ token: signSession(user), user: serializeUser(user) })
+  }))
   router.patch('/me', requireAuth, validate(updateProfileSchema), asyncHandler(async (req, res) => {
     const { nombre, apellido, fechaNacimiento } = req.body
     const user = await db.user.update({ where: { id: req.user.id }, data: {
@@ -137,20 +149,29 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
   }))
 
   router.get('/google', authActionRateLimiter, asyncHandler(async (req, res) => {
+    const audience = req.query.app ?? 'store'
+    if (!['store', 'panel'].includes(audience)) return res.status(400).json({ error: 'Destino OAuth no permitido.' })
+    let origin
+    try { origin = authFrontendOrigin(audience) }
+    catch { return res.status(503).json({ error: 'El acceso con Google no está configurado para este destino.' }) }
     try {
       secret()
       const flow = await startGoogleFlow(db, req.query.challenge, now())
       const destination = google.authorizationUrl(flow.state, challenge(flow.verifier))
-      res.cookie(oauthCookieName(), signFlowCookie({ stateHash: flow.stateHash, binding: flow.binding, verifier: flow.verifier }), oauthCookieOptions())
+      res.cookie(oauthCookieName(), signFlowCookie({ stateHash: flow.stateHash, binding: flow.binding, verifier: flow.verifier, audience }), oauthCookieOptions())
       res.redirect(destination)
     } catch (error) {
       if (error.status && error.status < 500) return res.status(error.status).json({ error: error.message })
-      res.redirect(`${frontendUrl()}/iniciar-sesion?googleError=config`)
+      res.redirect(`${origin}/iniciar-sesion?googleError=config`)
     }
   }))
   router.get('/google/callback', asyncHandler(async (req, res) => {
-    const fail = reason => res.redirect(`${frontendUrl()}/iniciar-sesion?googleError=${reason}`)
     const cookie = readFlowCookie(req.headers.cookie)
+    const audience = cookie?.audience ?? 'store'
+    let origin
+    try { origin = authFrontendOrigin(audience) }
+    catch { return res.status(503).json({ error: 'El acceso con Google no está configurado para este destino.' }) }
+    const fail = reason => res.redirect(`${origin}/iniciar-sesion?googleError=${reason}`)
     const { maxAge: _maxAge, ...cookieOptions } = oauthCookieOptions()
     res.clearCookie(oauthCookieName(), cookieOptions)
     let flow
@@ -165,14 +186,19 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     try { profile = await google.profile(await google.exchange(req.query.code, flow.verifier)) }
     catch { return fail('exchange') }
     try {
-      const user = await resolveGoogleUser(db, profile)
-      const code = await issueExchange(db, user, flow.exchangeChallenge, now())
-      res.redirect(`${frontendUrl()}/auth/google/callback?code=${encodeURIComponent(code)}`)
-    } catch (error) { return fail(error.status === 403 ? 'linking' : 'unavailable') }
+      const user = await resolveGoogleUser(db, profile, { adminOnly: audience === 'panel' })
+      const code = await issueExchange(db, user, flow.exchangeChallenge, now(), audience)
+      res.redirect(`${origin}/auth/google/callback?code=${encodeURIComponent(code)}`)
+    } catch (error) { return fail(error.status === 403 ? (audience === 'panel' ? 'access' : 'linking') : 'unavailable') }
   }))
   router.post('/google/exchange', loginRateLimiter, asyncHandler(async (req, res) => {
     secret()
     const user = await consumeExchange(db, req.body?.code, req.body?.verifier, now())
+    res.json({ token: signSession(user), user: serializeUser(user) })
+  }))
+  router.post('/staff-google/exchange', loginRateLimiter, asyncHandler(async (req, res) => {
+    secret()
+    const user = await consumeExchange(db, req.body?.code, req.body?.verifier, now(), 'panel')
     res.json({ token: signSession(user), user: serializeUser(user) })
   }))
   return router

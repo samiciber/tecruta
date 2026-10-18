@@ -14,7 +14,7 @@ test('exact CORS configuration and panel return destinations', () => {
   assert.equal(safePanelReturn('/admin/productos?pagina=2#editar'), '/productos?pagina=2#editar')
 })
 
-test('real API: both origins, ADMIN permissions and existing schema work without new migrations', async () => {
+test('real API: both origins and ADMIN permissions work without inventory or POS migrations', async () => {
   process.env.CORS_ORIGINS = 'https://www.tecruta.com,https://tecruta-panel.vercel.app'
   process.env.STORE_ORIGIN = 'https://www.tecruta.com'
   const rt = await createSeparationRuntime()

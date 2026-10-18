@@ -14,6 +14,8 @@
     "build:all": "npm run build:store && npm run build:panel",
     "preview:panel": "vite preview --mode panel --port 5180",
     "test:separation": "node --test server/prisma/tests/separation.test.mjs",
+    "test:panel-access": "node --test server/prisma/tests/panel-access.test.mjs",
+    "qa:panel-access-ui": "node scripts/verify-panel-access-ui.mjs",
     "qa:separation-ui": "node scripts/verify-separation-ui.mjs"
   },
   "dependencies": {

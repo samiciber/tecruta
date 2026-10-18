@@ -13,6 +13,15 @@ export function corsOrigins(env = process.env) {
 export function storeOrigin(env = process.env) { return checkedOrigin(env.STORE_ORIGIN || corsOrigins(env)[0], 'STORE_ORIGIN') }
 export function panelOrigin(env = process.env) { return checkedOrigin(env.PANEL_ORIGIN || 'http://127.0.0.1:5180', 'PANEL_ORIGIN') }
 
+export function authFrontendOrigin(audience = 'store', env = process.env) {
+  if (!['store', 'panel'].includes(audience)) throw new Error('Destino OAuth no permitido.')
+  if (audience === 'store') return storeOrigin(env)
+  if (env.NODE_ENV === 'production' && !env.PANEL_ORIGIN) throw new Error('Configura PANEL_ORIGIN para Google en el panel.')
+  const origin = panelOrigin(env)
+  if (!corsOrigins(env).includes(origin)) throw new Error('PANEL_ORIGIN debe estar incluido en CORS_ORIGINS.')
+  return origin
+}
+
 // Validate before opening the listening socket. Error messages contain names,
 // never configuration values or URL credentials.
 export function validateRuntimeEnv(env = process.env) {

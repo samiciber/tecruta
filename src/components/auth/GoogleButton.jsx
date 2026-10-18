@@ -27,7 +27,7 @@ function GoogleIcon() {
 }
 
 // A per-tab proof protects the one-use code, also across separate SPA/API sites.
-export default function GoogleButton({ label = 'Continuar con Google', remember = false }) {
+export default function GoogleButton({ label = 'Continuar con Google', remember = false, audience = 'store', returnTo = '/' }) {
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   async function start() {
@@ -35,7 +35,8 @@ export default function GoogleButton({ label = 'Continuar con Google', remember 
     setPending(true); setError('')
     try {
       const challenge = await prepareGoogleFlow(window.sessionStorage, remember)
-      window.location.assign(`${API_URL}/api/auth/google?challenge=${encodeURIComponent(challenge)}`)
+      if (audience === 'panel') window.sessionStorage.setItem('tecruta:panel-google-return', returnTo)
+      window.location.assign(`${API_URL}/api/auth/google?challenge=${encodeURIComponent(challenge)}&app=${audience === 'panel' ? 'panel' : 'store'}`)
     } catch {
       setError('No pudimos iniciar Google desde esta pestaña. Habilita el almacenamiento y reintenta.')
       setPending(false)

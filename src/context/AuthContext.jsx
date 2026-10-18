@@ -42,21 +42,21 @@ export function AuthProvider({ children }) {
     saveSessionToken(storage.local, storage.session, data.token, remember)
     setToken(data.token); setUser(data.user); setAuthError(''); setChecking(false)
   }, [storage])
-  const login = useCallback(async ({ email, password, remember = false }) => {
+  const login = useCallback(async ({ email, identifier, password, remember = false }) => {
     const current = ++operation.current
     try {
-      const data = await api.auth.login({ email, password })
+      const data = await (identifier !== undefined ? api.auth.staffLogin({ identifier, password }) : api.auth.login({ email, password }))
       if (current !== operation.current) return { ok: false, error: 'El acceso fue cancelado.' }
       adopt(data, remember)
       return { ok: true }
     } catch (error) { return { ok: false, error: error.message, needsVerification: error.needsVerification } }
   }, [adopt])
-  const loginWithGoogleCode = useCallback(async code => {
+  const loginWithGoogleCode = useCallback(async (code, audience = 'store') => {
     const current = ++operation.current
     const proof = readGoogleFlow(storage.session)
     if (!proof) return { ok: false, error: 'Inicia Google nuevamente desde esta pestaña.' }
     try {
-      const data = await api.auth.googleExchange(code, proof.verifier)
+      const data = await (audience === 'panel' ? api.auth.staffGoogleExchange(code, proof.verifier) : api.auth.googleExchange(code, proof.verifier))
       if (current !== operation.current) return { ok: false, error: 'El acceso fue cancelado.' }
       adopt(data, proof.remember)
       clearGoogleFlow(storage.session)

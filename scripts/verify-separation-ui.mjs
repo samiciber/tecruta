@@ -13,7 +13,7 @@ process.env.PANEL_ORIGIN = panel
 const rt = await createSeparationRuntime()
 const require = createRequire(import.meta.url)
 const { chromium } = require(join(process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-final-tools/node_modules'), 'playwright-core'))
-const evidence = join(rt.root, 'docs/separacion/evidencia')
+const evidence = process.env.TECRUTA_QA_EVIDENCE || join(rt.root, 'docs/separacion/evidencia')
 mkdirSync(evidence, { recursive: true })
 const checks = [], errors = []
 let browser, store, admin
@@ -39,7 +39,7 @@ try {
   }
   const login = async email => {
     await page.goto(panel + '/iniciar-sesion')
-    await page.getByRole('textbox', { name: 'Correo electrónico', exact: true }).fill(email)
+    await page.getByRole('textbox', { name: 'Usuario o correo', exact: true }).fill(email)
     await page.getByLabel('Contraseña', { exact: true }).fill(rt.password)
     await page.getByRole('button', { name: 'Ingresar al panel', exact: true }).click()
   }
@@ -48,8 +48,7 @@ try {
   await page.getByRole('heading', { name: 'Panel TecRuta' }).waitFor()
   await capture('login')
   await login(rt.customer.email)
-  await page.getByRole('alert').filter({ hasText: 'Acceso denegado' }).waitFor()
-  await page.getByRole('button', { name: 'Usar otra cuenta' }).click()
+  await page.getByRole('alert').filter({ hasText: 'acceso no autorizado' }).waitFor()
   await login(rt.admin.email)
   await page.getByRole('navigation', { name: 'Secciones del panel' }).waitFor()
   assert.equal(await page.getByRole('link', { name: /Inventario|Punto de venta|Usuarios y permisos/ }).count(), 0)
@@ -110,5 +109,5 @@ try {
   await page.getByRole('navigation', { name: 'Secciones del panel' }).waitFor()
   check('Pérdida temporal de conexión: sesión conservada y recuperación con Reintentar')
   assert.deepEqual(errors, [])
-  writeFileSync(join(evidence, 'resultados.json'), JSON.stringify({ checks, errors, database: 'PostgreSQL local desechable; esquema de main, datos sintéticos' }, null, 2) + '\n')
+  writeFileSync(join(evidence, 'resultados.json'), JSON.stringify({ checks, errors, database: 'PostgreSQL local desechable; esquema de separación sin inventario/POS, datos sintéticos' }, null, 2) + '\n')
 } finally { await browser?.close(); await store?.close(); await admin?.close(); await rt.close() }

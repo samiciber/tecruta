@@ -1,5 +1,10 @@
 # Separación de tienda y administración, sin cambio de base
 
+> Este documento conserva la entrega base `fae9594`. La corrección posterior de
+> Google en panel y del alias ADMIN, con su única migración aditiva, se describe
+> en [Acceso al panel](../acceso-panel/README.md). Esa corrección está preparada
+> para revisión local y no está publicada.
+
 Esta entrega parte de `main` (`97684b3`). Conserva exactamente el esquema Prisma,
 los SQL de migraciones, versiones y lockfiles de esa revisión. No incluye
 inventario, Kardex, POS, caja, invitaciones de personal ni nuevos roles. El trabajo

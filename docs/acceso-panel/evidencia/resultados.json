@@ -1,0 +1,14 @@
+{
+  "syntheticOnly": true,
+  "disposablePostgres": true,
+  "providerDouble": true,
+  "checks": [
+    "Login con usuario o correo y Google: escritorio/tablet, temas claro/oscuro sin desborde",
+    "Alias normalizado inicia la misma sesión ADMIN y conserva acceso al recargar",
+    "Google vuelve al panel y conserva el destino protegido /productos, sin tokens en URL",
+    "Google iniciado en tienda regresa a tienda; las sesiones por origen son independientes",
+    "Cliente rechazado por Google y por contraseña en el panel",
+    "Recuperación por correo establece contraseña en cuenta Google y mantiene alias, identidad y rol"
+  ],
+  "pageErrors": []
+}
