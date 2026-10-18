@@ -71,3 +71,11 @@ export async function sendPasswordResetEmail({ to, code }) {
     }),
   })
 }
+
+export async function sendStaffActivationEmail({ to, code, activationUrl }) {
+  return sendEmail({ to, subject: 'Activa tu acceso al Panel TecRuta', html: codeEmailHtml({
+    heading: 'Tu cuenta de trabajo en TecRuta',
+    intro: `Un administrador autorizó tu cuenta. Entra a <a href="${activationUrl}">Panel TecRuta · Activar cuenta</a>, solicita un código nuevo si este vence y establece tu propia contraseña. Código válido durante 15 minutos.`,
+    code,
+  }) })
+}

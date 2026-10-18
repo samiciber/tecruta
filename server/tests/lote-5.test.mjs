@@ -67,6 +67,26 @@ async function withApp(run, app = createApp()) {
   try { await run(`http://127.0.0.1:${server.address().port}`) }
   finally { await new Promise(resolve => server.close(resolve)) }
 }
+test('deployment maintenance blocks reads and writes without invalidating sessions; health stays available', async () => {
+  const previous = process.env.MAINTENANCE_MODE
+  process.env.MAINTENANCE_MODE = 'true'
+  try {
+    await withApp(async base => {
+      const health = await fetch(base + '/api/health')
+      assert.equal(health.status, 200)
+      assert.equal((await health.json()).maintenance, true)
+      for (const [method, path] of [['GET', '/api/products'], ['POST', '/api/orders'], ['PATCH', '/api/admin/users/test/role'], ['POST', '/api/auth/login']]) {
+        const response = await fetch(base + path, { method })
+        assert.equal(response.status, 503)
+        assert.equal(response.headers.get('cache-control'), 'no-store')
+        assert.equal(response.headers.get('retry-after'), '120')
+        assert.equal((await response.json()).maintenance, true)
+      }
+      process.env.MAINTENANCE_MODE = 'false'
+      assert.equal((await fetch(base + '/api/auth/me')).status, 401)
+    })
+  } finally { if (previous === undefined) delete process.env.MAINTENANCE_MODE; else process.env.MAINTENANCE_MODE = previous }
+})
 test('health, denied admin and unknown routes have API CSP, nosniff and no X-Powered-By', async () => {
   await withApp(async base => {
     for (const [path, status] of [['/api/health', 200], ['/api/admin/products', 401], ['/api/qa-unknown', 404]]) {

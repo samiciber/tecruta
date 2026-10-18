@@ -1,0 +1,26 @@
+{
+  "fechaLima": "2026-10-17",
+  "rama": "implementacion/pos-parte-2",
+  "produccionModificada": false,
+  "dependenciasActualizadas": false,
+  "integracionPostgresLocal": {
+    "inventario": { "pruebas": 14, "correctas": 14 },
+    "pos": { "pruebas": 19, "correctas": 19 },
+    "driftPrismaMigraciones": "sin diferencias",
+    "base": "Docker local desechable; usuario y datos QA; dotenv vacío"
+  },
+  "regresionExistente": { "pruebas": 67, "correctas": 67 },
+  "interfaz": {
+    "inventario": "docs/inventario/evidencia/resultados.json",
+    "pos": "docs/pos/evidencia/resultados.json",
+    "dispositivos": ["escritorio 1440", "tablet 834"],
+    "temas": ["claro", "oscuro"],
+    "erroresNoControlados": 0,
+    "conectividad": "desconexión bloquea cobro; respuesta perdida tras COMMIT recuperada con la misma clave después de recargar"
+  },
+  "build": "correcto; avisos existentes de ubigeo y bundle 3D",
+  "gitDiffCheck": "correcto; también se revisaron archivos nuevos",
+  "pendienteExterno": ["proveedor fiscal real y homologación", "integración bancaria automática", "prueba de lectora e impresora físicas"],
+  "documentosEmitidos": "ninguno; adaptador fiscal desactivado",
+  "publicado": false
+}

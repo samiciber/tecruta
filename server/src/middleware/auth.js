@@ -1,5 +1,6 @@
 import { verifyToken } from '../lib/token.js'
 import { prisma } from '../lib/prisma.js'
+import { hash } from '../lib/authSecurity.js'
 
 export function createAuthMiddleware({ db = prisma, verify = verifyToken } = {}) {
   const authenticate = optional => async (req, res, next) => {
@@ -21,7 +22,16 @@ export function createAuthMiddleware({ db = prisma, verify = verifyToken } = {})
     }
     try {
       const user = await db.user.findUnique({ where: { id: payload.sub } })
-      if (!user || tokenVersion !== (user.tokenVersion ?? 0)) return res.status(401).json({ error: 'Sesión inválida o expirada.' })
+      if (!user || user.isSuspended || tokenVersion !== (user.tokenVersion ?? 0)) return res.status(401).json({ error: 'Sesión inválida o expirada.' })
+      req.authChannel = payload.authChannel || 'legacy'
+      if (req.authChannel === 'panel') {
+        if (typeof payload.sid !== 'string') return res.status(401).json({error:'Sesión inválida.'})
+        const session = await db.staffSession.findUnique({where:{tokenHash:hash(payload.sid)}}), now = new Date()
+        if (!session || session.userId !== user.id || session.revokedAt || session.expiresAt <= now || now - session.lastSeenAt > 30 * 60000) return res.status(401).json({error:'La sesión del personal venció. Inicia nuevamente.'})
+        if (now - session.lastSeenAt > 60000) await db.staffSession.update({where:{id:session.id},data:{lastSeenAt:now}})
+      }
+      const path = req.originalUrl.split('?')[0]
+      if (user.mustChangePassword && !((req.method === 'GET' && path === '/api/auth/me') || ['/api/auth/staff-change-password','/api/auth/logout-all'].includes(path))) return res.status(403).json({error:'Debes cambiar tu contraseña temporal antes de continuar.',code:'PASSWORD_CHANGE_REQUIRED'})
       req.user = user
       return next()
     } catch (error) {
@@ -33,9 +43,9 @@ export function createAuthMiddleware({ db = prisma, verify = verifyToken } = {})
 }
 export const { requireAuth, optionalAuth } = createAuthMiddleware()
 
-export function requireRole(role) {
+export function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user || req.user.role !== role) return res.status(403).json({ error: 'No tienes permisos para realizar esta acción.' })
+    if (!req.user || !roles.includes(req.user.role)) return res.status(403).json({ error: 'No tienes permisos para realizar esta acción.' })
     next()
   }
 }

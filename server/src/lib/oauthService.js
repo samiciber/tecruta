@@ -23,7 +23,7 @@ export async function consumeGoogleFlow(db, state, cookie, now) {
     return { ...flow, verifier: cookie.verifier }
   })
 }
-export async function resolveGoogleUser(db, profile, { adminOnly = false } = {}) {
+export async function resolveGoogleUser(db, profile, { adminOnly = false, customersOnly = false } = {}) {
   const identity = googleIdentity(profile)
   // Hash on all successful Google profiles, not only new emails.
   const passwordHash = await bcrypt.hash(randomSecret(), 10)
@@ -33,6 +33,7 @@ export async function resolveGoogleUser(db, profile, { adminOnly = false } = {})
     let user = await tx.user.findUnique({ where: { googleId: identity.sub } })
     if (user) {
       user = await lockUser(tx, user.id)
+      if (customersOnly && (user.role !== 'CUSTOMER' || user.isSuspended)) throw new AuthError(403,'El personal utiliza usuario y contraseña.')
       if (adminOnly && user.role !== 'ADMIN') throw new AuthError(403, 'Acceso al panel no autorizado.')
       if (!user.verified) throw new AuthError(403, 'Verifica o recupera primero tu cuenta local.')
       return user
@@ -40,6 +41,7 @@ export async function resolveGoogleUser(db, profile, { adminOnly = false } = {})
     user = await tx.user.findUnique({ where: { email: identity.email } })
     if (user) {
       user = await lockUser(tx, user.id)
+      if (customersOnly && (user.role !== 'CUSTOMER' || user.isSuspended)) throw new AuthError(403,'El personal utiliza usuario y contraseña.')
       if (adminOnly && user.role !== 'ADMIN') throw new AuthError(403, 'Acceso al panel no autorizado.')
       // Never verify a local account or replace another Google identity here.
       if (!user.verified || (user.googleId && user.googleId !== identity.sub)) throw new AuthError(403, 'Verifica o recupera primero tu cuenta local.')

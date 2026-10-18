@@ -20,10 +20,12 @@ const emptyValues = {
   slug: '',
   name: '',
   category: '',
+  sku: '',
   brand: '',
   price: '',
   compareAtPrice: '',
   stock: '0',
+  stockReason: '',
   featured: false,
   bestSeller: false,
   image: '',
@@ -53,10 +55,12 @@ export function productToFormValues(product) {
     slug: product.slug || '',
     name: product.name || '',
     category: product.category || '',
+    sku: product.sku || '',
     brand: product.brand || '',
     price: product.price != null ? String(product.price) : '',
     compareAtPrice: product.compareAtPrice != null ? String(product.compareAtPrice) : '',
     stock: product.stock != null ? String(product.stock) : '0',
+    stockReason: '',
     featured: Boolean(product.featured),
     bestSeller: Boolean(product.bestSeller),
     image: product.image || '',
@@ -219,10 +223,13 @@ export default function ProductForm({ categories, initialValues, submitting, onS
       slug: form.slug.trim(),
       name: form.name.trim(),
       category: form.category,
+      sku: form.sku.trim() || null,
       brand: form.brand.trim() || null,
       price: Number(form.price),
       compareAtPrice: form.compareAtPrice === '' ? null : Number(form.compareAtPrice),
-      stock: Number(form.stock || 0),
+      ...(!initialValues ? { stock: Number(form.stock || 0) }
+        : Number(form.stock) !== Number(initialValues.stock) ? { stock: Number(form.stock), expectedStock: Number(initialValues.stock) } : {}),
+      stockReason: form.stockReason.trim() || null,
       featured: form.featured,
       bestSeller: form.bestSeller,
       image: form.image.trim() || images[0] || '',
@@ -253,6 +260,7 @@ export default function ProductForm({ categories, initialValues, submitting, onS
               </option>
             ))}
           </select>
+          <input className="input-tr" placeholder="SKU interno (opcional)" value={form.sku} onChange={set('sku')} maxLength={40} />
           <label className="flex min-w-0 flex-col gap-1">
             <span id={`${brandHelpId}-label`} className="sr-only">Marca</span>
             <input className="input-tr" placeholder="Marca (ej: UGREEN)" value={form.brand} onChange={set('brand')} aria-labelledby={`${brandHelpId}-label`} aria-describedby={brandHelpId} />
@@ -267,7 +275,10 @@ export default function ProductForm({ categories, initialValues, submitting, onS
             value={form.compareAtPrice}
             onChange={set('compareAtPrice')}
           />
-          <input type="number" className="input-tr" placeholder="Stock inicial" value={form.stock} onChange={set('stock')} />
+          <label className="flex min-w-0 flex-col gap-1">
+            <input type="number" min="0" step="1" className="input-tr" placeholder="Existencias" value={form.stock} onChange={set('stock')} />
+            <input className="input-tr" placeholder="Motivo si cambia el stock" value={form.stockReason} onChange={set('stockReason')} maxLength={240} />
+          </label>
           <label className="flex items-center gap-2 text-sm text-ink-soft dark:text-paper/60">
             <input
               type="checkbox"

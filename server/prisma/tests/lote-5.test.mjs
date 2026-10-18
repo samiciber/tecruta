@@ -1,23 +1,11 @@
 import { before, after, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync, existsSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { randomBytes } from 'node:crypto'
 import bcrypt from '../../node_modules/bcryptjs/index.js'
-import { createEmptyDotenv, createPrismaWorkspace, runDocker, runPrisma } from './helpers/isolated-runtime.mjs'
+import { createInventoryRuntime } from './helpers/inventory-runtime.mjs'
 
-const root = fileURLToPath(new URL('../../../', import.meta.url))
-const source = process.env.TECRUTA_QA_MIGRATIONS_DIR || join(root, 'server/prisma/migrations')
-const container = `tecruta-lote5-test-${process.pid}`
-const temp = mkdtempSync(join(tmpdir(), 'tecruta-lote5-'))
-const dotenvPath = createEmptyDotenv(temp)
-const schema = join(root, 'server/prisma/schema.prisma')
-const image = 'postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
 const password = randomBytes(24).toString('hex')
-let workspace, started, server, db, base, token
-function docker(...args) { return runDocker(args) }
+let rt, db, base, token
 async function request(path, { method = 'GET', body, authenticated = false } = {}) {
   const response = await fetch(base + '/api/' + path, { method, headers: {
     'Content-Type': 'application/json', ...(authenticated ? { Authorization: `Bearer ${token}` } : {}),
@@ -25,41 +13,22 @@ async function request(path, { method = 'GET', body, authenticated = false } = {
   return { status: response.status, data: await response.json().catch(() => null) }
 }
 before(async () => {
-  assert.ok(existsSync(join(source, '20261012000000_add_nav_brands_stores_saved_items/migration.sql')), 'Integra Lote 2 o usa su SQL sin cambios mediante TECRUTA_QA_MIGRATIONS_DIR.')
-  docker('run', '--detach', '--name', container, '--publish', '127.0.0.1::5432', '--env', 'POSTGRES_USER=qa_lote5', '--env', 'POSTGRES_DB=qa_lote5', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', image)
-  started = true
-  process.env.DATABASE_URL = `postgresql://qa_lote5@${docker('port', container, '5432/tcp')}/qa_lote5`
-  process.env.DOTENV_CONFIG_PATH = dotenvPath
-  process.env.JWT_SECRET = randomBytes(32).toString('hex')
   process.env.CORS_ORIGIN = 'https://qa.example.invalid'
   process.env.TRUST_PROXY = '1'
   process.env.NODE_ENV = 'production'
   for (const key of ['RESEND_API_KEY', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET']) process.env[key] = ''
-  let ready = false
-  for (let attempt = 0; attempt < 40; attempt++) {
-    try { docker('exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'qa_lote5'); ready = true; break } catch {}
-    await new Promise(resolve => setTimeout(resolve, 250))
-  }
-  assert.ok(ready)
-  workspace = createPrismaWorkspace({ tempRoot: temp, name: 'prisma', schemaSource: schema, migrationsSource: source })
-  runPrisma({ root, tempRoot: temp, schemaPath: workspace.schemaPath, dotenvPath, databaseUrl: process.env.DATABASE_URL,
-    args: ['migrate', 'deploy', '--schema', workspace.schemaPath] })
-  db = (await import('../../src/lib/prisma.js')).prisma
+  rt = await createInventoryRuntime()
+  db = rt.db
   await db.category.create({ data: { id: 'qa-category', name: 'QA category', slug: 'qa-category', legacy: true } })
   await db.brand.create({ data: { id: 'qa-brand', name: 'QA brand', slug: 'qa-brand' } })
-  await db.product.create({ data: { id: 'qa-product', name: 'QA product', slug: 'qa-product', brand: 'QA brand', brandId: 'qa-brand', categoryId: 'qa-category', price: '19.90', stock: 3, tags: ['qa'] } })
+  // The fixture uses the same central stock mechanism as the product editor.
+  const { createAdminProduct } = await rt.load('server/src/lib/adminProducts.js')
+  await createAdminProduct(db, { id: 'qa-product', name: 'QA product', slug: 'qa-product', brand: 'QA brand', brandId: 'qa-brand', category: 'qa-category', price: '19.90', stock: 3, stockReason: 'Synthetic opening balance', tags: ['qa'] }, rt.admin.id)
   await db.user.create({ data: { id: 'qa-customer', email: 'qa-customer@example.invalid', passwordHash: await bcrypt.hash(password, 10), nombre: 'QA', apellido: 'Customer', verified: true } })
-  const { app } = await import('../../src/index.js')
-  server = app.listen(0, '127.0.0.1')
-  await new Promise(resolve => server.once('listening', resolve))
-  base = `http://127.0.0.1:${server.address().port}`
+  base = await rt.start()
 })
-after(async () => {
-  if (server) await new Promise(resolve => server.close(resolve))
-  if (db) await db.$disconnect()
-  if (started) docker('rm', '--force', '--volumes', container)
-  rmSync(temp, { recursive: true, force: true })
-})
+after(async () => { await rt?.close() })
+
 test('updated Express/Prisma serves catalog filters and detail from disposable Postgres', async () => {
   for (const path of ['products', 'products?category=qa-category', 'products?brand=qa-brand', 'products?q=QA']) {
     const result = await request(path)

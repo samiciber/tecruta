@@ -41,7 +41,7 @@ function PageFallback() {
 
 export default function App() {
   const location = useLocation()
-  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) return <PanelRedirect />
+  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/') || location.pathname === '/pos' || location.pathname.startsWith('/pos/')) return <PanelRedirect />
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#contenido" className="sr-only z-[200] rounded bg-white px-4 py-2 text-sm font-bold text-ink shadow focus:not-sr-only focus:fixed focus:left-3 focus:top-3">
@@ -83,6 +83,7 @@ export default function App() {
             <Route path="/mis-direcciones" element={<Addresses />} />
             <Route path="/mi-cuenta" element={<Account />} />
             <Route path="/admin/*" element={<PanelRedirect />} />
+            <Route path="/pos/*" element={<PanelRedirect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

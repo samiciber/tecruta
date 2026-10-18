@@ -19,8 +19,11 @@ import { addressesRouter } from './routes/addresses.routes.js'
 import { defaultJson } from './middleware/bodyLimits.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import { newsletterRouter } from './routes/newsletter.routes.js'
+import { inventoryRouter } from './routes/inventory.routes.js'
+import { posRouter } from './routes/pos.routes.js'
+import { staffRouter } from './routes/staff.routes.js'
 
-export function createApp({ orders = ordersRouter, admin = adminRouter, auth = authRouter } = {}) {
+export function createApp({ orders = ordersRouter, admin = adminRouter, inventory = inventoryRouter, staff = staffRouter, auth = authRouter } = {}) {
   validateRuntimeEnv()
   const app = express()
   // Render has one proxy hop. Never trust every forwarded address.
@@ -37,13 +40,19 @@ export function createApp({ orders = ordersRouter, admin = adminRouter, auth = a
 
   // Verificación rápida de que el servidor está vivo (útil para monitoreo
   // y para que la app móvil futura confirme conectividad).
-  app.get('/api/health', (req, res) => res.json({ ok: true }))
+  app.get('/api/health', (req, res) => res.json({ ok: true,
+    ...(process.env.RENDER_GIT_COMMIT ? { revision: process.env.RENDER_GIT_COMMIT } : {}),
+  }))
 
   app.use('/api/categories', categoriesRouter)
   app.use('/api/products', productsRouter)
   app.use('/api/payment-methods', paymentMethodsRouter)
   app.use('/api/auth', auth)
   app.use('/api/orders', orders)
+  app.use('/api/pos', posRouter)
+  // Inventory roles differ from the ADMIN-only routers mounted below.
+  app.use('/api/admin/inventory', inventory)
+  app.use('/api/admin/staff', staff)
   app.use('/api/admin', admin)
   app.use('/api/admin', adminContentRouter)
   app.use('/api/cart', cartRouter)

@@ -47,16 +47,22 @@ export function AuthProvider({ children }) {
     try {
       const data = await (identifier !== undefined ? api.auth.staffLogin({ identifier, password }) : api.auth.login({ email, password }))
       if (current !== operation.current) return { ok: false, error: 'El acceso fue cancelado.' }
+      if (data.requiresMfa) return {ok:true,requiresMfa:true,challenge:data.challenge}
       adopt(data, remember)
       return { ok: true }
     } catch (error) { return { ok: false, error: error.message, needsVerification: error.needsVerification } }
   }, [adopt])
-  const loginWithGoogleCode = useCallback(async (code, audience = 'store') => {
+  const completeStaffMfa = useCallback(async (challenge,code,remember=false) => {
+    const current=++operation.current
+    try {const data=await api.auth.staffMfaLogin({challenge,code});if(current!==operation.current)return {ok:false,error:'El acceso fue cancelado.'};adopt(data,remember);return {ok:true}}
+    catch(error){return {ok:false,error:error.message}}
+  },[adopt])
+  const loginWithGoogleCode = useCallback(async code => {
     const current = ++operation.current
     const proof = readGoogleFlow(storage.session)
     if (!proof) return { ok: false, error: 'Inicia Google nuevamente desde esta pestaña.' }
     try {
-      const data = await (audience === 'panel' ? api.auth.staffGoogleExchange(code, proof.verifier) : api.auth.googleExchange(code, proof.verifier))
+      const data = await api.auth.googleExchange(code, proof.verifier)
       if (current !== operation.current) return { ok: false, error: 'El acceso fue cancelado.' }
       adopt(data, proof.remember)
       clearGoogleFlow(storage.session)
@@ -96,6 +102,6 @@ export function AuthProvider({ children }) {
   // Hold cart/admin restoration while an initial saved session is unavailable.
   const authLoading = checking || Boolean(token && !user && authError)
   return <AuthContext.Provider value={{ user, token, authLoading, authError, retrySession, isAuthenticated: Boolean(user),
-    register, resendCode, verifyEmail, login, loginWithGoogleCode, logout, logoutAll,
+    register, resendCode, verifyEmail, login, completeStaffMfa, loginWithGoogleCode, logout, logoutAll,
     requestPasswordReset, resetPassword, updateProfile, changePassword }}>{children}</AuthContext.Provider>
 }

@@ -11,6 +11,7 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
     price: product.price,
     compareAtPrice: product.compareAtPrice ?? '',
     stock: product.stock,
+    stockReason: '',
     featured: product.featured,
     bestSeller: product.bestSeller,
     category: product.category,
@@ -26,6 +27,7 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
     draft.featured !== product.featured ||
     draft.bestSeller !== product.bestSeller ||
     draft.category !== product.category
+  const stockChanged = Number(draft.stock) !== product.stock
 
   const set = (field) => (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
@@ -40,7 +42,8 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
         {
           price: Number(draft.price),
           compareAtPrice: draft.compareAtPrice === '' ? null : Number(draft.compareAtPrice),
-          stock: Number(draft.stock),
+          ...(stockChanged ? { stock: Number(draft.stock), expectedStock: product.stock } : {}),
+          stockReason: draft.stockReason.trim() || null,
           featured: draft.featured,
           bestSeller: draft.bestSeller,
           category: draft.category,
@@ -117,6 +120,15 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
         </td>
         <td className="py-2.5 pr-3">
           <input type="number" value={draft.stock} onChange={set('stock')} className="input-tr h-9 w-20 py-0 text-xs" />
+          <input
+            type="text"
+            value={draft.stockReason}
+            onChange={set('stockReason')}
+            placeholder="Motivo"
+            aria-label={`Motivo del cambio de stock de ${product.name}`}
+            className="input-tr mt-1 h-8 w-28 py-0 text-xs"
+            maxLength={240}
+          />
         </td>
         <td className="py-2.5 pr-3 text-center">
           <input type="checkbox" checked={draft.featured} onChange={set('featured')} className="h-4 w-4 rounded border-paper-line text-route dark:border-night-line" />
@@ -129,7 +141,7 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
             <button
               type="button"
               onClick={handleSave}
-              disabled={!dirty || saving}
+              disabled={!dirty || saving || (stockChanged && !draft.stockReason.trim())}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-route transition-colors hover:bg-route-soft disabled:opacity-30 dark:hover:bg-route-softDark"
               aria-label="Guardar cambios rápidos"
               title="Guardar cambios rápidos"

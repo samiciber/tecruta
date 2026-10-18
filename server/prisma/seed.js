@@ -14,6 +14,7 @@ import { PrismaClient } from '@prisma/client'
 import { categories } from '../../src/data/categories.js'
 import { products } from '../../src/data/products.js'
 import { paymentConfig } from '../../src/config/paymentConfig.js'
+import { recordConfirmedMovement } from '../src/lib/inventoryService.js'
 import { seedNav } from './seed-nav.js'
 
 const prisma = new PrismaClient()
@@ -38,39 +39,47 @@ async function seedProducts() {
       continue
     }
 
-    const product = await prisma.product.upsert({
-      where: { slug: p.slug },
-      update: {
-        name: p.name,
-        brand: p.brand ?? null,
-        description: p.description ?? null,
-        shortDescription: p.shortDescription ?? null,
-        price: p.price,
-        compareAtPrice: p.compareAtPrice ?? null,
-        stock: p.stock ?? 0,
-        featured: Boolean(p.featured),
-        bestSeller: Boolean(p.bestSeller),
-        image: p.image ?? null,
-        tags: p.tags ?? [],
-        specifications: p.specifications ?? null,
-        categoryId: category.id,
-      },
-      create: {
-        slug: p.slug,
-        name: p.name,
-        brand: p.brand ?? null,
-        description: p.description ?? null,
-        shortDescription: p.shortDescription ?? null,
-        price: p.price,
-        compareAtPrice: p.compareAtPrice ?? null,
-        stock: p.stock ?? 0,
-        featured: Boolean(p.featured),
-        bestSeller: Boolean(p.bestSeller),
-        image: p.image ?? null,
-        tags: p.tags ?? [],
-        specifications: p.specifications ?? null,
-        categoryId: category.id,
-      },
+    const product = await prisma.$transaction(async tx => {
+      const existing = await tx.product.findUnique({ where: { slug: p.slug } })
+      const row = await tx.product.upsert({
+        where: { slug: p.slug },
+        update: {
+          name: p.name,
+          brand: p.brand ?? null,
+          description: p.description ?? null,
+          shortDescription: p.shortDescription ?? null,
+          price: p.price,
+          compareAtPrice: p.compareAtPrice ?? null,
+
+          featured: Boolean(p.featured),
+          bestSeller: Boolean(p.bestSeller),
+          image: p.image ?? null,
+          tags: p.tags ?? [],
+          specifications: p.specifications ?? null,
+          categoryId: category.id,
+        },
+        create: {
+          slug: p.slug,
+          name: p.name,
+          brand: p.brand ?? null,
+          description: p.description ?? null,
+          shortDescription: p.shortDescription ?? null,
+          price: p.price,
+          compareAtPrice: p.compareAtPrice ?? null,
+          stock: 0,
+          featured: Boolean(p.featured),
+          bestSeller: Boolean(p.bestSeller),
+          image: p.image ?? null,
+          tags: p.tags ?? [],
+          specifications: p.specifications ?? null,
+          categoryId: category.id,
+        },
+      })
+      if (!existing) await recordConfirmedMovement(tx, {
+        productId: row.id, type: 'INITIAL_BALANCE', direction: 'IN', quantity: p.stock ?? 0,
+        reason: 'Importación inicial de catálogo', sourceKey: `product-initial:${row.id}`,
+      })
+      return row
     })
 
     // Reemplaza las imágenes del producto (simple: borra e inserta de nuevo).

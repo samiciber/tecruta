@@ -4,8 +4,8 @@ import {
   CircleHelp, CreditCard, Heart, LogOut, Receipt, Settings, ShieldCheck, ShoppingBag, Sparkles, Truck, User, UserCircle, Wallet,
 } from 'lucide-react'
 import FloatingPanel from './header/FloatingPanel.jsx'
-import { useAuth } from '../../hooks/useAuth.js'
 import { PANEL_ORIGIN } from '../../app/urls.js'
+import { useAuth } from '../../hooks/useAuth.js'
 
 export const ACCOUNT_LINKS = [
   { to: '/mi-cuenta', label: 'Cuenta', Icon: UserCircle },
@@ -85,14 +85,15 @@ export function AccountPanelBody({ onNavigate }) {
             </Link>
           </li>
         ))}
-        {isAuthenticated && user.role === 'ADMIN' && (
+        {isAuthenticated && ['ADMIN', 'WAREHOUSE', 'CASHIER'].includes(user.role) && (
           <li>
             <a href={PANEL_ORIGIN} onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 text-[15px] font-medium text-header hover:bg-gray-100 dark:text-sky-300 dark:hover:bg-white/10">
               <ShieldCheck className="h-5 w-5 shrink-0" aria-hidden="true" />
-              Panel de administración
+              Panel TecRuta
             </a>
           </li>
         )}
+        {isAuthenticated && ['ADMIN', 'CASHIER'].includes(user.role) && <li><a href={PANEL_ORIGIN + '/pos'} onClick={onNavigate} className="flex items-center gap-4 rounded-md px-2 py-3 font-semibold text-route">Punto de venta</a></li>}
         {isAuthenticated && (
           <li>
             <button

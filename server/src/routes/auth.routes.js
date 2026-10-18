@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { authFrontendOrigin } from '../lib/runtimeConfig.js'
-import { normalizeAdminUsername } from '../lib/adminUsername.js'
+import { createStaffAuthRouter } from './staffAuth.routes.js'
+import { canRecover, isStaff, audit } from '../lib/staffSecurity.js'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma.js'
 import { signSession } from '../lib/token.js'
@@ -11,7 +12,7 @@ import { asyncHandler } from '../middleware/errorHandler.js'
 import { createAuthMiddleware } from '../middleware/auth.js'
 import { loginRateLimiter, authActionRateLimiter } from '../middleware/rateLimit.js'
 import { validate } from '../middleware/validate.js'
-import { registerSchema, emailOnlySchema, loginSchema, staffLoginSchema, verifySchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../lib/schemas.js'
+import { registerSchema, emailOnlySchema, loginSchema, verifySchema, resetPasswordSchema, changePasswordSchema, updateProfileSchema } from '../lib/schemas.js'
 import { AuthError, UNIFORM_AUTH_RESPONSE, normalizeEmail, secret, challenge, signFlowCookie, readFlowCookie,
   oauthCookieName, oauthCookieOptions, randomSecret } from '../lib/authSecurity.js'
 import { lockUser, version, issueCode, consumeCode } from '../lib/authCodes.js'
@@ -29,6 +30,7 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
   mailer = { verification: sendVerificationEmail, reset: sendPasswordResetEmail },
   google = { authorizationUrl: buildGoogleAuthUrl, exchange: exchangeCodeForAccessToken, profile: fetchGoogleProfile } } = {}) {
   const router = Router()
+  router.use(createStaffAuthRouter({db}))
   const dummyPasswordHash = bcrypt.hash(randomSecret(), 10)
   const { requireAuth } = createAuthMiddleware({ db })
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); res.set('Referrer-Policy', 'no-referrer'); next() })
@@ -40,8 +42,9 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
   }
   const lookupAndIssue = async (email, purpose) => db.$transaction(async tx => {
     const found = await tx.user.findUnique({ where: { email } })
-    if (!found) return null
+    if (!found || purpose === 'reset' && !canRecover(found)) return null
     const user = await lockUser(tx, found.id)
+    if (purpose === 'reset' && !canRecover(user)) return null
     return issueCode(tx, user, purpose, now())
   })
 
@@ -91,10 +94,14 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
       const found = await tx.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
       if (!found) return false
       const user = await lockUser(tx, found.id)
+      if (!canRecover(user)) return false
+      if (isStaff(user) && (req.body.newPassword.length < 12 || Buffer.byteLength(req.body.newPassword,'utf8')>72)) throw new AuthError(400,'La contraseña del personal requiere al menos 12 caracteres y como máximo 72 bytes UTF-8.')
       if (!await consumeCode(tx, user, 'reset', req.body.code, now())) return false
       await tx.user.update({ where: { id: user.id }, data: { passwordHash, tokenVersion: version(user) + 1,
         verified: true, resetCode: null, verificationCode: null, verificationCodeHash: null,
-        verificationCodeExpiresAt: null, verificationCodeAttempts: 0, verificationCodeLockedUntil: null } })
+        verificationCodeExpiresAt: null, verificationCodeAttempts: 0, verificationCodeLockedUntil: null,
+        mustChangePassword: false, temporaryPasswordExpiresAt: null, mfaPendingSecretEncrypted:null } })
+      if (isStaff(user)) await audit(tx,user.id,'OWNER_PASSWORD_RECOVERED',user.id)
       return true
     })
     return accepted ? res.json({ ok: true }) : res.status(400).json(invalidCode)
@@ -103,23 +110,11 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     secret()
     const user = await db.user.findUnique({ where: { email: normalizeEmail(req.body.email) } })
     const matches = await bcrypt.compare(req.body.password, user?.passwordHash ?? await dummyPasswordHash)
-    if (!user || !matches) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
+    if (!user || !matches || user.role !== 'CUSTOMER' || user.isSuspended) return res.status(401).json({ error: 'Correo o contraseña incorrectos.' })
     if (!user.verified) return res.status(403).json({ error: 'Debes verificar tu correo antes de iniciar sesión.', needsVerification: true })
     res.json({ token: signSession(user), user: serializeUser(user) })
   }))
   router.get('/me', requireAuth, (req, res) => res.json({ user: serializeUser(req.user) }))
-  router.post('/staff-login', loginRateLimiter, validate(staffLoginSchema), asyncHandler(async (req, res) => {
-    secret()
-    const identifier = normalizeEmail(req.body.identifier)
-    let where
-    if (identifier.includes('@')) where = { email: identifier }
-    else { try { where = { adminUsername: normalizeAdminUsername(identifier) } } catch {} }
-    const user = where ? await db.user.findUnique({ where }) : null
-    const matches = await bcrypt.compare(req.body.password, user?.passwordHash ?? await dummyPasswordHash)
-    // Uniform response for unknown alias/email, invalid password and non-ADMIN.
-    if (!user || !matches || !user.verified || user.role !== 'ADMIN') return res.status(401).json({ error: 'Usuario, correo o contraseña incorrectos, o acceso no autorizado.' })
-    res.json({ token: signSession(user), user: serializeUser(user) })
-  }))
   router.patch('/me', requireAuth, validate(updateProfileSchema), asyncHandler(async (req, res) => {
     const { nombre, apellido, fechaNacimiento } = req.body
     const user = await db.user.update({ where: { id: req.user.id }, data: {
@@ -129,6 +124,7 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     res.json({ user: serializeUser(user) })
   }))
   router.post('/change-password', requireAuth, loginRateLimiter, validate(changePasswordSchema), asyncHandler(async (req, res) => {
+    if (isStaff(req.user)) return res.status(403).json({error:'Cambia tu contraseña desde Seguridad del panel.'})
     await db.$transaction(async tx => {
       const user = await lockUser(tx, req.user.id)
       if (version(user) !== version(req.user)) throw new AuthError(401, 'La sesión cambió. Inicia sesión nuevamente.')
@@ -144,12 +140,17 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
       const user = await lockUser(tx, req.user.id)
       if (version(user) !== version(req.user)) throw new AuthError(401, 'La sesión ya cambió.')
       await tx.user.update({ where: { id: user.id }, data: { tokenVersion: version(user) + 1 } })
+      if (isStaff(user)) {
+        await tx.staffSession.updateMany({where:{userId:user.id,revokedAt:null},data:{revokedAt:new Date()}})
+        await audit(tx,user.id,'STAFF_SESSIONS_REVOKED',user.id)
+      }
     })
     res.json({ ok: true })
   }))
 
   router.get('/google', authActionRateLimiter, asyncHandler(async (req, res) => {
     const audience = req.query.app ?? 'store'
+    if (audience === 'panel') return res.status(403).json({error:'El personal ingresa únicamente con usuario y contraseña.'})
     if (!['store', 'panel'].includes(audience)) return res.status(400).json({ error: 'Destino OAuth no permitido.' })
     let origin
     try { origin = authFrontendOrigin(audience) }
@@ -168,6 +169,7 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
   router.get('/google/callback', asyncHandler(async (req, res) => {
     const cookie = readFlowCookie(req.headers.cookie)
     const audience = cookie?.audience ?? 'store'
+    if (audience === 'panel') return res.status(403).json({error:'Google no permite ingresar al panel.'})
     let origin
     try { origin = authFrontendOrigin(audience) }
     catch { return res.status(503).json({ error: 'El acceso con Google no está configurado para este destino.' }) }
@@ -186,7 +188,8 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     try { profile = await google.profile(await google.exchange(req.query.code, flow.verifier)) }
     catch { return fail('exchange') }
     try {
-      const user = await resolveGoogleUser(db, profile, { adminOnly: audience === 'panel' })
+      const user = await resolveGoogleUser(db, profile, { customersOnly: true })
+      if (isStaff(user) || user.isSuspended) return fail('access')
       const code = await issueExchange(db, user, flow.exchangeChallenge, now(), audience)
       res.redirect(`${origin}/auth/google/callback?code=${encodeURIComponent(code)}`)
     } catch (error) { return fail(error.status === 403 ? (audience === 'panel' ? 'access' : 'linking') : 'unavailable') }
@@ -194,12 +197,11 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
   router.post('/google/exchange', loginRateLimiter, asyncHandler(async (req, res) => {
     secret()
     const user = await consumeExchange(db, req.body?.code, req.body?.verifier, now())
+    if (isStaff(user) || user.isSuspended) return res.status(403).json({error:'El personal debe ingresar con su usuario del panel.'})
     res.json({ token: signSession(user), user: serializeUser(user) })
   }))
   router.post('/staff-google/exchange', loginRateLimiter, asyncHandler(async (req, res) => {
-    secret()
-    const user = await consumeExchange(db, req.body?.code, req.body?.verifier, now(), 'panel')
-    res.json({ token: signSession(user), user: serializeUser(user) })
+    res.status(403).json({error:'Google no permite ingresar al panel.'})
   }))
   return router
 }

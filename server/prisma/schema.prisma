@@ -33,13 +33,27 @@ model NewsletterSubscriber {
 enum Role {
   CUSTOMER
   ADMIN
+  WAREHOUSE
+  CASHIER
 }
 
 model User {
   id                String    @id @default(cuid())
-  email             String    @unique
+  email             String?   @unique
   // Optional ADMIN login alias, stored as lowercase ASCII (email is retained).
   adminUsername     String?   @unique
+  isSuspended       Boolean   @default(false)
+  mustChangePassword Boolean  @default(false)
+  temporaryPasswordExpiresAt DateTime?
+  ownerRecoveryEnabled Boolean @default(false)
+  mfaSecretEncrypted String?
+  mfaPendingSecretEncrypted String?
+  mfaEnabled Boolean @default(false)
+  mfaLastStep Int?
+  mfaRecoveryHashes Json?
+  staffSessions StaffSession[]
+  staffLoginChallenges StaffLoginChallenge[]
+  auditEvents StaffAuditEvent[]
   passwordHash      String
   nombre            String
   apellido          String
@@ -77,11 +91,59 @@ model User {
   cart      Cart?
   savedItems SavedItem[]
   authExchanges AuthExchange[]
+  inventoryMovements          InventoryMovement[] @relation("InventoryMovementActor")
+  confirmedInventoryMovements InventoryMovement[] @relation("InventoryMovementConfirmer")
+  cashSessions CashSession[]
+  cashEntries CashEntry[]
+  posSales PosSale[] @relation("PosSaleActor")
+  approvedPosSales PosSale[] @relation("PosSaleApprover")
+  posPayments PosPayment[]
+  posRefunds PosRefund[]
+  posOperations PosOperation[]
 
   @@map("users")
 }
 
 // Short-lived OAuth state bound to an HttpOnly browser cookie.
+model StaffSession {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  @@index([userId, expiresAt])
+  @@map("staff_sessions")
+}
+
+model StaffLoginChallenge {
+  id String @id @default(cuid())
+  tokenHash String @unique
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenVersion Int
+  attempts Int @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+  @@map("staff_login_challenges")
+}
+
+model StaffAuditEvent {
+  id String @id @default(cuid())
+  actorId String?
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  subjectId String?
+  action String
+  detail Json
+  createdAt DateTime @default(now())
+  @@index([createdAt, id])
+  @@index([subjectId, createdAt])
+  @@map("staff_audit_events")
+}
+
 model OAuthFlow {
   id            String   @id @default(cuid())
   stateHash     String   @unique
@@ -264,6 +326,8 @@ model SavedItem {
 model Product {
   id               String         @id @default(cuid())
   slug             String         @unique
+  // El trigger inventory_assign_sku genera el valor si no se envía.
+  sku              String         @unique @default(dbgenerated())
   name             String
   brand            String?
   description      String?
@@ -291,6 +355,9 @@ model Product {
   orderItems       OrderItem[]
   cartItems        CartItem[]
   savedItems       SavedItem[]
+  barcodes         ProductBarcode[]
+  inventoryMovements InventoryMovement[]
+  posSaleItems PosSaleItem[]
   // Marca normalizada (el campo `brand` de texto se conserva sin cambios).
   brandId          String?
   brandRef         Brand?         @relation(fields: [brandId], references: [id], onDelete: SetNull)
@@ -299,7 +366,86 @@ model Product {
 
   @@index([categoryId])
   @@index([brandId])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_pos_name_search_idx")
+  @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_pos_sku_search_idx")
   @@map("products")
+}
+
+enum ProductBarcodeKind {
+  MANUFACTURER
+  INTERNAL
+}
+
+model ProductBarcode {
+  id             String             @id @default(cuid())
+  code           String
+  normalizedCode String             @unique
+  kind           ProductBarcodeKind
+  productId      String
+  product        Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+
+  @@index([productId])
+  @@index([normalizedCode(ops: raw("gin_trgm_ops"))], type: Gin, map: "barcodes_pos_search_idx")
+  @@map("product_barcodes")
+}
+
+enum InventoryMovementType {
+  INITIAL_BALANCE
+  PURCHASE
+  CUSTOMER_RETURN
+  POSITIVE_ADJUSTMENT
+  LOSS
+  DAMAGE
+  SUPPLIER_RETURN
+  NEGATIVE_ADJUSTMENT
+  WEB_ORDER
+  WEB_CANCELLATION
+  POS_SALE
+  POS_RETURN
+  REVERSAL
+}
+
+enum InventoryDirection {
+  IN
+  OUT
+}
+
+enum InventoryMovementStatus {
+  DRAFT
+  CONFIRMED
+}
+
+model InventoryMovement {
+  id            String                  @id @default(cuid())
+  productId     String
+  product       Product                 @relation(fields: [productId], references: [id], onDelete: Restrict)
+  type          InventoryMovementType
+  direction     InventoryDirection
+  status        InventoryMovementStatus @default(DRAFT)
+  quantity      Int
+  balanceAfter  Int?
+  reason        String
+  reference     String?
+  supplier      String?
+  unitCost      Decimal?                @db.Decimal(10, 2)
+  occurredAt    DateTime                @default(now())
+  createdAt     DateTime                @default(now())
+  confirmedAt   DateTime?
+  createdById   String?
+  createdBy     User?                   @relation("InventoryMovementActor", fields: [createdById], references: [id], onDelete: SetNull)
+  confirmedById String?
+  confirmedBy   User?                   @relation("InventoryMovementConfirmer", fields: [confirmedById], references: [id], onDelete: SetNull)
+  sourceKey     String?                 @unique
+  reversalOfId  String?                 @unique
+  reversalOf    InventoryMovement?      @relation("InventoryMovementReversal", fields: [reversalOfId], references: [id], onDelete: Restrict)
+  reversals     InventoryMovement[]     @relation("InventoryMovementReversal")
+
+  @@index([productId, occurredAt, createdAt])
+  @@index([type, occurredAt])
+  @@index([status, occurredAt])
+  @@index([createdById, occurredAt])
+  @@map("inventory_movements")
 }
 
 model ProductImage {
@@ -427,6 +573,7 @@ model Order {
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]
+  posSale           PosSale?
 
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
@@ -458,4 +605,177 @@ model OrderStatusHistory {
   createdAt DateTime    @default(now())
 
   @@map("order_status_history")
+}
+
+enum CashSessionStatus {
+  OPEN
+  CLOSED
+}
+
+enum PosSaleStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  RETURNED
+  VOIDED
+}
+
+enum PosPaymentStatus {
+  PENDING
+  CONFIRMED
+}
+
+model CashSession {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  status CashSessionStatus @default(OPEN)
+  openingAmount Decimal @db.Decimal(12, 2)
+  openedAt DateTime @default(now())
+  closedAt DateTime?
+  countedAmount Decimal? @db.Decimal(12, 2)
+  expectedAmount Decimal? @db.Decimal(12, 2)
+  difference Decimal? @db.Decimal(12, 2)
+  closingNote String?
+  entries CashEntry[]
+  payments PosPayment[]
+  refunds PosRefund[]
+
+  @@index([userId, openedAt])
+  @@index([openedAt])
+  @@map("cash_sessions")
+}
+
+model CashEntry {
+  id String @id @default(cuid())
+  sessionId String
+  session CashSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  kind String
+  amount Decimal @db.Decimal(12, 2)
+  reason String
+  reference String?
+  sourceKey String @unique
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+  @@map("cash_entries")
+}
+
+model PosSale {
+  id String @id @default(cuid())
+  orderId String? @unique
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  userId String
+  user User @relation("PosSaleActor", fields: [userId], references: [id], onDelete: Restrict)
+  status PosSaleStatus @default(PENDING)
+  cancellationReason String?
+  customerName String?
+  customerDocument String?
+  subtotal Decimal @db.Decimal(12, 2)
+  discount Decimal @db.Decimal(12, 2)
+  discountReason String?
+  approvedById String?
+  approvedBy User? @relation("PosSaleApprover", fields: [approvedById], references: [id], onDelete: Restrict)
+  total Decimal @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+  confirmedAt DateTime?
+  items PosSaleItem[]
+  payments PosPayment[]
+  refunds PosRefund[]
+
+  @@index([confirmedAt, userId])
+  @@index([userId, createdAt])
+  @@map("pos_sales")
+}
+
+model PosSaleItem {
+  id String @id @default(cuid())
+  saleId String
+  sale PosSale @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  productId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  name String
+  sku String
+  quantity Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  lineTotal Decimal @db.Decimal(12, 2)
+  returns PosRefundItem[]
+
+  @@unique([saleId, productId])
+  @@index([productId])
+  @@map("pos_sale_items")
+}
+
+model PosPayment {
+  id String @id @default(cuid())
+  saleId String
+  sale PosSale @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  method String
+  amount Decimal @db.Decimal(12, 2)
+  received Decimal @db.Decimal(12, 2)
+  change Decimal @db.Decimal(12, 2)
+  status PosPaymentStatus @default(PENDING)
+  reference String?
+  confirmedById String?
+  confirmedBy User? @relation(fields: [confirmedById], references: [id], onDelete: Restrict)
+  sessionId String?
+  session CashSession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  confirmedAt DateTime?
+
+  @@unique([saleId, method])
+  @@index([method, confirmedAt])
+  @@index([confirmedAt, confirmedById])
+  @@index([sessionId])
+  @@map("pos_payments")
+}
+
+model PosRefund {
+  id String @id @default(cuid())
+  saleId String
+  sale PosSale @relation(fields: [saleId], references: [id], onDelete: Restrict)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sessionId String
+  session CashSession @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  kind String
+  amount Decimal @db.Decimal(12, 2)
+  method String
+  reference String?
+  reason String
+  createdAt DateTime @default(now())
+  items PosRefundItem[]
+
+  @@index([createdAt, userId])
+  @@index([saleId])
+  @@map("pos_refunds")
+}
+
+model PosRefundItem {
+  id String @id @default(cuid())
+  refundId String
+  refund PosRefund @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  saleItemId String
+  saleItem PosSaleItem @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
+  quantity Int
+  restock Boolean
+  amount Decimal @db.Decimal(12, 2)
+
+  @@unique([refundId, saleItemId])
+  @@index([saleItemId])
+  @@map("pos_refund_items")
+}
+
+model PosOperation {
+  id String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  kind String
+  requestHash String
+  response Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("pos_operations")
 }

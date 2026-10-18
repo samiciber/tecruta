@@ -37,7 +37,13 @@ async function main() {
     return
   }
 
-  await prisma.user.update({ where: { id: user.id }, data: { role: 'ADMIN' } })
+  if (!user.verified) {
+    console.error('La cuenta debe verificar primero su correo. No se modificó el acceso.')
+    process.exitCode = 1
+    return
+  }
+
+  await prisma.user.update({ where: { id: user.id }, data: { role: 'ADMIN', tokenVersion: (user.tokenVersion ?? 0) + 1 } })
   console.log(`✔ "${email}" ahora es ADMIN.`)
 }
 

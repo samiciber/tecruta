@@ -12,8 +12,8 @@
 // como mensaje de error al usuario.
 
 import { invalidateLiveResources, invalidatedResourcesFor } from './liveResource.js'
-import { apiBase } from '../app/urls.js'
 
+import { apiBase } from '../app/urls.js'
 export const API_URL = apiBase(import.meta.env.VITE_API_URL || 'http://localhost:4000')
 
 async function request(path, { method = 'GET', body, token, headers = {}, signal, cache } = {}) {
@@ -32,6 +32,7 @@ async function request(path, { method = 'GET', body, token, headers = {}, signal
   const data = await res.json().catch(() => null)
 
   if (!res.ok) {
+    if (token && res.status === 401 && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('tecruta:session-expired', { detail: { token } }))
     const error = new Error(data?.error || `API respondió ${res.status} en ${path}`)
     error.status = res.status
     error.needsVerification = data?.needsVerification
@@ -45,6 +46,25 @@ async function request(path, { method = 'GET', body, token, headers = {}, signal
 }
 
 export const api = {
+  pos: {
+    config: token => request('/api/pos/config', { token }),
+    setConfig: (body, token) => request('/api/pos/config', { method: 'PUT', body, token }),
+    search: (q, token, options = {}) => request(`/api/pos/products?${new URLSearchParams({ q })}`, { token, ...options }),
+    cash: token => request('/api/pos/cash', { token }),
+    entries: (id, token) => request(`/api/pos/cash/${encodeURIComponent(id)}/entries`, { token }),
+    sales: token => request('/api/pos/sales', { token }),
+    sale: (id, token) => request(`/api/pos/sales/${encodeURIComponent(id)}`, { token }),
+    webOrder: (id, token) => request(`/api/pos/web-orders/${encodeURIComponent(id)}`, { token }),
+    webOrders: (page,token) => request(`/api/pos/web-orders?page=${page}`,{token}),
+    fiscal: token => request('/api/pos/fiscal', { token }),
+    execute: (path, body, token) => request(`/api/pos${path}`, { method: 'POST', body, token }),
+    reports: (filters, token) => request(`/api/pos/reports?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`, { token }),
+    export: async (filters, token) => {
+      const response = await fetch(`${API_URL}/api/pos/reports/export.csv?${new URLSearchParams(Object.entries(filters).filter(([, value]) => value))}`, { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' })
+      if (!response.ok) throw new Error((await response.json()).error || 'No se pudo exportar.')
+      return response.blob()
+    },
+  },
   getFooter: () => request('/api/footer'),
   getLegal: type => request(`/api/legal/${encodeURIComponent(type)}`),
   subscribe: body => request('/api/newsletter/subscribe', { method: 'POST', body }),
@@ -73,8 +93,12 @@ export const api = {
     verify: (email, code) => request('/api/auth/verify', { method: 'POST', body: { email, code } }),
     login: (payload) => request('/api/auth/login', { method: 'POST', body: payload }),
     staffLogin: (payload) => request('/api/auth/staff-login', { method: 'POST', body: payload }),
+    staffMfaLogin: body => request('/api/auth/staff-mfa/login', {method:'POST',body}),
+    staffChangePassword: (body,token) => request('/api/auth/staff-change-password',{method:'POST',body,token}),
+    staffMfaSetup: (body,token) => request('/api/auth/staff-mfa/setup',{method:'POST',body,token}),
+    staffMfaEnable: (body,token) => request('/api/auth/staff-mfa/enable',{method:'POST',body,token}),
+    staffMfaDisable: (body,token) => request('/api/auth/staff-mfa/disable',{method:'POST',body,token}),
     googleExchange: (code, verifier) => request('/api/auth/google/exchange', { method: 'POST', body: { code, verifier } }),
-    staffGoogleExchange: (code, verifier) => request('/api/auth/staff-google/exchange', { method: 'POST', body: { code, verifier } }),
     logoutAll: (token) => request('/api/auth/logout-all', { method: 'POST', token }),
     me: (token) => request('/api/auth/me', { token }),
     updateProfile: (payload, token) => request('/api/auth/me', { method: 'PATCH', body: payload, token }),
@@ -120,6 +144,37 @@ export const api = {
     add: (productId, token) => request('/api/saved/items', { method: 'POST', body: { productId }, token }),
     remove: (productId, token) => request(`/api/saved/items/${encodeURIComponent(productId)}`, { method: 'DELETE', token }),
     merge: (productIds, token) => request('/api/saved/merge', { method: 'POST', body: { productIds }, token }),
+  },
+
+  inventory: {
+    getSummary: token => request('/api/admin/inventory/summary', { token }),
+    listProducts: (params = {}, token) => {
+      const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== ''))
+      return request(`/api/admin/inventory/products?${query}`, { token })
+    },
+    lookup: (code, token) => request(`/api/admin/inventory/lookup?${new URLSearchParams({ code })}`, { token }),
+    addBarcode: (productId, body, token) => request(`/api/admin/inventory/products/${encodeURIComponent(productId)}/barcodes`, { method: 'POST', body, token }),
+    removeBarcode: (productId, barcodeId, token) => request(`/api/admin/inventory/products/${encodeURIComponent(productId)}/barcodes/${encodeURIComponent(barcodeId)}`, { method: 'DELETE', token }),
+    getLabels: (ids, token) => request(`/api/admin/inventory/labels?${new URLSearchParams({ ids: ids.join(',') })}`, { token }),
+    listOperators: token => request('/api/admin/inventory/operators', { token }),
+    listDrafts: token => request('/api/admin/inventory/drafts', { token }),
+    listMovements: (params = {}, token) => {
+      const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== ''))
+      return request(`/api/admin/inventory/movements?${query}`, { token })
+    },
+    exportMovements: async (params = {}, token) => {
+      const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value !== undefined && value !== ''))
+      const response = await fetch(`${API_URL}/api/admin/inventory/movements/export.csv?${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      })
+      if (!response.ok) throw new Error((await response.json()).error || 'No se pudo exportar el Kardex.')
+      return response.blob()
+    },
+    createMovement: (body, token) => request('/api/admin/inventory/movements', { method: 'POST', body, token }),
+    confirmMovement: (id, token) => request(`/api/admin/inventory/movements/${encodeURIComponent(id)}/confirm`, { method: 'POST', token }),
+    deleteMovementDraft: (id, token) => request(`/api/admin/inventory/movements/${encodeURIComponent(id)}`, { method: 'DELETE', token }),
+    reverseMovement: (id, reason, token) => request(`/api/admin/inventory/movements/${encodeURIComponent(id)}/reverse`, { method: 'POST', body: { reason }, token }),
   },
 
   // Direcciones guardadas — también solo para clientes con sesión.
@@ -173,6 +228,15 @@ export const api = {
       request(`/api/admin/orders/${encodeURIComponent(id)}/status`, { method: 'PATCH', body: payload, token }),
 
     getUsers: (token) => request('/api/admin/users', { token }),
+    changeUserRole: (id, role, token) =>
+      request(`/api/admin/staff/${encodeURIComponent(id)}/role`, { method: 'PATCH', body: { role }, token }),
+    getStaff: token => request('/api/admin/staff', { token }),
+    updateStaff: (id,body,token) => request(`/api/admin/staff/${encodeURIComponent(id)}`,{method:'PATCH',body,token}),
+    resetStaffPassword: (id,body,token) => request(`/api/admin/staff/${encodeURIComponent(id)}/reset-password`,{method:'POST',body,token}),
+    revokeStaffSessions: (id,token) => request(`/api/admin/staff/${encodeURIComponent(id)}/revoke-sessions`,{method:'POST',token}),
+    staffAudit: (page,action,token) => request(`/api/admin/staff/audit?page=${page}&action=${encodeURIComponent(action||'')}`,{token}),
+    inviteStaff: (body, token) => request('/api/admin/staff', { method: 'POST', body, token }),
+    resendStaffActivation: (id, token) => request(`/api/admin/staff/${encodeURIComponent(id)}/activation`, { method: 'POST', token }),
 
     // --- Contenido de navegación (Bloque 1). DELETE responde 204 → null. ---
     getDashboard: (token) => request('/api/admin/dashboard', { token }),

@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "ADMIN crea trabajador sin correo; escritorio y tablet en ambos temas; Google ausente",
+    "Cambio obligatorio bloquea el POS; contraseña definitiva permite operar y persiste al recargar",
+    "Venta por doble escaneo, efectivo y vuelto; stock y Kardex una vez con usuario real de prueba",
+    "Cajero selecciona pedido web desde la lista y cobra sin volver a descontar inventario",
+    "Suspensión efectiva del trabajador; historial permanece y acceso rechazado",
+    "Almacén accede a inventario y no puede entrar a usuarios"
+  ],
+  "errors": [],
+  "syntheticOnly": true,
+  "productionModified": false
+}

@@ -12,6 +12,11 @@ export function serializeUser(user) {
     apellido: user.apellido,
     fechaNacimiento: user.fechaNacimiento,
     role: user.role,
+    username: user.adminUsername || null,
+    mustChangePassword: Boolean(user.mustChangePassword),
+    ownerRecoveryEnabled: Boolean(user.ownerRecoveryEnabled),
+    mfaEnabled: Boolean(user.mfaEnabled),
+    verified: user.verified,
   }
 }
 
@@ -42,6 +47,7 @@ export function serializeOrder(order) {
     total: Number(order.total),
     paymentMethodLabel: order.paymentMethod?.label ?? null,
     receiptUrl: order.receiptUrl ?? null,
+    posSale: order.posSale ?? null,
     items: (order.items || []).map((it) => ({
       id: it.id,
       productId: it.productId,
@@ -72,6 +78,7 @@ export function serializeProduct(product) {
   return {
     id: product.id,
     slug: product.slug,
+    sku: product.sku ?? null,
     name: product.name,
     brand: product.brand,
     category: product.category?.slug,

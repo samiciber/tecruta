@@ -32,7 +32,7 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
     '/products',
     validate(productCreateSchema),
     asyncHandler(async (req, res) => {
-      res.status(201).json(await createAdminProduct(prisma, req.body))
+      res.status(201).json(await createAdminProduct(prisma, req.body, req.user.id))
     }),
   )
 
@@ -40,7 +40,7 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
     '/products/:id',
     validate(productUpdateSchema),
     asyncHandler(async (req, res) => {
-      res.json(await updateAdminProduct(prisma, req.params.id, req.body))
+      res.json(await updateAdminProduct(prisma, req.params.id, req.body, req.user.id))
     }),
   )
 
@@ -179,7 +179,11 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
       const parsed = statusBodySchema.safeParse(req.body)
       if (!parsed.success) return res.status(400).json({ error: 'Estado o nota inválidos.' })
       const { status, note } = parsed.data
-      const order = await changeOrderStatus(prisma, req.params.id, status, note)
+      if (status === 'PAID') {
+        const linked = await prisma.posSale.findUnique({ where: { orderId: req.params.id }, select: { confirmedAt: true } })
+        if (!linked?.confirmedAt) return res.status(409).json({ error: 'Registra el cobro verificado desde Punto de venta para conciliar pagos y caja. Una captura no confirma el dinero.' })
+      }
+      const order = await changeOrderStatus(prisma, req.params.id, status, note, req.user.id)
 
       res.json(serializeOrder(order))
     }),
@@ -192,8 +196,14 @@ export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploa
   adminRouter.get(
     '/users',
     asyncHandler(async (req, res) => {
-      const users = await prisma.user.findMany({ orderBy: { createdAt: 'desc' } })
+      const users = await prisma.user.findMany({ where:{role:'CUSTOMER'}, orderBy: { createdAt: 'desc' } })
       res.json(users.map(serializeUser))
+    }),
+  )
+  adminRouter.patch(
+    '/users/:id/role',
+    asyncHandler(async (req, res) => {
+      res.status(410).json({error:'Gestiona cuentas de personal y permisos exclusivamente desde Usuarios y permisos. Las cuentas de clientes no se convierten en trabajadores.'})
     }),
   )
   return adminRouter

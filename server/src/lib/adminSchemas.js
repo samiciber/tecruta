@@ -11,6 +11,9 @@ const money = z.number({ error: 'El importe debe ser un número finito.' })
   .multipleOf(0.01, 'El importe admite como máximo dos decimales.')
 const stock = z.number({ error: 'El stock debe ser un número.' })
   .int('El stock debe ser entero.').min(0, 'El stock no puede ser negativo.').max(2147483647, 'El stock excede el máximo permitido.')
+const sku = z.string({ error: 'El SKU debe ser texto.' }).trim().max(40, 'El SKU no puede superar 40 caracteres.')
+  .refine(value => !value || /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value), 'El SKU solo admite letras, números, puntos, guiones y guiones bajos.')
+  .transform(value => value || null).nullable().optional()
 const slug = text('El slug').regex(/^[a-zA-Z0-9]+(?:[-_][a-zA-Z0-9]+)*$/, 'El slug solo admite letras, números, guiones y guiones bajos.')
 const media = z.string({ error: 'La URL debe ser texto.' }).trim().max(2000, 'La URL es demasiado larga.')
   .refine(value => {
@@ -21,9 +24,9 @@ const media = z.string({ error: 'La URL debe ser texto.' }).trim().max(2000, 'La
   }, 'Usa una URL HTTP(S) o una ruta local válida.').transform(value => value || null)
 const json = z.json({ error: 'El campo debe contener datos JSON válidos.' })
 const productFields = {
-  slug, name: text('El nombre'), category: text('La categoría'),
+  slug, name: text('El nombre'), category: text('La categoría'), sku,
   brand: optionalText(120), brandId: text('El ID de marca').nullable().optional(),
-  price: money, compareAtPrice: money.nullable().optional(), stock: stock.optional(),
+  price: money, compareAtPrice: money.nullable().optional(), stock: stock.optional(), expectedStock: stock.optional(), stockReason: optionalText(240),
   featured: boolean.optional(), bestSeller: boolean.optional(),
   image: media.nullable().optional(), images: z.array(media.refine(value => value !== null, 'La URL de imagen no puede estar vacía.'), { error: 'Las imágenes deben ser una lista.' }).max(50, 'Máximo 50 imágenes.').optional(),
   description: optionalText(), shortDescription: optionalText(2000),

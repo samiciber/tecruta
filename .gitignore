@@ -1,6 +1,7 @@
 node_modules
 dist-panel
 dist
+dist-panel
 .DS_Store
 *.log
 
