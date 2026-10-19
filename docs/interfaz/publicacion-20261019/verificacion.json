@@ -1,0 +1,53 @@
+{
+  "at": "2026-10-19T14:04:03.912Z",
+  "frontend": "3043703f14456314fa254c4fbb4a0b58084c7dfc",
+  "chunks": [
+    {
+      "name": "assets/WorkspaceShell-9L_w8Ue9.js",
+      "status": 200,
+      "drawer": true,
+      "recovery": false
+    },
+    {
+      "name": "assets/Pos-B67K5W1z.js",
+      "status": 200,
+      "drawer": false,
+      "recovery": true
+    }
+  ],
+  "health": {
+    "ok": true,
+    "revision": "972628acddcb2da8a6390b28d4d1e1cbe9cc0ae2"
+  },
+  "protected": [
+    {
+      "path": "/api/admin/inventory/summary",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/staff",
+      "status": 401
+    },
+    {
+      "path": "/api/pos/cash",
+      "status": 401
+    }
+  ],
+  "cors": [
+    {
+      "origin": "https://www.tecruta.com",
+      "allowed": "https://www.tecruta.com"
+    },
+    {
+      "origin": "https://tecruta-panel.vercel.app",
+      "allowed": "https://tecruta-panel.vercel.app"
+    },
+    {
+      "origin": "https://example.com",
+      "allowed": null
+    }
+  ],
+  "adminDns": {
+    "code": "ENOTFOUND"
+  }
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "domain": "https://www.tecruta.com",
+    "status": 200,
+    "assets": [
+      "/assets/index-CrgAeE3w.js",
+      "/assets/index-Btv0Wdgs.css"
+    ],
+    "robots": null,
+    "scripts": [
+      {
+        "asset": "/assets/index-CrgAeE3w.js",
+        "status": 200,
+        "moreDrawer": false,
+        "recovery": false,
+        "localFixtures": false
+      }
+    ]
+  },
+  {
+    "domain": "https://tecruta-panel.vercel.app",
+    "status": 200,
+    "assets": [
+      "/assets/index-cPsQ9huo.js",
+      "/assets/index-Btv0Wdgs.css"
+    ],
+    "robots": "noindex, nofollow, noarchive",
+    "scripts": [
+      {
+        "asset": "/assets/index-cPsQ9huo.js",
+        "status": 200,
+        "moreDrawer": false,
+        "recovery": false,
+        "localFixtures": false
+      }
+    ]
+  }
+]

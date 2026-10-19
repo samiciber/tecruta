@@ -1,5 +1,7 @@
 # Panel de trabajo: navegación y diseño para revisión local
 
+**Publicado el 19 de octubre de 2026.** [Registro de publicación y pendientes](../interfaz/publicacion-20261019.md). Las notas de preparación local de este documento describen el estado anterior al despliegue.
+
 Navegación rápida entre herramientas: [menú lateral de Más](../mas-lateral/README.md), preparado localmente.
 
 Último ajuste de facilidad de uso: [panel más sencillo](../usabilidad/README.md), con opciones secundarias plegadas y guía por tarea. Preparado localmente; pendiente de publicación.

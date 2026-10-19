@@ -1,5 +1,7 @@
 # Panel más sencillo de usar
 
+**Publicado el 19 de octubre de 2026.** [Registro de publicación y pendientes](../interfaz/publicacion-20261019.md). Las notas de preparación local de este documento describen el estado anterior al despliegue.
+
 Esta etapa continúa la navegación y los atajos de docs/interfaz y docs/operacion-rapida. Sólo cambia la presentación: sin migraciones, nuevas dependencias ni cambios de permisos, precios o movimientos. Pendiente de publicación.
 
 ## Uso diario

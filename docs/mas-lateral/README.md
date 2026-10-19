@@ -1,5 +1,7 @@
 # Más: herramientas sin volver atrás
 
+**Publicado el 19 de octubre de 2026.** [Registro de publicación y pendientes](../interfaz/publicacion-20261019.md). Las notas de preparación local de este documento describen el estado anterior al despliegue.
+
 Implementación local en la rama mejora/mas-menu-lateral, sobre las mejoras de usabilidad anteriores. Pendiente de publicación. No requiere migraciones, DNS ni cambios del backend.
 
 ## Cómo usarlo

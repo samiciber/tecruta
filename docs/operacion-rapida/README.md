@@ -1,5 +1,7 @@
 # Operación rápida: carritos recuperables y tareas directas
 
+**Publicado el 19 de octubre de 2026.** [Registro de publicación y pendientes](../interfaz/publicacion-20261019.md). Las notas de preparación local de este documento describen el estado anterior al despliegue.
+
 Entrega local en `mejora/venta-recuperable-y-atajos`. No publica cambios, no
 requiere migraciones y no cambia cuentas, base, DNS ni servicios de producción.
 Conserva la reorganización visual y el botón «Volver a Más» de la etapa anterior.
