@@ -22,7 +22,8 @@
     "test:staff": "node --test server/prisma/tests/staff-system.test.mjs",
     "qa:staff-ui": "node scripts/verify-staff-system-ui.mjs",
     "qa:panel-ui": "node scripts/verify-staff-system-ui.mjs",
-    "qa:workspace-ui": "node scripts/verify-panel-workspace-ui.mjs"
+    "qa:workspace-ui": "node scripts/verify-panel-workspace-ui.mjs",
+    "qa:pos-recovery-ui": "node scripts/verify-pos-recovery-ui.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

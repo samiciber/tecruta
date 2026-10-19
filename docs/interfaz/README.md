@@ -1,5 +1,9 @@
 # Panel de trabajo: navegación y diseño para revisión local
 
+> Etapa siguiente preparada localmente: [carritos recuperables, atajos y
+> siguientes pasos](../operacion-rapida/README.md). Esa etapa sustituye la
+> limitación del carrito no guardado y amplía la persistencia de filtros.
+
 Rama: `mejora/panel-operacion-clara`, basada en el sistema integrado publicado.
 Esta etapa cambia la interfaz; no publica código, no ejecuta migraciones y no
 modifica cuentas ni datos reales. React, Express, Prisma y las dependencias

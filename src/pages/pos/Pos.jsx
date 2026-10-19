@@ -10,6 +10,8 @@ import WorkspaceShell from '../../components/admin/WorkspaceShell.jsx'
 import './pos.css'
 import WebOrdersQueue from './WebOrdersQueue.jsx'
 import SuspendedCash from './SuspendedCash.jsx'
+import { clearAttempt, clearDraft, draftExpired, readAttempt, readDraft, saveAttempt, saveDraft, withOperationLock } from '../../utils/posRecovery.js'
+import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 
 const safe = value => { try { return cents(String(value || '0')) } catch { return 0n } }
 const sol = value => `S/ ${Number(value || 0).toFixed(2)}`
@@ -23,7 +25,7 @@ function Panel({ title, children, subtitle, className = '', id }) {
   return <section id={id} className={`pos-panel ${className}`}><div className="mb-4"><h2 className="text-lg font-bold">{title}</h2>{subtitle && <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}</div>{children}</section>
 }
 function PaymentEditor({ rows, setRows, config, total }) {
-  const update = (index, field, value) => setRows(current => current.map((row, i) => i === index ? { ...row, [field]: value } : row))
+  const update = (index, field, value) => setRows(current => current.map((row, i) => i === index ? { ...row, [field]: value, ...(field !== 'verified' ? { verified: false } : {}) } : row))
   return <div className="space-y-3">
     {rows.map((row, index) => <div key={index} className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
       <div className="mb-2 flex gap-2"><select aria-label={`Método ${index + 1}`} value={row.method} onChange={e => update(index, 'method', e.target.value)} className="pos-input flex-1">{config.methods.map(method => <option key={method.key} value={method.key}>{methodLabel[method.key] || method.label}</option>)}</select><button type="button" aria-label={`Retirar pago ${index + 1}`} onClick={() => setRows(current => current.filter((_, i) => i !== index))} className="pos-icon"><Trash2 size={16} /></button></div>
@@ -32,6 +34,7 @@ function PaymentEditor({ rows, setRows, config, total }) {
           : <label className="pos-label">Referencia verificada<input aria-label={`Referencia pago ${index + 1}`} value={row.reference} onChange={e => update(index, 'reference', e.target.value)} className="pos-input" placeholder="N.º de operación" maxLength={120} /></label>}
       </div>
       <button type="button" onClick={() => { const others = rows.reduce((sum, item, i) => i === index ? sum : sum + safe(item.amount), 0n); update(index, 'amount', amount(total > others ? total - others : 0n)) }} className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400">Completar saldo restante</button>
+      {row.method === 'cashOnDelivery' && <div className="mt-3 flex flex-wrap gap-2" aria-label={`Atajos de efectivo ${index + 1}`}><button type="button" className="pos-secondary text-xs" onClick={() => { const others = rows.reduce((sum, item, i) => i === index ? sum : sum + safe(item.amount), 0n); const remaining = amount(total > others ? total - others : 0n); setRows(current => current.map((item, i) => i === index ? { ...item, amount: remaining, received: remaining, verified: false } : item)) }}>Importe exacto</button>{['20','50','100','200'].map(value => <button key={value} type="button" className="pos-secondary text-xs" aria-label={`Recibido S/ ${value} pago ${index + 1}`} onClick={() => update(index, 'received', value + '.00')}>S/ {value}</button>)}</div>}
       <label className="mt-3 flex items-start gap-2 text-xs"><input type="checkbox" checked={row.verified} onChange={e => update(index, 'verified', e.target.checked)} className="mt-0.5" />{row.method === 'cashOnDelivery' ? 'Conté y recibí este efectivo.' : 'Verifiqué el abono en la cuenta o aplicación del negocio.'}</label>
       {row.method === 'cashOnDelivery' && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Vuelto: {sol(amount(safe(row.received || row.amount) > safe(row.amount) ? safe(row.received || row.amount) - safe(row.amount) : 0n))}</p>}
     </div>)}
@@ -46,7 +49,7 @@ export default function Pos() {
   if (auth.authLoading) return <p className="p-10">Comprobando sesión…</p>
   if (!auth.user) return <Navigate to="/iniciar-sesion" replace />
   if (!['ADMIN', 'CASHIER'].includes(auth.user.role)) return <Navigate to="/inventario" replace />
-  return <PosWorkspace user={auth.user} token={auth.token} />
+  return <PosWorkspace key={auth.user.id} user={auth.user} token={auth.token} />
 }
 function PosWorkspace({ user, token }) {
   const isAdmin = user.role === 'ADMIN'
@@ -67,17 +70,30 @@ function PosWorkspace({ user, token }) {
   const loadingWebRef = useRef(false)
   const [lastIdentified, setLastIdentified] = useState(null)
   const [customerOpen, setCustomerOpen] = useState(Boolean(new URLSearchParams(location.search).get('order')))
-  const [attempt, setAttempt] = useState(() => { try { return JSON.parse(sessionStorage.getItem(`tecruta:pos-attempt:${user.id}`)) } catch { return null } })
+  const [initialRecovery] = useState(() => { try { return { attempt: readAttempt(user.id), draft: readDraft(user.id) } } catch { return { error: 'No se pudo leer la recuperación local. Revisa el historial y contacta al administrador antes de realizar otro cobro.' } } })
+  const [attempt, setAttempt] = useState(initialRecovery.attempt || null)
+  const [recoverable, setRecoverable] = useState(initialRecovery.draft || null)
+  const [recoveryProblem, setRecoveryProblem] = useState(initialRecovery.error || '')
+  const [recovering, setRecovering] = useState(false), [reviewRecovery, setReviewRecovery] = useState(false)
+  const draftId = useRef(initialRecovery.draft?.id || crypto.randomUUID())
   const [opening, setOpening] = useState('0.00'), [counted, setCounted] = useState(''), [closeReason, setCloseReason] = useState('')
   const [manual, setManual] = useState({ direction: 'IN', amount: '', reason: '' }), [entries, setEntries] = useState([])
   const [refund, setRefund] = useState({ kind: 'RETURN', method: 'cashOnDelivery', reason: '', reference: '', verified: false, lines: {} })
-  const [filters, setFilters] = useState({ type: 'sales', from: today(), to: today(), userId: '', method: '', productId: '' }), [report, setReport] = useState(null), [fiscal, setFiscal] = useState(null)
+  const [filters, setFilters] = useWorkspacePreference('pos-report-filters', { type: 'sales', from: today(), to: today(), userId: '', method: '', productId: '' }, value => value && typeof value.type === 'string' && typeof value.from === 'string' && typeof value.to === 'string')
+  const [report, setReport] = useState(null), [fiscal, setFiscal] = useState(null)
+  const [salesQuery, setSalesQuery] = useWorkspacePreference('pos-sales-search', '')
+  const [salesStatus, setSalesStatus] = useWorkspacePreference('pos-sales-status', '')
+  const visibleSales = sales.filter(sale => (!salesStatus || sale.status === salesStatus) && [sale.id, sale.customerName, sale.orderId].join(' ').toLocaleLowerCase('es-PE').includes(salesQuery.trim().toLocaleLowerCase('es-PE')))
+  useEffect(() => { const selected = new URLSearchParams(location.search).get('venta'); if (selected) setSelectedSale(sales.find(row => row.id === selected) || null) }, [location.search, sales])
+  const [cashStatus, setCashStatus] = useWorkspacePreference('pos-cash-status', '')
+  const visibleSessions = sessions.filter(session => !cashStatus || session.status === cashStatus)
+  useEffect(() => { const requested = new URLSearchParams(location.search).get('estado'); if (['OPEN','CLOSED'].includes(requested)) setCashStatus(requested) }, [location.search, setCashStatus])
   const cash = sessions.find(session => session.userId === user.id && session.status === 'OPEN')
-  const frozen = busy || Boolean(attempt) || loadingWeb
+  const frozen = busy || Boolean(attempt) || loadingWeb || recovering || Boolean(recoverable) || Boolean(recoveryProblem)
   const subtotal = cart.reduce((sum, line) => sum + safe(line.price) * BigInt(Number.isInteger(line.quantity) ? line.quantity : 0), 0n)
   const total = pendingSale ? safe(pendingSale.total) : webOrder ? safe(webOrder.total) : subtotal >= safe(discount) ? subtotal - safe(discount) : 0n
   const paid = payments.reduce((sum, row) => sum + safe(row.amount), 0n)
-  const ready = Boolean(cash) && connected && (cart.length > 0 || webOrder) && paid === total && payments.every(row => row.verified) && !frozen && !scanning
+  const ready = Boolean(cash) && connected && (cart.length > 0 || webOrder) && paid === total && payments.length > 0 && payments.every(row => row.verified) && !frozen && !scanning && !reviewRecovery
   let expectedRefund = 0n
   if (selectedSale) for (const line of selectedSale.items) {
     const quantity = Number(refund.lines[line.id]?.quantity || 0), returned = line.returns.reduce((sum, row) => sum + row.quantity, 0)
@@ -91,6 +107,21 @@ function PosWorkspace({ user, token }) {
     setOperators(nextOperators)
   }, [token])
   useEffect(() => { refresh().catch(error => notify(error.message, 'error')) }, [refresh])
+  useWorkspaceScroll(sessions.length > 0 || sales.length > 0)
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('tipo')
+    if (['sales','payments','products','cash','refunds','low-stock'].includes(requested)) setFilters(current => ({ ...current, type: requested }))
+  }, [location.search, setFilters])
+  useEffect(() => {
+    if (recoverable || recoveryProblem || attempt || recovering) return
+    if (!cart.length && !webOrder && !pendingSale) { try { clearDraft(user.id, draftId.current) } catch { /* Do not remove another tab's draft. */ } return }
+    try { saveDraft({ version: 1, id: draftId.current, userId: user.id, updatedAt: Date.now(), kind: pendingSale ? 'pending' : webOrder ? 'web' : 'cart', referenceId: pendingSale?.id || webOrder?.id || null, items: webOrder || pendingSale ? [] : cart.map(line => ({ sku: line.sku, quantity: line.quantity })), discount, discountReason }) }
+    catch (error) { setRecoveryProblem(error.message || 'No se pudo guardar el carrito en este navegador. No inicies un cobro hasta recuperar el almacenamiento.'); }
+  }, [cart, webOrder, pendingSale, discount, discountReason, user.id, recoverable, attempt, recovering, recoveryProblem])
+  useEffect(() => {
+    const sync = event => { if (event.key !== `tecruta:pos-attempt:${user.id}`) return; try { setAttempt(readAttempt(user.id)) } catch { setRecoveryProblem('Otra pestaña tiene un registro de cobro que no se pudo leer. Revisa el historial antes de continuar.') } }
+    window.addEventListener('storage', sync); return () => window.removeEventListener('storage', sync)
+  }, [user.id])
   useEffect(() => { const listener = () => setConnected(navigator.onLine); window.addEventListener('online', listener); window.addEventListener('offline', listener); return () => { window.removeEventListener('online', listener); window.removeEventListener('offline', listener) } }, [])
   useEffect(() => {
     if (query.trim().length < 2) { setFound([]); return }
@@ -116,30 +147,65 @@ function PosWorkspace({ user, token }) {
       finally { setScanning(count => count - 1) }
     })
   }
-  const reset = () => { setCart([]); setLastIdentified(null); setCustomerOpen(false); setWebId(''); setWebOrder(null); setPendingSale(null); setDiscount('0.00'); setDiscountReason(''); setCustomer({ name: '', document: '' }); setPayments([newPayment(config.methods.some(method => method.key === 'cashOnDelivery') ? 'cashOnDelivery' : config.methods[0]?.key)]); setLastSale(null) }
-  const run = async (path, body, recovery = false) => {
-    if (busyRef.current || (attempt && !recovery)) return
-    busyRef.current = true; setBusy(true)
-    const operation = { path, body, userId: user.id }
+  const reset = () => {
+    try { clearDraft(user.id, draftId.current) } catch { setRecoveryProblem('No se pudo limpiar el carrito local. Revisa su recuperación antes de iniciar otra venta.') }
+    draftId.current = crypto.randomUUID(); setRecoverable(null); setReviewRecovery(false)
+    setCart([]); setLastIdentified(null); setCustomerOpen(false); setWebId(''); setWebOrder(null); setPendingSale(null); setDiscount('0.00'); setDiscountReason(''); setCustomer({ name: '', document: '' }); setPayments([newPayment(config.methods.some(method => method.key === 'cashOnDelivery') ? 'cashOnDelivery' : config.methods[0]?.key)]); setLastSale(null)
+  }
+  const recoverCart = async () => {
+    if (!recoverable || attempt || recovering || !connected) return
+    setRecovering(true)
     try {
-      sessionStorage.setItem(`tecruta:pos-attempt:${user.id}`, JSON.stringify(operation)); setAttempt(operation)
-      const result = await api.pos.execute(path, body, token)
-      sessionStorage.removeItem(`tecruta:pos-attempt:${user.id}`); setAttempt(null)
-      if (result.items && result.payments) { reset(); setLastSale(result); setSelectedSale(result) }
-      notify(result.status === 'PENDING' ? 'Venta pendiente guardada. No se cobró ni se reservó stock.' : 'Operación registrada correctamente.', 'success')
-      try { await refresh() } catch { notify('La operación quedó registrada, pero no se pudo actualizar el panel. Conserva su referencia y recarga para consultar el historial.', 'error') }
-      return result
-    } catch (error) {
-      if (error.status && error.status < 500) { sessionStorage.removeItem(`tecruta:pos-attempt:${user.id}`); setAttempt(null) }
-      notify(error.status ? error.message : 'No se pudo conocer el resultado. Recupera el mismo intento antes de iniciar otro cobro.', 'error')
-    } finally { busyRef.current = false; setBusy(false) }
+      if (draftExpired(recoverable)) throw new Error('Este carrito tiene más de siete días. Descártalo y prepara una venta con datos actuales.')
+      if (recoverable.kind === 'cart') {
+        const products = await Promise.all(recoverable.items.map(line => api.inventory.lookup(line.sku, token)))
+        setCart(products.map((product, index) => ({ ...product, price: String(product.price), quantity: recoverable.items[index].quantity })))
+        setDiscount(isAdmin ? amount(safe(recoverable.discount)) : '0.00'); setDiscountReason(isAdmin ? String(recoverable.discountReason || '').slice(0,240) : '')
+      } else if (recoverable.kind === 'web') {
+        const order = await api.pos.webOrder(recoverable.referenceId, token)
+        if (order.posSale || !['PENDING','CONFIRMED'].includes(order.status)) throw new Error('El pedido ya tiene un cobro o cambió de estado. Revísalo en el historial antes de continuar.')
+        setWebOrder(order); setWebId(order.id)
+      } else {
+        const sale = await api.pos.sale(recoverable.referenceId, token)
+        if (sale.status !== 'PENDING') throw new Error('La venta guardada ya no está pendiente. Revisa el historial; no vuelvas a cobrarla.')
+        setPendingSale(sale); setCart(sale.items.map(line => ({ id: line.productId, name: line.name, sku: line.sku, price: String(line.unitPrice), quantity: line.quantity, stock: null })))
+      }
+      draftId.current = recoverable.id; setRecoverable(null); setPayments([newPayment(config.methods.some(method => method.key === 'cashOnDelivery') ? 'cashOnDelivery' : config.methods[0]?.key)]); setReviewRecovery(true)
+      notify('Carrito recuperado con datos consultados al servidor. Revisa precios y existencias; vuelve a introducir y verificar los pagos.'); navigate('/pos')
+    } catch (error) { notify(error.message, 'error') } finally { setRecovering(false) }
+  }
+  const run = async (path, body, recovery = false) => {
+    if (busyRef.current || recoveryProblem || (attempt && !recovery) || (recoverable && !recovery) || recovering) return
+    busyRef.current = true; setBusy(true)
+    try {
+      await withOperationLock(user.id, async () => {
+        const existing = readAttempt(user.id)
+        if (existing && (!recovery || existing.body.requestId !== body.requestId || existing.path !== path)) { setAttempt(existing); return notify('Hay una operación pendiente. Recupera ese mismo intento antes de continuar.', 'error') }
+        if (recovery && !existing) return notify('Otra pestaña ya resolvió el intento. Consulta el historial antes de cobrar de nuevo.', 'error')
+        const operation = { path, body, userId: user.id }
+        saveAttempt(operation); setAttempt(operation)
+        try {
+          const result = await api.pos.execute(path, body, token)
+          clearAttempt(user.id, body.requestId); setAttempt(null)
+          if (result.items && result.payments) { reset(); setLastSale(result); setSelectedSale(result) }
+          notify(result.status === 'PENDING' ? 'Venta pendiente guardada. No se cobró ni se reservó stock.' : 'Operación registrada correctamente.', 'success')
+          try { await refresh() } catch { notify('La operación quedó registrada, pero no se pudo actualizar el panel. Conserva su referencia y consulta el historial.', 'error') }
+          return result
+        } catch (error) {
+          if (error.status && error.status < 500 && ![408,425,429].includes(error.status)) { clearAttempt(user.id, body.requestId); setAttempt(null) }
+          notify(error.status ? error.message : 'No se pudo conocer el resultado. Recupera el mismo intento antes de iniciar otro cobro.', 'error')
+        }
+      })
+    } catch (error) { notify(error.message || 'No se pudo asegurar la recuperación local; no se envió otro cobro.', 'error'); try { setAttempt(readAttempt(user.id)) } catch { setRecoveryProblem('No se pudo leer la operación local. Consulta el historial y contacta al administrador.') } }
+    finally { busyRef.current = false; setBusy(false) }
   }
   const sell = mode => {
+    if (frozen || reviewRecovery || scanning) return
     if (!cash) return notify('Abre tu caja antes de operar.', 'error')
     const plan = (mode === 'PENDING' ? payments.filter(row => safe(row.amount) > 0n) : payments).map(row => ({ ...row, amount: row.amount || '0', received: row.method === 'cashOnDelivery' ? row.received || row.amount || '0' : row.amount || '0' }))
     if (mode === 'CONFIRM' && !window.confirm(`Confirmar cobro de ${sol(amount(total))}. Verifica efectivo y abonos reales antes de continuar.`)) return
     if (pendingSale) return run(`/sales/${pendingSale.id}/confirm`, { requestId: crypto.randomUUID(), sessionId: cash.id, payments: plan })
-    return run('/sales', { requestId: crypto.randomUUID(), sessionId: cash.id, mode, ...(webOrder ? { orderId: webOrder.id, items: [], discount: '0.00' } : { items: cart.map(line => ({ productId: line.id, quantity: line.quantity, expectedPrice: line.price })), discount, discountReason: discountReason || undefined }), customerName: customer.name || null, customerDocument: customer.document || null, payments: plan })
+    return run('/sales', { requestId: draftId.current, sessionId: cash.id, mode, ...(webOrder ? { orderId: webOrder.id, items: [], discount: '0.00' } : { items: cart.map(line => ({ productId: line.id, quantity: line.quantity, expectedPrice: line.price })), discount, discountReason: discountReason || undefined }), customerName: customer.name || null, customerDocument: customer.document || null, payments: plan })
   }
   const openPending = sale => {
     if (frozen) return
@@ -171,15 +237,19 @@ function PosWorkspace({ user, token }) {
   }
   const showReport = async () => { try { setReport(await api.pos.reports(filters, token)) } catch (error) { notify(error.message, 'error') } }
   const exportReport = async () => { try { const blob = await api.pos.export(filters, token); const href = URL.createObjectURL(blob), link = document.createElement('a'); link.href = href; link.download = `tecruta-${filters.type}.csv`; link.click(); setTimeout(() => URL.revokeObjectURL(href), 1000) } catch (error) { notify(error.message, 'error') } }
-  const leave = to => to.startsWith('/pos') || !(cart.length || webOrder || pendingSale || attempt) || window.confirm(attempt ? 'Hay un cobro por recuperar. Podrás recuperarlo al regresar; no inicies otro cobro. ¿Salir de esta pantalla?' : 'La venta actual no está guardada. Si sales se perderá su contenido. ¿Salir de esta pantalla?')
+  const leave = () => true // Draft/attempt recovery is durable and scoped to this account.
   const cashBadge = <span className={`rounded-full px-3 py-2 text-xs font-bold ${cash ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'}`}>{cash ? '● Caja abierta' : '● Caja cerrada'}</span>
   return <WorkspaceShell beforeLeave={leave}><div className="pos-app">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><nav aria-label="Punto de venta" className="flex flex-wrap gap-2">{[['/pos', ShoppingBag, 'Venta actual'], ['/pos/ventas', CreditCard, 'Ventas y devoluciones'], ['/pos/reportes', BarChart3, 'Reportes']].map(([to, Icon, label])=><NavLink key={to} to={to} end className={({isActive})=>`pos-secondary ${isActive ? 'border-blue-500 text-blue-700 dark:text-blue-300' : ''}`}><Icon size={16} aria-hidden="true" />{label}</NavLink>)}</nav><Link to="/pos/caja" aria-label="Consultar mi turno de caja">{cashBadge}</Link></div>
       <main id="contenido-panel" className="min-w-0 space-y-4">
+        {recoveryProblem && <div role="alert" className="rounded-xl border border-red-300 p-4 text-sm text-red-700 dark:text-red-300">{recoveryProblem} <Link className="font-bold underline" to="/pos/ventas">Ver historial de ventas</Link></div>}
+        {recoverable && !attempt && <div role="status" className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-blue-300 bg-blue-50 p-4 text-sm text-blue-950 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-100"><div><strong>Hay un carrito guardado de esta cuenta.</strong><p>Guardado {date(recoverable.updatedAt)}. No reserva stock ni confirma pagos.</p></div><div className="flex flex-wrap gap-2"><button className="pos-primary" disabled={recovering || !connected || draftExpired(recoverable)} onClick={recoverCart}>{recovering ? 'Consultando productos…' : 'Recuperar carrito'}</button><button className="pos-secondary" disabled={recovering} onClick={() => { if (window.confirm('Descartar solo el carrito local sin confirmar. No se borrará ninguna venta ni pedido. ¿Continuar?')) reset() }}>Descartar carrito guardado</button></div></div>}
         {message && <div role="status" className={`flex items-start justify-between gap-3 rounded-xl border p-4 text-sm ${message.kind === 'error' ? 'border-red-300 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200' : 'border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200'}`}>{message.text}<button aria-label="Cerrar aviso" onClick={() => setMessage(null)}>×</button></div>}
         {!connected && <div role="alert" className="rounded-xl bg-amber-100 p-4 text-sm text-amber-900">Sin conexión. Los cobros están bloqueados hasta verificar precios, stock y pagos con el servidor.</div>}
         {attempt && <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><div><strong>Hay una operación por recuperar.</strong><p>No repitas el cobro con una clave nueva. Este intento conserva su identificador al recargar.</p></div><button disabled={busy || !connected} className="pos-primary" onClick={() => run(attempt.path, attempt.body, true)}>Recuperar mismo intento</button></div>}
         {section === 'venta' && <>
+          {cart.length > 0 && !attempt && !recoverable && <p className="text-xs text-slate-500 dark:text-slate-400">Carrito guardado automáticamente para esta cuenta en este navegador. Los pagos deben verificarse al recuperar.</p>}
+          {reviewRecovery && <label className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"><input type="checkbox" className="mt-1" onChange={e => { if (e.target.checked) setReviewRecovery(false) }} />Revisé los precios y existencias recuperados.</label>}
           <div className="flex items-end justify-between gap-3"><div><p className="pos-eyebrow">PUNTO DE VENTA</p><h1 className="text-2xl font-bold">{pendingSale ? 'Cobrar venta pendiente' : webOrder ? 'Cobrar pedido web' : 'Nueva venta'}</h1></div><button disabled={frozen} onClick={() => { if ((cart.length || webOrder || pendingSale) && !window.confirm('Descartar la venta sin guardar e iniciar una nueva?')) return; reset(); scanner.current?.focus() }} className="pos-secondary"><Plus size={16} /> Nueva venta</button></div>
           {!cash && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Abre tu turno en <Link to="/pos/caja" className="font-bold underline">Caja</Link> antes de cobrar o guardar una venta.</div>}
           {lastSale && <Panel title={statusLabel[lastSale.status]} subtitle={`Registro ${lastSale.id}`}><div className="flex flex-wrap items-center gap-3"><span className="text-2xl font-bold">{sol(lastSale.total)}</span>{lastSale.confirmedAt ? <button className="pos-primary" onClick={() => ticket(lastSale)}><Printer size={16} /> Imprimir ticket interno</button> : <button className="pos-primary" onClick={() => openPending(lastSale)}>Abrir para cobrar</button>}<Link to="/pos/ventas" className="pos-secondary">Ver historial</Link></div></Panel>}
@@ -215,11 +285,11 @@ function PosWorkspace({ user, token }) {
             {!cash ? <Panel title="Abrir caja" subtitle="Una caja abierta por cuenta. El saldo inicial es efectivo físico."><label className="pos-label">Saldo inicial S/<input aria-label="Saldo inicial" className="pos-input" inputMode="decimal" value={opening} onChange={e => setOpening(e.target.value)} /></label><button className="pos-primary mt-4" onClick={() => run('/cash', { requestId: crypto.randomUUID(), openingAmount: opening })}>Abrir turno</button></Panel> : <Panel title="Caja abierta" subtitle={`${cash.id} · ${date(cash.openedAt)}`}><p className="text-sm text-slate-500 dark:text-slate-400">Efectivo esperado</p><strong className="my-2 block text-4xl" data-testid="cash-expected">{sol(cash.currentExpected)}</strong><p className="mb-5 text-xs text-slate-500 dark:text-slate-400">No incluye Yape, Plin ni transferencias. El vuelto ya está descontado.</p><label className="pos-label">Efectivo contado S/<input aria-label="Efectivo contado" className="pos-input" value={counted} inputMode="decimal" onChange={e => setCounted(e.target.value)} /></label><label className="pos-label mt-3">Observación del cierre<input aria-label="Observación del cierre" className="pos-input" value={closeReason} maxLength={240} onChange={e => setCloseReason(e.target.value)} /></label><p className="my-3 text-sm">Diferencia: {sol(amount(safe(counted) - safe(cash.currentExpected)))}</p><button disabled={!counted || !closeReason.trim()} className="pos-primary" onClick={() => { if (window.confirm('Cerrar este turno con el conteo indicado. No se podrá reabrir ni modificar.')) run(`/cash/${cash.id}/close`, { requestId: crypto.randomUUID(), countedAmount: counted, reason: closeReason }) }}>Cerrar turno definitivamente</button></Panel>}
             {isAdmin && cash && <Panel title="Ingreso o retiro manual" subtitle="Sólo administrador, en su caja abierta; siempre con motivo."><label className="pos-label">Movimiento<select className="pos-input" value={manual.direction} onChange={e => setManual(current => ({ ...current, direction: e.target.value }))}><option value="IN">Ingreso de efectivo</option><option value="OUT">Retiro de efectivo</option></select></label><label className="pos-label mt-3">Importe S/<input className="pos-input" value={manual.amount} inputMode="decimal" onChange={e => setManual(current => ({ ...current, amount: e.target.value }))} /></label><label className="pos-label mt-3">Motivo<input className="pos-input" maxLength={240} value={manual.reason} onChange={e => setManual(current => ({ ...current, reason: e.target.value }))} /></label><button disabled={!manual.reason || !manual.amount} className="pos-secondary mt-4" onClick={() => run(`/cash/${cash.id}/entries`, { requestId: crypto.randomUUID(), ...manual })}>Registrar movimiento de caja</button></Panel>}
           </fieldset>
-          <Panel title="Historial de turnos" subtitle="Los cierres se conservan. Las correcciones posteriores usan un nuevo turno."><div className="overflow-x-auto"><table className="pos-table"><thead><tr><th>Apertura / responsable</th><th>Estado</th><th>Inicial</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th /></tr></thead><tbody>{sessions.map(session => <tr key={session.id}><td>{date(session.openedAt)}<small className="block text-slate-400">{operators.find(operator => operator.id === session.userId)?.nombre || session.userId}</small></td><td>{statusLabel[session.status]}</td><td>{sol(session.openingAmount)}</td><td>{sol(session.currentExpected)}</td><td>{session.countedAmount === null ? '—' : sol(session.countedAmount)}</td><td>{session.difference === null ? '—' : sol(session.difference)}</td><td><button className="pos-secondary" onClick={() => api.pos.entries(session.id, token).then(setEntries).catch(error => notify(error.message, 'error'))}>Ver movimientos</button></td></tr>)}</tbody></table></div>{entries.length > 0 && <div className="mt-4 max-h-72 overflow-auto">{entries.map(entry => <p key={entry.id} className="border-b border-slate-100 py-2 text-sm dark:border-slate-800">{date(entry.createdAt)} · {entry.kind} · <strong>{sol(entry.amount)}</strong> · {entry.reason}<small className="block text-slate-400">{entry.userId} · {entry.reference}</small></p>)}</div>}</Panel>
+          <Panel id="cash-history" title="Historial de turnos" subtitle="Últimos 100 turnos. Los cierres se conservan; las correcciones posteriores usan un nuevo turno."><label className="pos-label mb-4">Filtrar turnos<select className="pos-input" value={cashStatus} onChange={e => setCashStatus(e.target.value)}><option value="">Todos</option><option value="OPEN">Abiertos</option><option value="CLOSED">Cerrados</option></select></label><div className="overflow-x-auto"><table className="pos-table"><thead><tr><th>Apertura / responsable</th><th>Estado</th><th>Inicial</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th /></tr></thead><tbody>{visibleSessions.map(session => <tr key={session.id}><td>{date(session.openedAt)}<small className="block text-slate-400">{operators.find(operator => operator.id === session.userId)?.nombre || session.userId}</small></td><td>{statusLabel[session.status]}</td><td>{sol(session.openingAmount)}</td><td>{sol(session.currentExpected)}</td><td>{session.countedAmount === null ? '—' : sol(session.countedAmount)}</td><td>{session.difference === null ? '—' : sol(session.difference)}</td><td><button className="pos-secondary" onClick={() => api.pos.entries(session.id, token).then(setEntries).catch(error => notify(error.message, 'error'))}>Ver movimientos</button></td></tr>)}</tbody></table></div>{entries.length > 0 && <div className="mt-4 max-h-72 overflow-auto">{entries.map(entry => <p key={entry.id} className="border-b border-slate-100 py-2 text-sm dark:border-slate-800">{date(entry.createdAt)} · {entry.kind} · <strong>{sol(entry.amount)}</strong> · {entry.reason}<small className="block text-slate-400">{entry.userId} · {entry.reference}</small></p>)}</div>}</Panel>
         </>}
         {section === 'ventas' && <>
           <div><p className="pos-eyebrow">TRAZABILIDAD</p><h1 className="text-2xl font-bold">Ventas y devoluciones</h1></div>
-          <Panel title="Últimas ventas" subtitle="Hasta 100 registros recientes; usa reportes para periodos y CSV."><div className="overflow-x-auto"><table className="pos-table"><thead><tr><th>Fecha / venta</th><th>Cliente / origen</th><th>Estado</th><th>Total</th><th /></tr></thead><tbody>{sales.map(sale => <tr key={sale.id}><td>{date(sale.createdAt)}<small className="block font-mono text-[10px] text-slate-400">{sale.id}</small></td><td>{sale.customerName || 'Consumidor final'}<small className="block text-slate-400">{sale.orderId ? `Pedido web ${sale.orderId}` : 'Venta presencial'}</small></td><td><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold dark:bg-slate-800">{statusLabel[sale.status]}</span></td><td className="font-semibold">{sol(sale.total)}</td><td><button className="pos-secondary" onClick={() => { setSelectedSale(sale); setRefund({ kind: 'RETURN', method: config.methods[0]?.key || 'cashOnDelivery', reason: '', reference: '', verified: false, lines: {} }) }}>Ver venta</button></td></tr>)}</tbody></table></div></Panel>
+          <div className="flex flex-wrap gap-3"><label className="pos-label flex-1">Buscar en ventas cargadas<input type="search" className="pos-input" value={salesQuery} onChange={e => setSalesQuery(e.target.value)} placeholder="Referencia, cliente o pedido" /></label><label className="pos-label">Estado de venta<select className="pos-input" value={salesStatus} onChange={e => setSalesStatus(e.target.value)}><option value="">Todos</option>{['PENDING','CONFIRMED','CANCELLED','RETURNED','VOIDED'].map(status => <option key={status} value={status}>{statusLabel[status]}</option>)}</select></label></div><Panel title="Últimas ventas" subtitle="Hasta 100 registros recientes; usa reportes para periodos y CSV."><div className="overflow-x-auto"><table className="pos-table"><thead><tr><th>Fecha / venta</th><th>Cliente / origen</th><th>Estado</th><th>Total</th><th /></tr></thead><tbody>{visibleSales.map(sale => <tr key={sale.id}><td>{date(sale.createdAt)}<small className="block font-mono text-[10px] text-slate-400">{sale.id}</small></td><td>{sale.customerName || 'Consumidor final'}<small className="block text-slate-400">{sale.orderId ? `Pedido web ${sale.orderId}` : 'Venta presencial'}</small></td><td><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold dark:bg-slate-800">{statusLabel[sale.status]}</span></td><td className="font-semibold">{sol(sale.total)}</td><td><button className="pos-secondary" onClick={() => { setSelectedSale(sale); navigate('/pos/ventas?venta=' + encodeURIComponent(sale.id), { replace: true }); setRefund({ kind: 'RETURN', method: config.methods[0]?.key || 'cashOnDelivery', reason: '', reference: '', verified: false, lines: {} }) }}>Ver venta</button></td></tr>)}</tbody></table></div></Panel>
           {selectedSale && <Panel title={`Venta ${selectedSale.id}`} subtitle={`${statusLabel[selectedSale.status]} · ${selectedSale.user.nombre} ${selectedSale.user.apellido}`}><div className="mb-4 flex flex-wrap gap-2">{selectedSale.confirmedAt && <button className="pos-primary" onClick={() => ticket(selectedSale)}><Printer size={16} /> Imprimir ticket interno</button>}{selectedSale.status === 'PENDING' && <><button disabled={frozen} className="pos-primary" onClick={() => openPending(selectedSale)}>Cobrar pendiente</button><button disabled={frozen} className="pos-secondary" onClick={() => { const reason = window.prompt('Motivo de cancelación del pendiente'); if (reason?.trim()) run(`/sales/${selectedSale.id}/cancel`, { requestId: crypto.randomUUID(), reason }) }}>Cancelar pendiente</button></>}</div>
             <p className="mb-3 text-sm">{selectedSale.cancellationReason && <span className="mb-2 block">Motivo de cancelación: {selectedSale.cancellationReason}</span>}Total {sol(selectedSale.total)} · Descuento {sol(selectedSale.discount)}{selectedSale.approvedBy && ` · Aprobó ${selectedSale.approvedBy.nombre}`}</p>
             {selectedSale.payments.map(payment => <p key={payment.id} className="text-sm text-slate-500 dark:text-slate-400">{methodLabel[payment.method]} · {sol(payment.amount)} · {payment.status === 'CONFIRMED' ? 'Pago confirmado' : 'Plan pendiente'} · Vuelto {sol(payment.change)}{payment.reference && ` · Ref. ${payment.reference}`}</p>)}
@@ -229,7 +299,7 @@ function PosWorkspace({ user, token }) {
         </>}
         {section === 'reportes' && <>
           <div><p className="pos-eyebrow">CONTROL Y CONCILIACIÓN</p><h1 className="text-2xl font-bold">Reportes del negocio</h1></div>
-          <Panel title="Filtros" subtitle="America/Lima. Los importes son registros del negocio, no confirmación automática del banco."><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><label className="pos-label">Reporte<select className="pos-input" value={filters.type} onChange={e => setFilters(current => ({ ...current, type: e.target.value }))}>{[['sales','Ventas'],['payments','Pagos por método'],['products','Ventas por producto'],['cash','Cajas'],['refunds','Devoluciones'],['low-stock','Stock bajo']].map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="pos-label">Desde<input className="pos-input" type="date" value={filters.from} onChange={e => setFilters(current => ({ ...current, from: e.target.value }))} /></label><label className="pos-label">Hasta<input className="pos-input" type="date" value={filters.to} onChange={e => setFilters(current => ({ ...current, to: e.target.value }))} /></label><label className="pos-label">Método<select className="pos-input" value={filters.method} onChange={e => setFilters(current => ({ ...current, method: e.target.value }))}><option value="">Todos</option>{Object.entries(methodLabel).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>{isAdmin && <label className="pos-label">Usuario<select aria-label="Usuario del reporte" className="pos-input" value={filters.userId} onChange={e => setFilters(current => ({ ...current, userId: e.target.value }))}><option value="">Todos los usuarios</option>{operators.map(operator => <option key={operator.id} value={operator.id}>{operator.nombre} {operator.apellido}</option>)}</select></label>}<label className="pos-label">Buscar producto<input aria-label="Buscar producto del reporte" className="pos-input" value={query} onChange={e => { setQuery(e.target.value); setFilters(current => ({ ...current, productId: '' })) }} placeholder="Nombre o SKU (mín. 2 letras)" /></label><label className="pos-label">Producto<select aria-label="Producto del reporte" className="pos-input" value={filters.productId} onChange={e => setFilters(current => ({ ...current, productId: e.target.value }))}><option value="">Todos los productos</option>{found.map(product => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}</select></label></div><div className="mt-4 flex flex-wrap gap-2"><button className="pos-primary" onClick={showReport}>Consultar reporte</button><button className="pos-secondary" onClick={exportReport}>Exportar CSV</button><button className="pos-secondary" onClick={() => refresh().catch(error => notify(error.message, 'error'))}><RefreshCw size={15} /> Actualizar</button></div></Panel>
+          <Panel title="Filtros" subtitle="America/Lima. Los importes son registros del negocio, no confirmación automática del banco."><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><label className="pos-label">Reporte<select aria-label="Reporte" className="pos-input" value={filters.type} onChange={e => setFilters(current => ({ ...current, type: e.target.value }))}>{[['sales','Ventas'],['payments','Pagos por método'],['products','Ventas por producto'],['cash','Cajas'],['refunds','Devoluciones'],['low-stock','Stock bajo']].map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label><label className="pos-label">Desde<input className="pos-input" type="date" value={filters.from} onChange={e => setFilters(current => ({ ...current, from: e.target.value }))} /></label><label className="pos-label">Hasta<input className="pos-input" type="date" value={filters.to} onChange={e => setFilters(current => ({ ...current, to: e.target.value }))} /></label><label className="pos-label">Método<select className="pos-input" value={filters.method} onChange={e => setFilters(current => ({ ...current, method: e.target.value }))}><option value="">Todos</option>{Object.entries(methodLabel).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>{isAdmin && <label className="pos-label">Usuario<select aria-label="Usuario del reporte" className="pos-input" value={filters.userId} onChange={e => setFilters(current => ({ ...current, userId: e.target.value }))}><option value="">Todos los usuarios</option>{operators.map(operator => <option key={operator.id} value={operator.id}>{operator.nombre} {operator.apellido}</option>)}</select></label>}<label className="pos-label">Buscar producto<input aria-label="Buscar producto del reporte" className="pos-input" value={query} onChange={e => { setQuery(e.target.value); setFilters(current => ({ ...current, productId: '' })) }} placeholder="Nombre o SKU (mín. 2 letras)" /></label><label className="pos-label">Producto<select aria-label="Producto del reporte" className="pos-input" value={filters.productId} onChange={e => setFilters(current => ({ ...current, productId: e.target.value }))}><option value="">Todos los productos</option>{found.map(product => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}</select></label></div><div className="mt-4 flex flex-wrap gap-2"><button className="pos-primary" onClick={showReport}>Consultar reporte</button><button className="pos-secondary" onClick={exportReport}>Exportar CSV</button><button className="pos-secondary" onClick={() => refresh().catch(error => notify(error.message, 'error'))}><RefreshCw size={15} /> Actualizar</button></div></Panel>
           {report && <Panel title="Resultados" subtitle={`${report.rows.length} registros · ${report.timeZone}`}><p className="mb-3 text-sm text-slate-500 dark:text-slate-400">{report.costs}</p>{report.totals.net && <p className="mb-4 font-semibold">Ventas: {sol(report.totals.total)} · Devoluciones: {sol(report.totals.refunded)} · Neto: {sol(report.totals.net)}</p>}<div className="max-h-[520px] overflow-auto"><table className="pos-table"><thead><tr>{Object.keys(report.rows[0] || { resultado: '' }).map(key => <th key={key}>{reportLabels[key] || key}</th>)}</tr></thead><tbody>{report.rows.map((row, index) => <tr key={index}>{Object.entries(row).map(([key, value]) => <td key={key}>{value === null ? 'No disponible' : key === 'method' ? methodLabel[value] || value : key === 'status' ? statusLabel[value] || value : key === 'userId' || key === 'approvedById' ? operators.find(operator => operator.id === value)?.nombre || value : monetaryColumns.has(key) ? sol(value) : String(value)}</td>)}</tr>)}</tbody></table>{!report.rows.length && <p className="p-4 text-sm text-slate-500">Sin registros para este periodo.</p>}</div></Panel>}
           <Panel title="Comprobantes electrónicos" subtitle="El ticket interno no es boleta ni factura electrónica SUNAT."><p className="mb-3 text-sm">Estado: <strong>{fiscal?.enabled ? 'Adaptador configurado' : 'Sin proveedor configurado'}</strong>. No se envían ni aceptan documentos fiscales desde esta entrega.</p><ul className="list-disc space-y-1 pl-5 text-sm text-slate-500 dark:text-slate-400">{fiscal?.missing?.map(item => <li key={item}>{item}</li>)}</ul>{isAdmin && <label className="mt-5 flex items-center gap-2 text-sm"><input type="checkbox" checked={config.allowMixed} onChange={e => api.pos.setConfig({ allowMixed: e.target.checked }, token).then(() => refresh()).catch(error => notify(error.message, 'error'))} />Permitir pagos combinados (métodos activos en Admin → Métodos de pago).</label>}</Panel>
         </>}

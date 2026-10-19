@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Barcode, Download, PackageSearch, Printer, RotateCcw, ScanLine, Search, Trash2 } from 'lucide-react'
+import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
@@ -83,12 +84,13 @@ export default function AdminInventory() {
   const [drafts, setDrafts] = useState([])
   const [movements, setMovements] = useState([])
   const [movementTotal, setMovementTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [productPage, setProductPage] = useState(1)
-  const [productSearch, setProductSearch] = useState('')
+  const [page, setPage] = useWorkspacePreference('inventory-ledger-page', 1, value => Number.isSafeInteger(value) && value > 0)
+  const [productPage, setProductPage] = useWorkspacePreference('inventory-products-page', 1, value => Number.isSafeInteger(value) && value > 0)
+  const [productSearch, setProductSearch] = useWorkspacePreference('inventory-search', new URLSearchParams(location.search).get('buscar') || '')
+  useEffect(() => { const requested = new URLSearchParams(window.location.search).get('buscar'); if (requested !== null) setProductSearch(requested) }, [])
   const [scannerValue, setScannerValue] = useState('')
   const [selectedProduct, setSelectedProduct] = useState(null)
-  const [filters, setFilters] = useState({ productId: '', type: '', userId: '', from: '', to: '' })
+  const [filters, setFilters] = useWorkspacePreference('inventory-filters', { productId: '', type: '', userId: '', from: '', to: '' }, value => value && ['productId','type','userId','from','to'].every(key => typeof value[key] === 'string'))
   const [barcodeDraft, setBarcodeDraft] = useState({ code: '', kind: 'MANUFACTURER' })
   const [movementDraft, setMovementDraft] = useState({
     type: 'PURCHASE', quantity: '1', reason: '', reference: '', supplier: '', unitCost: '', occurredAt: '',
@@ -96,6 +98,7 @@ export default function AdminInventory() {
   const [busy, setBusy] = useState(false)
   const [includePrice, setIncludePrice] = useState(true)
   const canManage = ['ADMIN', 'WAREHOUSE'].includes(user?.role)
+  useWorkspaceScroll(Boolean(summary))
   const pageSize = 50
 
   const loadProducts = useCallback(async (q = productSearch) => {

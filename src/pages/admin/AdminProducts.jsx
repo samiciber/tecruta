@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 import { Trash2, Save, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
@@ -192,9 +193,11 @@ export default function AdminProducts() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useWorkspacePreference('products-search', new URLSearchParams(location.search).get('buscar') || '')
+  useEffect(() => { const requested = new URLSearchParams(window.location.search).get('buscar'); if (requested !== null) setSearch(requested) }, [])
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
+  useWorkspaceScroll(!loading)
 
   useEffect(() => {
     // Categorías: TODO el árbol (nuevas + heredadas) con la ruta completa en la

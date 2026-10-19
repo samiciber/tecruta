@@ -7,7 +7,7 @@ import { createPanelPreview } from './lib/panel-preview-runtime.mjs'
 const require = createRequire(import.meta.url)
 const { chromium } = require(join(process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-final-tools/node_modules'), 'playwright-core'))
 const rt = await createPanelPreview({ panelPort: 5196, storePort: 5197 })
-const evidence = join(rt.root, 'docs/interfaz/evidencia')
+const evidence = join(rt.root, 'docs/operacion-rapida/regresion-interfaz')
 mkdirSync(evidence, { recursive: true })
 const checks = [], errors = [], captures = []
 let browser, page
@@ -58,6 +58,7 @@ try {
   assert.equal(await nav('Más').getAttribute('aria-current'), 'page')
   await nav('Más').click(); await page.getByRole('searchbox', { name: 'Buscar herramienta' }).fill('inexistenteqa')
   await page.getByRole('button', { name: 'Ver todas las herramientas' }).click()
+  await page.locator('main a[href="/usuarios"]').waitFor()
   assert.equal(await page.locator('main a').count(), 20)
   check('Todas las herramientas anteriores siguen accesibles; búsqueda sin acentos y estado vacío recuperable')
   await page.locator('summary[aria-label="Mi cuenta"]').click()
@@ -81,7 +82,7 @@ try {
   for (let i=0;i<2;i++) { await scanner.fill('0000123456789'); await scanner.press('Enter'); await page.waitForFunction(quantity => document.querySelector('[aria-label="Cantidad Cable USB-C de prueba"]')?.value === String(quantity), i + 1) }
   assert.equal(await page.getByRole('button', { name: 'Confirmar venta y cobro', exact: true }).isEnabled(), false)
   await page.getByRole('button', { name: 'Volver al lector', exact: true }).click(); assert.equal(await scanner.evaluate(node => node === document.activeElement), true)
-  page.once('dialog', dialog => dialog.dismiss()); await nav('Inventario').click(); assert.equal(new URL(page.url()).pathname, '/pos')
+  await nav('Inventario').click(); assert.equal(new URL(page.url()).pathname, '/inventario'); await page.getByRole('heading',{name:'Inventario',exact:true}).waitFor(); await nav('Vender').click(); await page.getByRole('button',{name:'Recuperar carrito',exact:true}).click(); await page.getByLabel('Revisé los precios y existencias recuperados.').click()
   assert.equal(await page.getByLabel('Cantidad Cable USB-C de prueba').inputValue(), '2')
   await page.getByText('Cliente o pedido por referencia', { exact: true }).click(); const name = page.getByLabel('Nombre (opcional)', { exact: true }); await name.fill('Prueba'); await name.press('Enter'); assert.equal(await rt.db.posSale.count(), 0)
   await page.getByText('Cliente o pedido por referencia', { exact: true }).click()
@@ -97,7 +98,7 @@ try {
   await page.setViewportSize({ width: 1440, height: 1000 }); await page.getByLabel('Importe pago 1', { exact: true }).fill('39.80'); await page.getByLabel('Efectivo recibido', { exact: true }).fill('50.00'); await page.getByLabel('Conté y recibí este efectivo.').check()
   page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: 'Confirmar venta y cobro', exact: true }).click(); await page.getByRole('button', { name: 'Imprimir ticket interno', exact: true }).waitFor()
   assert.equal(await rt.db.posSale.count(), 1); assert.equal((await rt.db.product.findUnique({ where: { id: rt.products[0].id } })).stock, 18)
-  check('POS simplificado: doble escaneo, foco dedicado, salida cancelable sin perder carrito y cobro real sintético una sola vez')
+  check('POS simplificado: doble escaneo, foco dedicado, recuperación al cambiar de área sin perder carrito y cobro real sintético una sola vez')
   const { createOrder } = await rt.load('server/src/lib/orderService.js')
   const order = await createOrder(rt.db, { customer: { nombre: 'Cliente', apellido: 'Sintético', correo: 'qa@example.test', celular: '999999999' }, delivery: { tipoEntrega: 'recojo', departamento: 'Lima', provincia: 'Lima', distrito: 'Lima' }, items: [{ productId: rt.products[1].id, quantity: 1 }] }, null, crypto.randomUUID(), 'synthetic-only-secret')
   const stock = (await rt.db.product.findUnique({ where: { id: rt.products[1].id } })).stock

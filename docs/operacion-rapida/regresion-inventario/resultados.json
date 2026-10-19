@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "Enter identifica sin confirmar; escaneo repetido acumula cantidad de compra",
+    "Borrador persiste al recargar sin cambiar stock",
+    "Confirmación y Kardex persisten al recargar",
+    "Código desconocido muestra error y búsqueda manual",
+    "Teclado normal de otros formularios no se captura globalmente",
+    "ZXing decodifica el código de la etiqueta renderizada conservando ceros",
+    "Etiqueta imprimible con Code128, ceros iniciales, nombre y precio",
+    "Precio opcional en etiqueta",
+    "warehouse: navegación y permisos de interfaz",
+    "cashier: navegación y permisos de interfaz",
+    "Tienda pública responde con API real aislada"
+  ],
+  "captures": [
+    "desktop-light",
+    "desktop-dark",
+    "tablet-light",
+    "tablet-dark",
+    "warehouse-tablet",
+    "cashier-tablet",
+    "tienda-publica"
+  ],
+  "errors": []
+}

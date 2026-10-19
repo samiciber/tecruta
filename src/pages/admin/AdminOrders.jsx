@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { ChevronDown, ChevronUp, FileText, Upload, ExternalLink, RefreshCw, Search } from 'lucide-react'
+import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
@@ -113,6 +114,7 @@ function OrderRow({ order, token, onUpdated }) {
   const toast = useContext(ToastContext)
   const [expanded, setExpanded] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const nextStatus = order.status === 'PAID' && !order.posSale?._count?.refunds ? 'SHIPPED' : order.status === 'SHIPPED' ? 'DELIVERED' : null
 
   const handleStatusChange = async (e) => {
     const status = e.target.value
@@ -171,7 +173,8 @@ function OrderRow({ order, token, onUpdated }) {
       </div>
 
       <div className="px-4 pb-3 text-xs text-ink-soft dark:text-paper/60">
-        <Link className="font-semibold text-route" to={`/pos?order=${encodeURIComponent(order.id)}`}>{order.posSale ? `Ver cobro POS · ${order.posSale.status}` : 'Registrar cobro verificado en POS'}</Link>
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg bg-paper p-3 dark:bg-night"><strong>Siguiente paso:</strong>{nextStatus ? <button disabled={updating} className="btn-primary" onClick={() => { if (window.confirm(nextStatus === 'SHIPPED' ? '¿Confirmas que este pedido ya fue despachado?' : '¿Confirmas que este pedido ya fue entregado al cliente?')) handleStatusChange({ target: { value: nextStatus } }) }}>{nextStatus === 'SHIPPED' ? 'Registrar despacho' : 'Registrar entrega'}</button> : ['PENDING','CONFIRMED'].includes(order.status) && !order.posSale?.confirmedAt ? <Link to={`/pos?order=${encodeURIComponent(order.id)}`} className="btn-primary">Verificar y registrar cobro</Link> : <span>{order.posSale?._count?.refunds > 0 ? 'Revisar devoluciones antes de despachar.' : order.status === 'CANCELLED' ? 'Pedido cancelado; consultar historial.' : order.status === 'DELIVERED' ? 'Entrega finalizada.' : 'Revisar el detalle del pedido.'}</span>}</div>
+        {order.posSale && <Link className="font-semibold text-route" to={`/pos?order=${encodeURIComponent(order.id)}`}>{`Ver cobro POS · ${order.posSale.status}`}</Link>}
         {order.posSale?._count?.refunds > 0 && <p className="mt-1">Esta venta tiene devoluciones en POS. Revisa la trazabilidad antes de despachar.</p>}
       </div>
       {expanded && (
@@ -211,6 +214,9 @@ export default function AdminOrders() {
   const [params, setParams] = useSearchParams()
   const statusFilter = STATUSES.includes(params.get('estado')) ? params.get('estado') : ''
   const query = params.get('buscar') || ''
+  const [lastFilter, setLastFilter] = useWorkspacePreference('orders-filter', '', value => typeof value === 'string')
+  useEffect(() => { if (!params.toString() && lastFilter) setParams(lastFilter, { replace: true }); else if (params.toString()) setLastFilter(params.toString()) }, [])
+  useEffect(() => { setLastFilter(params.toString()) }, [params, setLastFilter])
   const [loading, setLoading] = useState(true), [error, setError] = useState(''), [reload, setReload] = useState(0)
   const filter = (key, value) => setParams(current => { const next = new URLSearchParams(current); value ? next.set(key, value) : next.delete(key); return next }, { replace: true })
   useEffect(() => {
@@ -219,6 +225,7 @@ export default function AdminOrders() {
     api.admin.getOrders(statusFilter ? { status: statusFilter } : {}, token).then(rows => { if (active) setOrders(rows) }).catch(err => { if (active) setError(err.message) }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [statusFilter, token, reload])
+  useWorkspaceScroll(!loading)
   const visible = orders.filter(order => (!statusFilter || order.status === statusFilter) && [order.id, order.customerNombre, order.customerApellido, order.customerCorreo].join(' ').toLocaleLowerCase('es-PE').includes(query.trim().toLocaleLowerCase('es-PE')))
 
   const handleUpdated = (updated) => {

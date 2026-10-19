@@ -12,7 +12,7 @@ const { PNG } = require(join(qaTools, 'pngjs'))
 const { chromium } = require(join(qaTools, 'playwright-core'))
 process.env.CORS_ORIGINS = 'http://127.0.0.1:5178,http://127.0.0.1:5188'
 const rt = await createInventoryRuntime()
-const evidence = join(rt.root, 'docs/interfaz/regresion-inventario')
+const evidence = join(rt.root, 'docs/operacion-rapida/regresion-inventario')
 mkdirSync(evidence, { recursive: true })
 const results = { checks: [], captures: [], errors: [] }
 let browser, vite, store

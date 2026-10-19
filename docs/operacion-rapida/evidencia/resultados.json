@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-19T01:25:14.691Z",
+  "checks": [
+    "Carrito por cuenta sin pagos/datos de cliente; recarga recupera precio actualizado y exige revisión explícita",
+    "Atajos de efectivo calculan céntimos y saldo de pagos combinados; no verifican el dinero automáticamente",
+    "Cambio de cuenta no revela ni mezcla el carrito; al regresar a su cuenta puede recuperarlo",
+    "Respuesta perdida tras COMMIT y cierre completo de pestaña: mismo intento, una venta, un descuento de stock",
+    "Dos pestañas recuperan el mismo carrito y lo envían: clave estable evita doble venta",
+    "Carrito vencido no se recupera y un intento corrupto bloquea operaciones sin crear ventas",
+    "Búsquedas de catálogo/inventario persistentes; pendientes y stock bajo abren el filtro correcto",
+    "Acceso de cajas filtra abiertos; pedido pendiente guía al cobro y pedido pagado permite despacho/entrega con API real aislada"
+  ],
+  "errors": []
+}

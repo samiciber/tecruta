@@ -36,7 +36,7 @@ export async function createFinalHomeRuntime({ realInteractiveApi = false } = {}
     const port = runDocker(['port', container, '5432/tcp']).split(':').at(-1)
     const databaseUrl = `postgresql://qa_final_home@127.0.0.1:${port}/qa_final_home`
     let ready = false
-    for (let i = 0; i < 40; i++) { try { runDocker(['exec', container, 'pg_isready', '-U', 'qa_final_home', '-d', 'qa_final_home']); ready = true; break } catch { await new Promise(resolve => setTimeout(resolve, 250)) } }
+    for (let i = 0; i < 40; i++) { try { runDocker(['exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'qa_final_home', '-d', 'qa_final_home']); ready = true; break } catch { await new Promise(resolve => setTimeout(resolve, 250)) } }
     if (!ready) throw new Error('PostgreSQL QA no está listo.')
     const workspace = createPrismaWorkspace({ tempRoot, name: 'schema', schemaSource: join(root, 'server/prisma/schema.prisma'), migrationsSource: join(root, 'server/prisma/migrations') })
     const clientPath = join(tempRoot, 'client')

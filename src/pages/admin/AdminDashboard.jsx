@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { STORE_ORIGIN } from '../../app/urls.js'
 import { AlertTriangle, ArrowRight, ClipboardList, Package, ShoppingBag, Users, Wallet } from 'lucide-react'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -44,10 +43,11 @@ export default function AdminDashboard() {
       {!data && !error && <p role="status" className="text-sm text-ink-soft dark:text-paper/60">Cargando resumen…</p>}
       {data && (
         <>
+          <div className="mb-5 flex flex-wrap gap-3" aria-label="Pendientes de atención"><Link to="/pedidos?estado=PENDING" className="btn-secondary">Atender {data.orders.pending} pedidos pendientes</Link><Link to="/pos/reportes?tipo=low-stock" className="btn-secondary">Ver productos con stock bajo</Link><Link to="/pos/caja?estado=OPEN#cash-history" className="btn-secondary">Revisar cajas abiertas</Link></div>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat icon={ClipboardList} label="Pedidos pendientes" value={data.orders.pending} to="/pedidos" tone={data.orders.pending > 0 ? 'warn' : 'default'} hint={`${data.orders.last7Days} en los últimos 7 días`} />
+            <Stat icon={ClipboardList} label="Pedidos pendientes" value={data.orders.pending} to="/pedidos?estado=PENDING" tone={data.orders.pending > 0 ? 'warn' : 'default'} hint={`${data.orders.last7Days} en los últimos 7 días`} />
             <Stat icon={Wallet} label="Pedidos web cobrados (30 días)" value={formatCurrency(data.revenue30Days)} hint="Pedidos pagados, enviados y entregados. Consulta ventas POS en Reportes." />
-            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/inventario" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
+            <Stat icon={Package} label="Stock bajo / agotado" value={`${data.stock.low} / ${data.stock.out}`} to="/pos/reportes?tipo=low-stock" tone={data.stock.low + data.stock.out > 0 ? 'warn' : 'default'} hint={`Bajo = ${data.stock.threshold} o menos`} />
             <Stat icon={Users} label="Clientes" value={data.customers} to="/clientes" />
           </div>
 
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
                 <ul className="divide-y divide-paper-line rounded-xl2 border border-paper-line dark:divide-night-line dark:border-night-line">
                   {data.recentOrders.map((o) => (
                     <li key={o.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <span className="min-w-0"><Link to="/pedidos" className="block truncate font-medium text-route dark:text-blue-300">{o.customer}</Link><span className="text-xs text-ink-soft dark:text-paper/50">{new Date(o.createdAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</span></span>
+                      <span className="min-w-0"><Link to={`/pedidos?buscar=${encodeURIComponent(o.id)}`} className="block truncate font-medium text-route dark:text-blue-300">{o.customer}</Link><span className="text-xs text-ink-soft dark:text-paper/50">{new Date(o.createdAt).toLocaleString('es-PE', { timeZone: 'America/Lima' })}</span></span>
                       <span className="shrink-0 text-right"><span className="block font-mono font-semibold text-ink dark:text-paper">{formatCurrency(o.total)}</span><span className="text-xs text-ink-soft dark:text-paper/60">{STATUS_LABEL[o.status] ?? o.status}</span></span>
                     </li>
                   ))}
@@ -81,7 +81,7 @@ export default function AdminDashboard() {
                 <ul className="divide-y divide-paper-line rounded-xl2 border border-paper-line dark:divide-night-line dark:border-night-line">
                   {data.stock.lowList.map((p) => (
                     <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                      <a href={`${STORE_ORIGIN}/producto/${encodeURIComponent(p.slug)}`} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate text-ink hover:text-route dark:text-paper">{p.name}</a>
+                      <Link to={`/productos?buscar=${encodeURIComponent(p.name)}`} className="min-w-0 truncate text-ink hover:text-route dark:text-paper">{p.name}</Link>
                       <span className="shrink-0 rounded-full bg-signal-amber/15 px-2 py-0.5 text-xs font-semibold text-signal-amber">{p.stock} u.</span>
                     </li>
                   ))}
