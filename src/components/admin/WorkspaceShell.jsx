@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Banknote, ChevronDown, ClipboardList, ExternalLink, Home, LayoutGrid, LogOut, Package, ShieldCheck, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, Banknote, ChevronDown, ClipboardList, ExternalLink, Home, LayoutGrid, LogOut, Package, ShieldCheck, ShoppingBag } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 import ThemeToggle from '../ui/ThemeToggle.jsx'
 import { STORE_ORIGIN, staffHome } from '../../app/urls.js'
@@ -11,6 +11,9 @@ export default function WorkspaceShell({ children, beforeLeave }) {
   const { user, logout } = useAuth(), location = useLocation(), navigate = useNavigate(), account = useRef(null)
   useEffect(() => { if (account.current) account.current.open = false }, [location.pathname])
   const follow = (event, to) => { if (to !== location.pathname && beforeLeave && !beforeLeave(to)) event.preventDefault() }
+  const showBack = user.role === 'ADMIN' && location.pathname !== '/mas' && isPrimaryActive('/mas', location.pathname, user.role)
+  const previousQuery = new URLSearchParams(typeof location.state?.moreSearch === 'string' ? location.state.moreSearch : '').get('buscar')
+  const backTo = previousQuery ? `/mas?${new URLSearchParams({ buscar: previousQuery })}` : '/mas'
   return <div className="workspace min-h-screen bg-paper text-ink dark:bg-night dark:text-paper">
     <a href="#contenido-panel" className="workspace-skip">Saltar al contenido</a>
     <header className="workspace-header">
@@ -23,6 +26,6 @@ export default function WorkspaceShell({ children, beforeLeave }) {
       </div>
       <nav aria-label="Secciones del panel" className="workspace-navigation">{primaryNavigation(user.role).map(item => { const Icon = icons[item.icon], active = isPrimaryActive(item.to, location.pathname, user.role); return <Link key={item.to} to={item.to} aria-current={active ? 'page' : undefined} onClick={e => follow(e, item.to)}><Icon size={19} aria-hidden="true" /><span>{item.label}</span></Link> })}</nav>
     </header>
-    <div className="workspace-content">{children}</div>
+    <div className="workspace-content">{showBack && <Link to={backTo} onClick={e => follow(e, backTo)} className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-paper-line bg-white px-4 py-2 text-sm font-semibold hover:border-route dark:border-night-line dark:bg-night-surface"><ArrowLeft size={18} aria-hidden="true" />Volver a Más</Link>}{children}</div>
   </div>
 }

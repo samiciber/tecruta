@@ -39,6 +39,10 @@ funcionando. El buscador de herramientas es local, ignora tildes y no consulta l
 API con cada pulsación. Más solo está disponible para ADMIN; se mantiene la
 validación de permisos de la API existente.
 
+Al abrir cualquiera de esas herramientas aparece **Volver a Más** sobre el
+contenido. Regresa al listado conservando la búsqueda utilizada, incluso si
+se recargó la herramienta. Si se abrió directamente, vuelve a Más sin filtro.
+
 ## Venta con menos elementos en pantalla
 
 La lista de pedidos por cobrar está en `/pos/pedidos`, fuera de la nueva venta.
