@@ -1,13 +1,12 @@
 import React from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowUpRight, Search } from 'lucide-react'
-import { panelGroups } from '../../app/panelNavigation.js'
-const normalized = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+import { filterPanelGroups } from '../../app/panelNavigation.js'
 export default function AdminMore() {
   const [params, setParams] = useSearchParams()
   const query = params.get('buscar') || ''
   const setQuery = value => setParams(value ? { buscar: value } : {}, { replace: true })
-  const groups = panelGroups.map(group => ({ ...group, items: group.items.filter(item => normalized(group.title + ' ' + item.join(' ')).includes(normalized(query.trim()))) })).filter(group => group.items.length)
+  const groups = filterPanelGroups(query)
   return <section>
     <div className="workspace-section-heading"><div><p className="workspace-eyebrow">Herramientas del administrador</p><h1 className="text-3xl font-bold">Más herramientas</h1><p className="mt-2 text-sm text-ink-soft dark:text-paper/60">Personal, catálogo y edición de la tienda, cada uno en su lugar.</p></div><label className="relative block w-full sm:w-80"><span className="sr-only">Buscar herramienta</span><Search size={18} className="absolute left-3 top-3.5 text-ink-soft" aria-hidden="true" /><input type="search" value={query} onChange={e => setQuery(e.target.value)} className="input-tr min-h-12 w-full pl-10" placeholder="Ej.: usuarios, banners, reportes…" /></label></div>
     <p role="status" className="sr-only">{groups.reduce((sum, group) => sum + group.items.length, 0)} herramientas disponibles</p>

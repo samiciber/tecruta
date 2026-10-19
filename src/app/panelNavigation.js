@@ -45,3 +45,9 @@ export function isPrimaryActive(to, pathname, role) {
   if (to === '/pos') return pathname === '/pos' || role !== 'ADMIN' && ['/pos/ventas', '/pos/reportes'].includes(pathname)
   return pathname === to || to === '/pedidos' && pathname === '/pos/pedidos'
 }
+
+const normalizeTool = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+export function filterPanelGroups(query) {
+  const needle = normalizeTool(query.trim())
+  return panelGroups.map(group => ({ ...group, items: group.items.filter(item => normalizeTool(group.title + ' ' + item.join(' ')).includes(needle)) })).filter(group => group.items.length)
+}

@@ -1,5 +1,7 @@
 # Panel de trabajo: navegación y diseño para revisión local
 
+Navegación rápida entre herramientas: [menú lateral de Más](../mas-lateral/README.md), preparado localmente.
+
 Último ajuste de facilidad de uso: [panel más sencillo](../usabilidad/README.md), con opciones secundarias plegadas y guía por tarea. Preparado localmente; pendiente de publicación.
 
 > Etapa siguiente preparada localmente: [carritos recuperables, atajos y
