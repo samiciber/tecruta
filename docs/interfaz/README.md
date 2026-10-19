@@ -1,5 +1,7 @@
 # Panel de trabajo: navegación y diseño para revisión local
 
+Último ajuste de facilidad de uso: [panel más sencillo](../usabilidad/README.md), con opciones secundarias plegadas y guía por tarea. Preparado localmente; pendiente de publicación.
+
 > Etapa siguiente preparada localmente: [carritos recuperables, atajos y
 > siguientes pasos](../operacion-rapida/README.md). Esa etapa sustituye la
 > limitación del carrito no guardado y amplía la persistencia de filtros.

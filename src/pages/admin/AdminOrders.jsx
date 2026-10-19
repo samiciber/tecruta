@@ -146,27 +146,16 @@ function OrderRow({ order, token, onUpdated }) {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="font-mono text-sm font-semibold text-ink dark:text-paper">{formatCurrency(order.total)}</span>
-          <select
-            aria-label={`Estado del pedido ${order.id}`}
-            value={order.status}
-            onChange={handleStatusChange}
-            disabled={updating}
-            className={`rounded-full border-0 px-3 py-1.5 text-xs font-medium ${STATUS_STYLES[order.status]}`}
-          >
-            {STATUSES.map((s) => (
-              <option key={s} value={s} disabled={!canTransition(order.status, s) || (s === 'PAID' && !order.posSale?.confirmedAt) || (s === 'CANCELLED' && order.posSale?.confirmedAt && order.status !== 'CANCELLED') || (s === 'SHIPPED' && order.posSale?._count?.refunds > 0)}>
-                {STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
+          <span className={`rounded-full px-3 py-2 text-xs font-medium ${STATUS_STYLES[order.status]}`}>{STATUS_LABELS[order.status]}</span>
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft hover:bg-ink/5 dark:text-paper/60 dark:hover:bg-paper/10"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold text-route hover:bg-ink/5 dark:text-blue-300 dark:hover:bg-paper/10"
             aria-label={expanded ? 'Ocultar detalle' : 'Ver detalle'}
           >
+            {expanded ? 'Ocultar detalle' : 'Ver detalle'}
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
@@ -198,6 +187,21 @@ function OrderRow({ order, token, onUpdated }) {
             </p>
           )}
 
+          <details className="workspace-disclosure mt-3"><summary>Más opciones del pedido</summary><p className="mb-3 text-xs text-ink-soft dark:text-paper/60">Para cambios excepcionales, elige un estado permitido. Para cobrar, despachar o entregar, utiliza Siguiente paso.</p>
+          <select
+            aria-label={`Estado del pedido ${order.id}`}
+            value={order.status}
+            onChange={handleStatusChange}
+            disabled={updating}
+            className={`rounded-full border-0 px-3 py-1.5 text-xs font-medium ${STATUS_STYLES[order.status]}`}
+          >
+            {STATUSES.map((s) => (
+              <option key={s} value={s} disabled={!canTransition(order.status, s) || (s === 'PAID' && !order.posSale?.confirmedAt) || (s === 'CANCELLED' && order.posSale?.confirmedAt && order.status !== 'CANCELLED') || (s === 'SHIPPED' && order.posSale?._count?.refunds > 0)}>
+                {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          </details>
           <div className="mt-3">
             <ReceiptManager order={order} token={token} onUpdated={onUpdated} />
           </div>

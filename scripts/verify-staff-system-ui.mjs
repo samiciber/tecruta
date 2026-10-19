@@ -5,7 +5,7 @@ import {join} from 'node:path'
 import {tmpdir} from 'node:os'
 import {createPanelPreview} from './lib/panel-preview-runtime.mjs'
 const require=createRequire(import.meta.url),{chromium}=require(join(process.env.TECRUTA_QA_TOOLS||join(tmpdir(),'tecruta-home-final-tools/node_modules'),'playwright-core'))
-const rt=await createPanelPreview({panelPort:5194,storePort:5195}),evidence=join(rt.root,'docs/operacion-rapida/regresion-personal')
+const rt=await createPanelPreview({panelPort:5194,storePort:5195}),evidence=join(rt.root,process.env.TECRUTA_QA_EVIDENCE_DIR||'docs/operacion-rapida/regresion-personal')
 mkdirSync(evidence,{recursive:true});const checks=[],errors=[];let browser
 try{
  browser=await chromium.launch({executablePath:process.env.TECRUTA_QA_BROWSER||'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',headless:true})
@@ -90,6 +90,7 @@ try{
  await page.getByRole('button',{name:'Guardar acceso',exact:true}).click()
  await row.getByRole('cell',{name:'Suspendido',exact:true}).waitFor()
  await page.goto(rt.panel+'/pos/caja')
+ await page.getByText('Gestión excepcional: caja de personal suspendido',{exact:true}).click()
  await page.getByRole('heading',{name:'Conciliar caja de personal suspendido',exact:true}).waitFor()
  const worker=await rt.db.user.findUnique({where:{adminUsername:'vendedorqa'}}),cash=await rt.db.cashSession.findFirst({where:{userId:worker.id,status:'OPEN'}})
  await page.getByLabel('Turno abierto a conciliar',{exact:true}).selectOption(cash.id)

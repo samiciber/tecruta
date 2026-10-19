@@ -11,7 +11,7 @@ const qaTools = process.env.TECRUTA_QA_TOOLS || join(tmpdir(), 'tecruta-home-fin
 const { chromium } = require(join(qaTools, 'playwright-core'))
 process.env.CORS_ORIGIN = 'http://127.0.0.1:5199'
 const rt = await createInventoryRuntime()
-const evidence = join(rt.root, 'docs/operacion-rapida/regresion-pos')
+const evidence = join(rt.root, process.env.TECRUTA_QA_EVIDENCE_DIR || 'docs/operacion-rapida/regresion-pos')
 mkdirSync(evidence, { recursive: true })
 const results = { checks: [], captures: [], errors: [] }
 let browser, vite, page

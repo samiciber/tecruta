@@ -33,3 +33,8 @@
 .workspace-action-primary small{@apply text-white/80;}
 .workspace-hub-grid{@apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;}
 @media(max-width:639px){.workspace{--workspace-header:145px}.workspace-content{padding-bottom:2rem}}
+
+/* Controles secundarios: permanecen montados para conservar lo escrito. */
+.workspace-disclosure{@apply min-w-0 rounded-xl border border-paper-line bg-white p-3 dark:border-night-line dark:bg-night-surface;}
+.workspace-disclosure>summary{@apply min-h-11 cursor-pointer py-3 text-sm font-semibold;}
+.workspace-disclosure[open]>summary{@apply mb-3 border-b border-paper-line dark:border-night-line;}

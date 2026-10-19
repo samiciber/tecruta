@@ -359,8 +359,9 @@ export default function AdminInventory() {
         <Panel id="inventory-operation">
           <div className="mb-4 flex items-center gap-2">
             <ScanLine className="h-5 w-5 text-route" />
-            <h2 className="font-display text-lg font-bold text-ink dark:text-paper">Lector y movimiento</h2>
+            <h2 className="font-display text-lg font-bold text-ink dark:text-paper">Buscar producto y registrar movimiento</h2>
           </div>
+          <p className="mb-4 text-sm text-ink-soft dark:text-paper/60">{canManage ? "1. Busca o escanea un producto. 2. Completa cantidad y motivo. 3. Guarda el borrador y confírmalo cuando esté revisado." : "Busca o escanea un producto para consultar sus existencias. El historial está en Consultar Kardex."}</p>
           <label className="mb-4 block">
             <span className="mb-1 block text-sm font-medium text-ink dark:text-paper">Escanea un SKU o código de barras</span>
             <div className="flex gap-2">
@@ -399,21 +400,21 @@ export default function AdminInventory() {
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 {(selectedProduct.barcodes || []).map(barcode => (
-                  <span key={barcode.id} className="inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 font-mono text-xs text-ink dark:bg-night">
+                  <span key={barcode.id} className="inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 font-mono text-xs text-ink dark:bg-night dark:text-paper">
                     {barcode.code} <span className="font-sans text-ink-soft dark:text-paper/50">{barcode.kind === 'INTERNAL' ? 'interno' : 'fabricante'}</span>
                     {canManage && <button type="button" disabled={busy} onClick={() => handleRemoveBarcode(barcode)} aria-label={`Quitar código ${barcode.code}`} className="ml-1 text-signal-red">×</button>}
                   </span>
                 ))}
               </div>
               {canManage && (
-                <form onSubmit={handleAddBarcode} className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                <details className="workspace-disclosure mt-3"><summary>Administrar códigos del producto</summary><p className="mb-2 text-xs">Agrega un código del fabricante o uno interno conservando sus ceros iniciales.</p><form onSubmit={handleAddBarcode} className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
                   <input value={barcodeDraft.code} onChange={event => setBarcodeDraft(row => ({ ...row, code: event.target.value }))} className="input-tr font-mono" maxLength={128} placeholder="Código en texto (conserva ceros iniciales)" required />
                   <select value={barcodeDraft.kind} onChange={event => setBarcodeDraft(row => ({ ...row, kind: event.target.value }))} className="input-tr">
                     <option value="MANUFACTURER">Fabricante</option>
                     <option value="INTERNAL">Interno</option>
                   </select>
                   <button type="submit" disabled={busy} className="btn-secondary">Agregar código</button>
-                </form>
+                </form></details>
               )}
             </div>
           )}
@@ -434,6 +435,7 @@ export default function AdminInventory() {
                 Motivo
                 <input required maxLength={240} value={movementDraft.reason} onChange={event => setMovementDraft(row => ({ ...row, reason: event.target.value }))} className="input-tr mt-1 w-full" placeholder="Describe por qué se registra la entrada o salida" />
               </label>
+              <details className="workspace-disclosure sm:col-span-2"><summary>Datos adicionales (opcional)</summary><div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm text-ink dark:text-paper">
                 Referencia
                 <input maxLength={120} value={movementDraft.reference} onChange={event => setMovementDraft(row => ({ ...row, reference: event.target.value }))} className="input-tr mt-1 w-full" placeholder="Documento, boleta u observación" />
@@ -454,9 +456,10 @@ export default function AdminInventory() {
                   </label>
                 </>
               )}
+              </div></details>
               <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-                <button type="submit" disabled={busy} className="btn-primary">Guardar borrador</button>
-                <span className="text-xs text-ink-soft dark:text-paper/50">El stock cambia solo al confirmar explícitamente el borrador.</span>
+                <button type="submit" disabled={busy || !selectedProduct} className="btn-primary">Guardar borrador</button>
+                <span className="text-xs text-ink-soft dark:text-paper/50">{selectedProduct ? "Después, ve a Borradores para revisar y confirmar. Guardar todavía no cambia el stock." : "Primero selecciona un producto con el lector o la lista."}</span>
               </div>
             </form>
           ) : (
