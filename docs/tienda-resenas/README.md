@@ -57,3 +57,9 @@ Se guardan en `SiteSetting.storeBusiness`, usando la validación ADMIN existente
 - [Capturas locales](capturas/README.md).
 
 La función queda implementada para revisión local. **No se certifica el criterio de batería global completamente verde:** los 57 fallos heredados también se reproducen en la base sin estos cambios. Deben conciliarse antes de autorizar publicación. Tampoco se corrigieron cinco avisos altos anteriores de dependencias de la tienda porque esta entrega prohíbe cambiar versiones. No se ha publicado ni ejecutado ninguna migración en producción.
+
+## Ajuste de opiniones compactas
+
+Resumen con promedio de 32 px y t?tulo de 24 px; comentarios y filtros plegados inicialmente. El bot?n Ver opiniones / Ocultar opiniones informa su estado con aria-expanded. La paginaci?n solicita tres rese?as por lote y conserva filtros y votos al plegar. Verificado abrir/cerrar en navegador local, ambos builds, cinco pruebas unitarias y diff --check. Evidencia: capturas/opiniones-compactas.jpg.
+
+La autorizaci?n de publicaci?n posterior est? recibida. El despliegue no se ha ejecutado: siguen pendientes la conciliaci?n de las 57 pruebas heredadas y la preparaci?n/verificaci?n del respaldo y del historial de migraciones del entorno de producci?n descritos en publicacion-recuperacion.md. Este ajuste no agrega otra migraci?n.
