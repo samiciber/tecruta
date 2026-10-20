@@ -80,6 +80,7 @@ export function serializeProduct(product) {
     slug: product.slug,
     sku: product.sku ?? null,
     name: product.name,
+    searchText: product.searchText,
     brand: product.brand,
     category: product.category?.slug,
     brandSlug: product.brandRef?.slug ?? null,
@@ -111,7 +112,7 @@ export function serializeProduct(product) {
 export const productCardSelect = {
   id: true, slug: true, sku: true, name: true, brand: true, price: true,
   compareAtPrice: true, stock: true, ratingCount: true, ratingSum: true,
-  featured: true, bestSeller: true, image: true, tags: true,
+  featured: true, bestSeller: true, image: true, tags: true, searchText: true,
   category: { select: { slug: true } }, brandRef: { select: { slug: true } },
   images: { take: 1, orderBy: { position: 'asc' }, select: { url: true, position: true } },
 }
@@ -121,7 +122,7 @@ export function serializeProductCard(product) {
     brand: product.brand, category: product.category?.slug, brandSlug: product.brandRef?.slug ?? null,
     price: Number(product.price), compareAtPrice: product.compareAtPrice == null ? null : Number(product.compareAtPrice),
     stock: product.stock, ratingCount: product.ratingCount, ratingSum: product.ratingSum,
-    featured: product.featured, bestSeller: product.bestSeller, tags: product.tags,
+    featured: product.featured, bestSeller: product.bestSeller, tags: product.tags, searchText: product.searchText,
     image: product.image || product.images[0]?.url || null,
     images: product.image ? [product.image] : product.images.map(row => row.url), summary: true,
   }

@@ -3,19 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { usePanelBehavior } from '../../../hooks/usePanel.js'
-import { usePopularSearches, useBrands, useCategoryTree } from '../../../hooks/useSiteContent.js'
-import { useProductIndex } from '../../../hooks/useProductIndex.js'
+import { usePopularSearches } from '../../../hooks/useSiteContent.js'
+import { api } from '../../../services/api.js'
+import { normalizeSearch } from '../../../utils/searchText.js'
 
-const norm = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 const MAX_CHIPS = 10
-
-function flatten(tree, out = []) {
-  for (const n of tree) {
-    out.push(n)
-    flatten(n.children || [], out)
-  }
-  return out
-}
 
 function shuffle(list) {
   const a = list.slice()
@@ -34,25 +26,31 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
   const [active, setActive] = useState(-1)
   const [seed, setSeed] = useState(0)
   const { searches } = usePopularSearches()
-  const { all: brands } = useBrands()
-  const { tree } = useCategoryTree()
-  const { index: products } = useProductIndex({ enabled: open && value.trim().length >= 2 })
+  const [suggestions, setSuggestions] = useState([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
 
   usePanelBehavior({ open, onClose, containerRef: wrapRef, trap: false, autoFocus: false, restoreFocus: false })
 
   const chips = useMemo(() => (seed === 0 ? searches : shuffle(searches)).slice(0, MAX_CHIPS), [searches, seed])
 
-  const q = norm(value.trim())
-  const suggestions = useMemo(() => {
-    if (q.length < 2) return []
-    const out = []
-    products.filter((p) => norm(p.name).includes(q)).slice(0, 5).forEach((p) => out.push({ key: `p-${p.id}`, kind: 'Producto', label: p.name, to: `/producto/${p.slug}`, image: p.image }))
-    brands.filter((b) => norm(b.name).includes(q)).slice(0, 2).forEach((b) => out.push({ key: `b-${b.id}`, kind: 'Marca', label: b.name, to: `/marca/${b.slug}` }))
-    flatten(tree).filter((c) => norm(c.name).includes(q)).slice(0, 2).forEach((c) => out.push({ key: `c-${c.id}`, kind: 'Categoría', label: c.name, to: `/categoria/${c.slug}` }))
-    return out
-  }, [q, products, brands, tree])
+  const q = normalizeSearch(value)
+  useEffect(() => {
+    setSuggestions([]); setError(''); setBusy(false)
+    if (!open || q.length < 3) return
+    let live = true
+    const controller = new AbortController()
+    setBusy(true)
+    const timer = setTimeout(() => {
+      api.searchSuggestions(q, { signal: controller.signal })
+        .then(result => { if (live) setSuggestions(result.items.slice(0, 8)) })
+        .catch(reason => { if (live && reason.name !== 'AbortError') setError('No se pudieron cargar las sugerencias. Pulsa Enter para buscar.') })
+        .finally(() => { if (live) setBusy(false) })
+    }, 250)
+    return () => { live = false; clearTimeout(timer); controller.abort() }
+  }, [q, open])
 
-  useEffect(() => setActive(-1), [q])
+  useEffect(() => setActive(-1), [q, open])
 
   const go = (to) => {
     setValue('')
@@ -96,12 +94,14 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
           ref={inputRef}
           type="search"
           role="combobox"
-          aria-expanded={open}
-          aria-controls={listId}
+          aria-expanded={open && suggestions.length > 0}
+          aria-controls={open && suggestions.length ? listId + '-options' : undefined}
+          aria-describedby={idPrefix + '-status'}
           aria-autocomplete="list"
           aria-activedescendant={active >= 0 ? `${idPrefix}-opt-${active}` : undefined}
           aria-label="Buscar en TecRuta"
           autoComplete="off"
+          maxLength={80}
           value={value}
           onFocus={onOpen}
           onClick={onOpen}
@@ -118,7 +118,7 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
       {open && (
         <div id={listId} className="absolute inset-x-0 top-full z-20 mt-1 rounded-lg bg-white p-4 text-ink shadow-2xl dark:bg-night-surface dark:text-paper">
           {suggestions.length > 0 ? (
-            <ul role="listbox" aria-label="Sugerencias">
+            <ul id={listId + '-options'} role="listbox" aria-label="Sugerencias">
               {suggestions.map((s, i) => (
                 <li key={s.key} id={`${idPrefix}-opt-${i}`} role="option" aria-selected={i === active}>
                   <button
@@ -134,8 +134,8 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
                 </li>
               ))}
             </ul>
-          ) : q.length >= 2 ? (
-            <p className="text-sm text-ink-soft dark:text-paper/70">Sin sugerencias para «{value.trim()}». Pulsa Enter para buscar en el catálogo.</p>
+          ) : q.length >= 3 ? (
+            <p className="text-sm text-ink-soft dark:text-paper/70">{busy ? 'Buscando…' : error || `Sin sugerencias para «${value.trim()}». Pulsa Enter para buscar en el catálogo.`}</p>
           ) : (
             <>
               <div className="mb-3 flex items-center justify-between">
@@ -168,6 +168,7 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
           )}
         </div>
       )}
+      <p id={idPrefix + '-status'} className="sr-only" role="status">{busy ? 'Buscando sugerencias.' : error || (q.length >= 3 ? `${suggestions.length} sugerencias. Usa las flechas y Enter.` : 'Escribe al menos tres caracteres para ver sugerencias.')}</p>
     </div>
   )
 }

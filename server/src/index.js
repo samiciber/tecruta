@@ -24,6 +24,7 @@ import { posRouter } from './routes/pos.routes.js'
 import { staffRouter } from './routes/staff.routes.js'
 import { reviewsRouter, reviewAdminRouter } from './routes/reviews.routes.js'
 import { publicCompression, publicResponsePolicy } from './middleware/publicResponses.js'
+import { storeSearchRouter } from './routes/storeSearch.routes.js'
 
 export function createApp({ orders = ordersRouter, admin = adminRouter, inventory = inventoryRouter, staff = staffRouter, auth = authRouter, reviews = reviewsRouter, reviewAdmin = reviewAdminRouter } = {}) {
   validateRuntimeEnv()
@@ -51,6 +52,7 @@ export function createApp({ orders = ordersRouter, admin = adminRouter, inventor
 
   app.use('/api/categories', categoriesRouter)
   app.use('/api/products', productsRouter)
+  app.use('/api/search', storeSearchRouter)
   app.use('/api/payment-methods', paymentMethodsRouter)
   app.use('/api/auth', auth)
   app.use('/api/orders', orders)

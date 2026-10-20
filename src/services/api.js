@@ -46,6 +46,7 @@ async function request(path, { method = 'GET', body, token, headers = {}, signal
 }
 
 export const api = {
+  searchSuggestions: (q, options = {}) => request('/api/search/suggestions?' + new URLSearchParams({ q }), { cache: 'no-store', ...options }),
   reviews: {
     list: (productId, params = {}, options = {}) => request(`/api/reviews/products/${encodeURIComponent(productId)}?${new URLSearchParams(Object.entries(params).filter(([,v])=>v !== '' && v != null))}`, options),
     recent: () => request('/api/reviews/recent'),

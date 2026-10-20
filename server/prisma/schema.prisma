@@ -200,6 +200,7 @@ model Category {
   id          String    @id @default(cuid())
   slug        String    @unique
   name        String
+  searchText  String @default("")
   description String?
   icon        String?
   products    Product[]
@@ -220,6 +221,7 @@ model Category {
   tiles       CategoryTile[]
 
   @@index([parentId])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "categories_store_search_idx")
   @@map("categories")
 }
 
@@ -242,6 +244,7 @@ model Brand {
   id               String    @id @default(cuid())
   slug             String    @unique
   name             String
+  searchText       String @default("")
   logo             String?
   featured         Boolean   @default(false)
   featuredPosition Int       @default(0)
@@ -249,6 +252,7 @@ model Brand {
   products         Product[]
   createdAt        DateTime  @default(now())
 
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "brands_store_search_idx")
   @@map("brands")
 }
 
@@ -332,6 +336,7 @@ model Product {
   // El trigger inventory_assign_sku genera el valor si no se envía.
   sku              String         @unique @default(dbgenerated())
   name             String
+  searchText       String @default("")
   brand            String?
   description      String?
   shortDescription String?
@@ -371,6 +376,7 @@ model Product {
   updatedAt        DateTime       @updatedAt
 
   @@index([categoryId])
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_store_search_idx")
   @@index([brandId])
   @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_pos_name_search_idx")
   @@index([sku(ops: raw("gin_trgm_ops"))], type: Gin, map: "products_pos_sku_search_idx")

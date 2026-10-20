@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
 import { serializeProduct, serializeProductCard, productCardSelect } from '../lib/serializers.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
+import { normalizeSearch } from '../../../src/utils/searchText.js'
 
 export const productsRouter = Router()
 
@@ -34,7 +35,10 @@ productsRouter.get(
     }
     if (brand) where.brandRef = { slug: String(brand) }
     if (featured === 'true') where.featured = true
-    if (q) where.name = { contains: String(q), mode: 'insensitive' }
+    if (q) {
+      if (typeof q !== 'string' || q.length > 80) return res.status(400).json({ error: 'La búsqueda admite hasta 80 caracteres.' })
+      where.AND = normalizeSearch(q).split(' ').filter(Boolean).slice(0, 8).map(token => ({ searchText: { contains: token } }))
+    }
 
     const cards = req.query.view === 'cards'
     const products = await prisma.product.findMany({

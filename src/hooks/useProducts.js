@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { matchesSearch } from '../utils/searchText.js'
 
 const SORTERS = {
   relevance: (a, b) => Number(b.featured) - Number(a.featured),
@@ -12,18 +13,10 @@ const SORTERS = {
   },
 }
 
-function matchesQuery(product, query) {
-  if (!query) return true
-  const q = query.trim().toLowerCase()
-  if (!q) return true
-  const haystack = [product.name, product.brand, product.category, ...(product.tags || [])].join(' ').toLowerCase()
-  return haystack.includes(q)
-}
-
 export function useProducts(list, { query = '', filters = {}, sort = 'relevance' } = {}) {
   return useMemo(() => {
     const { category, categorySlugs, brands = [], minPrice, maxPrice, inStockOnly } = filters
-    let result = list.filter((p) => matchesQuery(p, query))
+    let result = list.filter((p) => matchesSearch(p, query))
 
     // categorySlugs = el nodo elegido + sus descendientes (árbol de categorías)
     if (categorySlugs?.length) result = result.filter((p) => categorySlugs.includes(p.category))
