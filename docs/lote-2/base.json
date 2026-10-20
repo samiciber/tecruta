@@ -1,0 +1,10 @@
+{
+  "mainBytes": 288349,
+  "gzipBytes": 91433,
+  "base": "feature/rediseno-tienda-resenas",
+  "tests": {
+    "total": 172,
+    "pass": 115,
+    "fail": 57
+  }
+}
