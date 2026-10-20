@@ -1,6 +1,6 @@
 # Migración, publicación y recuperación
 
-Preparado el 20 de octubre de 2026, America/Lima. Procedimiento para una autorización futura; no ejecutado contra producción. No hay push ni merge a main en esta entrega.
+Preparado el 20 de octubre de 2026, America/Lima. Aplicado bajo autorización posterior del titular el mismo día. Ver el [registro de publicación](publicacion-20261020/README.md). Se publicó la rama sin fusionarla con main; se conservan abajo las instrucciones de preparación y recuperación.
 
 ## Preparación
 

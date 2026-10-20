@@ -1,6 +1,6 @@
 # Rediseño y reseñas verificadas
 
-Rama `feature/rediseno-tienda-resenas`, desde `main` actualizado `7d14d11`. Publicado el 20 de octubre de 2026 desde esta rama, sin merge a main. [Informe de publicaci?n y recuperaci?n](publicacion-20261020/README.md). No se leen archivos `.env`; PostgreSQL QA aislado mediante los helpers existentes.
+Rama `feature/rediseno-tienda-resenas`, desde `main` actualizado `7d14d11`. Publicado el 20 de octubre de 2026 desde esta rama, sin merge a main. [Informe de publicación y recuperación](publicacion-20261020/README.md). No se leen archivos `.env`; PostgreSQL QA aislado mediante los helpers existentes.
 
 ## Decisiones de alcance
 
@@ -60,8 +60,8 @@ La función queda implementada para revisión local. **No se certifica el criter
 
 ## Ajuste de opiniones compactas
 
-Resumen con promedio de 32 px y t?tulo de 24 px; comentarios y filtros plegados inicialmente. El bot?n Ver opiniones / Ocultar opiniones informa su estado con aria-expanded. La paginaci?n solicita tres rese?as por lote y conserva filtros y votos al plegar. Verificado abrir/cerrar en navegador local, ambos builds, cinco pruebas unitarias y diff --check. Evidencia: capturas/opiniones-compactas.jpg.
+Resumen con promedio de 32 px y título de 24 px; comentarios y filtros plegados inicialmente. El botón Ver opiniones / Ocultar opiniones informa su estado con aria-expanded. La paginación solicita tres reseñas por lote y conserva filtros y votos al plegar. Verificado abrir/cerrar en navegador local, ambos builds, cinco pruebas unitarias y diff --check. Evidencia: capturas/opiniones-compactas.jpg.
 
-La autorizaci?n de publicaci?n posterior est? recibida. El despliegue no se ha ejecutado: siguen pendientes la conciliaci?n de las 57 pruebas heredadas y la preparaci?n/verificaci?n del respaldo y del historial de migraciones del entorno de producci?n descritos en publicacion-recuperacion.md. Este ajuste no agrega otra migraci?n.
+La publicación posterior fue autorizada y ejecutada con respaldo previo y comprobación del historial de migraciones. Los 57 fallos heredados y los límites de validación se conservan documentados en el informe de publicación. Este ajuste visual no agregó otra migración.
 
-Estado final: redise?o y rese?as publicados en tienda/API/panel. Ver publicacion-20261020/README.md para versiones, respaldo y pendientes reales.
+Estado final: rediseño y reseñas publicados en tienda/API/panel. Ver publicacion-20261020/README.md para versiones, respaldo y pendientes reales.
