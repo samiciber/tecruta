@@ -138,3 +138,22 @@
 .storefront .product-reviews .review-toggle{display:inline-flex;align-items:center;gap:10px;min-height:44px}
 .storefront .product-reviews [hidden]{display:none!important}
 @media(max-width:639px){.storefront .product-reviews .review-summary{grid-template-columns:1fr;gap:12px}.storefront .product-reviews h2{font-size:22px}}
+
+.product-zoom-trigger{display:block;width:100%;text-align:center;cursor:zoom-in}
+.product-zoom-trigger>span{display:block;padding:8px;font-size:13px}
+.product-share>div{display:flex;flex-wrap:wrap;gap:12px}
+.product-share :is(button,a){min-height:44px;display:inline-flex;align-items:center;text-decoration:underline;font-size:13px}
+.product-share p{font-size:13px}.product-share input{width:100%;padding:8px}
+.product-commercial{padding-block:12px;border-block:1px solid var(--shop-line);font-size:14px}
+.product-commercial dt{font-weight:700}.product-commercial dd{white-space:pre-line;margin:4px 0 12px;overflow-wrap:anywhere}
+.product-specifications{width:100%;border-collapse:collapse;font-size:14px}
+.product-specifications caption{text-align:left;font-weight:700;margin-bottom:12px}
+.product-specifications :is(th,td){border-bottom:1px solid var(--shop-line);padding:10px 4px;text-align:left;overflow-wrap:anywhere;max-width:40vw}
+.product-specifications th{font-weight:600;width:40%}
+.store-image-zoom{color:var(--shop-text);background:var(--shop-page);border:1px solid var(--shop-line);border-radius:8px;padding:16px;max-width:94vw;max-height:92vh;overflow:auto}
+.store-image-zoom::backdrop{background:rgb(2 6 23 / .8)}
+.store-image-zoom header,.store-image-zoom footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.store-image-zoom header{margin-bottom:12px}.store-image-zoom button{min-height:44px;padding:8px 12px;border:1px solid var(--shop-line);border-radius:6px}
+.store-image-zoom img{max-height:66vh;max-width:100%;width:auto;height:auto;object-fit:contain;margin:auto;background:white}
+.product-mobile-buy{display:none}
+@media(max-width:639px){.store-product-detail{padding-bottom:90px}.product-mobile-buy{position:fixed;bottom:calc(var(--shop-mobile-nav-height,0px) + env(safe-area-inset-bottom,0px));inset-inline:0;z-index:35;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 16px;background:var(--shop-page);border-top:1px solid var(--shop-line)}.product-mobile-buy button{min-height:44px;padding:10px 16px;border-radius:6px;background:var(--shop-buy);color:#172538;font-weight:700}.product-mobile-buy button:disabled{opacity:.5;cursor:not-allowed}}

@@ -5,6 +5,7 @@ import {useAuth} from '../../hooks/useAuth.js'
 import Rating from './Rating.jsx'
 import ReviewCard from './ReviewCard.jsx'
 import {reviewJsonLd} from '../../utils/reviewJsonLd.js'
+import {STORE_ORIGIN} from '../../app/urls.js'
 
 export default function ProductReviews({product}) {
   const {token,user}=useAuth(), [data,setData]=useState(null),[eligibility,setEligibility]=useState(null)
@@ -67,7 +68,7 @@ export default function ProductReviews({product}) {
     }catch(e){if(scope===operationScope.current)setError(e.message)}
     finally{if(scope===operationScope.current)setBusy(false)}
   }
-  const schema=reviewJsonLd(product,data)
+  const schema=reviewJsonLd(product,data,STORE_ORIGIN)
   return <section id="resenas" className="product-reviews" aria-labelledby="reviews-title">
     {schema && <script type="application/ld+json" dangerouslySetInnerHTML={{__html:schema}}/>}
     <h2 id="reviews-title">Opiniones de clientes</h2>

@@ -3,7 +3,7 @@ import Rating from '../components/product/Rating.jsx'
 import { optimizeImage } from '../utils/imageUrl.js'
 import { useSiteSettings } from '../hooks/useSiteContent.js'
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
@@ -18,7 +18,11 @@ import { resolveCatalogDetail } from '../services/catalogDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
 import { api } from '../services/api.js'
+import ProductShare from '../components/product/ProductShare.jsx'
+import { breadcrumbStructuredData, safeJsonLd } from '../utils/seo.js'
+import { STORE_ORIGIN } from '../app/urls.js'
 
+const ImageZoom = lazy(() => import('../components/product/ImageZoom.jsx'))
 
 export default function ProductDetail() {
   const { slug } = useParams()
@@ -34,6 +38,7 @@ export default function ProductDetail() {
   const [viewMode, setViewMode] = useState('photos')
   const [detail, setDetail] = useState({ slug, status: 'loading' })
   const [retry, setRetry] = useState(0)
+  const [zoomOpen, setZoomOpen] = useState(false)
   const viewedProduct = useRef(null)
 
   useEffect(() => {
@@ -52,6 +57,7 @@ export default function ProductDetail() {
       if (identity && viewedProduct.current !== identity) {
         viewedProduct.current = identity
         setQuantity(1)
+        setZoomOpen(false)
         setActiveImage(0)
         setViewMode(result.product.enable3D && result.product.model3DUrl ? '3d' : 'photos')
       }
@@ -92,12 +98,13 @@ export default function ProductDetail() {
 
   return (
     <div className="store-product-detail container-tr py-8">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbStructuredData(product, category, STORE_ORIGIN)) }} />
       <nav className="mb-6 flex items-center gap-1.5 text-xs text-ink-soft/70 dark:text-paper/50" aria-label="Ruta de navegación">
         <Link to="/" className="hover:text-route">Inicio</Link>
         <ChevronRight className="h-3 w-3" />
-        <Link to={`/catalogo?categoria=${product.category}`} className="hover:text-route">{category?.name}</Link>
+        {category && <Link to={`/categoria/${encodeURIComponent(category.slug)}`} className="hover:text-route">{category.name}</Link>}
         <ChevronRight className="h-3 w-3" />
-        <span className="text-ink dark:text-paper">{product.name}</span>
+        <span aria-current="page" className="text-ink dark:text-paper">{product.name}</span>
       </nav>
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
@@ -152,7 +159,7 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                {gallery.length ? <img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" fetchPriority="high" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /> : <p className="p-8 text-center">Imagen no disponible</p>}
+                {gallery.length ? <button type="button" className="product-zoom-trigger" onClick={() => setZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}><img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" loading="eager" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /><span>Ampliar imagen</span></button> : <p className="p-8 text-center">Imagen no disponible</p>}
               </div>
               {gallery.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -190,6 +197,11 @@ export default function ProductDetail() {
           </div>
 
           <StockBadge stock={product.stock} className="w-fit" />
+          {(settings.storeBusiness?.shippingText?.trim() || settings.storeBusiness?.warrantyText?.trim()) && <dl className="product-commercial">
+            {settings.storeBusiness.shippingText?.trim() && <div><dt>Envío</dt><dd>{settings.storeBusiness.shippingText}</dd></div>}
+            {settings.storeBusiness.warrantyText?.trim() && <div><dt>Garantía</dt><dd>{settings.storeBusiness.warrantyText}</dd></div>}
+          </dl>}
+          <ProductShare product={product} />
 
           {benefits.length > 0 && <ul className="shop-benefits">{benefits.map(label=><li key={label}>{label}</li>)}</ul>}
 
@@ -225,21 +237,20 @@ export default function ProductDetail() {
 
           {product.specifications?.length > 0 && (
             <div className="rounded-xl2 border border-paper-line p-4 dark:border-night-line">
-              <h2 className="mb-3 font-display text-sm font-semibold text-ink dark:text-paper">Especificaciones</h2>
-              <dl className="space-y-2 text-sm">
+              <table className="product-specifications">
+                <caption>Ficha técnica</caption><tbody>
                 {product.specifications.map((spec) => (
-                  <div key={spec.label} className="flex justify-between gap-4 border-b border-paper-line/60 pb-2 last:border-0 last:pb-0 dark:border-night-line/60">
-                    <dt className="text-ink-soft dark:text-paper/50">{spec.label}</dt>
-                    <dd className="text-right font-medium text-ink dark:text-paper">{spec.value}</dd>
-                  </div>
+                  <tr key={spec.label}><th scope="row">{spec.label}</th><td>{spec.value}</td></tr>
                 ))}
-              </dl>
+                </tbody></table>
             </div>
           )}
         </div>
       </div>
 
       <ProductReviews key={product.id} product={product}/>
+      {zoomOpen && gallery.length > 0 && <Suspense fallback={<p role="status">Cargando ampliación…</p>}><ImageZoom images={gallery} active={Math.min(activeImage, gallery.length - 1)} name={product.name} onSelect={setActiveImage} onClose={() => setZoomOpen(false)} /></Suspense>}
+      <div className="product-mobile-buy"><strong>{formatCurrency(product.price)}</strong><button type="button" disabled={outOfStock || !canAdd(product) || quantity > product.stock} onClick={() => addItem(product, quantity)}>{outOfStock ? 'Agotado' : 'Agregar al carrito'}</button></div>
 
       {related.length > 0 && (
         <Reveal as="section" className="mt-16">

@@ -57,6 +57,12 @@ export function organizationStructuredData(business, origin = DEFAULT_STORE_ORIG
   return { '@context': 'https://schema.org', '@type': 'Organization', name: business.legalName, url: new URL(origin).origin,
     ...(business.ruc ? { taxID: business.ruc } : {}), ...(business.address ? { address: business.address } : {}) }
 }
+export function breadcrumbStructuredData(product, category, origin = DEFAULT_STORE_ORIGIN) {
+  const rows = [{ name: 'Inicio', item: canonicalUrl('/', origin) }]
+  if (category?.name && category?.slug) rows.push({ name: category.name, item: canonicalUrl('/categoria/' + encodeURIComponent(category.slug), origin) })
+  rows.push({ name: product.name, item: canonicalUrl('/producto/' + encodeURIComponent(product.slug), origin) })
+  return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: rows.map((row, index) => ({ '@type': 'ListItem', position: index + 1, ...row })) }
+}
 export function pageMetadata(path, { entity, origin = DEFAULT_STORE_ORIGIN, missing = false } = {}) {
   const page = staticPages[path] || ['TecRuta', 'Consulta el catálogo de TecRuta.']
   const type = path.split('/')[1]
