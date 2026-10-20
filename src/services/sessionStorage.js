@@ -13,10 +13,14 @@ function read(store) {
     return typeof value === 'string' && value ? value : null
   } catch { return null }
 }
-export function readSessionToken(local, session) { return read(session) || read(local) }
+export function readSessionToken(local, session) {
+  // Remove legacy persistent bearer tokens without reading or adopting them.
+  try { local.removeItem(TOKEN_KEY) } catch {}
+  return read(session)
+}
 export function saveSessionToken(local, session, token, remember) {
-  const target = remember ? local : session
-  const other = remember ? session : local
+  const target = session
+  const other = local
   try {
     target.setItem(TOKEN_KEY, JSON.stringify(token))
     other.removeItem(TOKEN_KEY)

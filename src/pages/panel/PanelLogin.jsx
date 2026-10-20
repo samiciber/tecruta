@@ -19,7 +19,7 @@ export default function PanelLogin(){
  {proof?<><label className="block text-sm">Código de la aplicación o código de respaldo<input required autoComplete="one-time-code" maxLength={80} className="input-tr mt-1 w-full" value={code} onChange={e=>setCode(e.target.value)}/></label><p className="text-sm">Introduce un código de tu aplicación autenticadora o uno de tus códigos de respaldo de un solo uso.</p><button type="button" className="text-route underline" onClick={()=>{setProof(null);setCode('');setError('')}}>Volver al usuario y contraseña</button></>:<>
  <label className="block text-sm">Usuario<input required autoCapitalize="none" spellCheck={false} autoComplete="username" maxLength={32} className="input-tr mt-1 w-full" value={form.identifier} onChange={e=>setForm({...form,identifier:e.target.value})}/></label>
  <label className="block text-sm">Contraseña<PasswordInput autoComplete="current-password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})}/></label>
- <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.remember} onChange={e=>setForm({...form,remember:e.target.checked})}/>Recordar sesión en este equipo</label></>}
+ <p className="text-xs">La sesión se conserva en esta pestaña.</p></>}
  <button disabled={busy} className="btn-primary w-full">{busy?'Ingresando…':proof?'Verificar código':'Ingresar al panel'}</button>
  <p className="text-sm text-ink-soft dark:text-paper/70">¿Olvidaste tu contraseña? Contacta a tu administrador para restablecer tu acceso.</p>
  <Link className="block text-xs text-route underline" to="/recuperar-contrasena">Recuperación del administrador principal</Link>

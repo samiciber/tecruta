@@ -20,7 +20,7 @@ try {
   const nav = name => page.getByRole('navigation', { name: 'Secciones del panel' }).getByRole('link', { name, exact: true })
   const login = async username => {
     await page.goto(rt.panel + '/iniciar-sesion'); await page.evaluate(() => { localStorage.removeItem('tecruta:token'); sessionStorage.removeItem('tecruta:token') }); await page.reload()
-    await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill(username); await page.getByLabel('Contraseña', { exact: true }).fill(rt.password); await page.getByLabel('Recordar sesión en este equipo').check(); await page.getByRole('button', { name: 'Ingresar al panel', exact: true }).click()
+    await page.getByRole('textbox', { name: 'Usuario', exact: true }).fill(username); await page.getByLabel('Contraseña', { exact: true }).fill(rt.password); await page.getByRole('button', { name: 'Ingresar al panel', exact: true }).click()
   }
   const scan = async () => { const input = page.getByLabel('Escanear código', { exact: true }); await input.fill('0000123456789'); await input.press('Enter'); await page.getByLabel('Cantidad Cable USB-C de prueba').waitFor() }
   await login('cajerolocal'); await nav('Mi caja').click(); await page.getByLabel('Saldo inicial', { exact: true }).fill('100.00'); await page.getByRole('button', { name: 'Abrir turno', exact: true }).click(); await page.getByText('● Caja abierta', { exact: true }).waitFor(); await nav('Vender').click(); await scan()

@@ -120,15 +120,7 @@ export default function Login() {
         </label>
 
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <label className="flex items-center gap-2 text-ink-soft dark:text-paper/60">
-            <input
-              type="checkbox"
-              checked={form.remember}
-              onChange={set('remember')}
-              className="h-4 w-4 rounded border-paper-line text-route focus:ring-route dark:border-night-line dark:bg-night-surface"
-            />
-            Recordar sesión
-          </label>
+          <p className="text-xs">La sesión se conserva en esta pestaña.</p>
           <Link to="/recuperar-contrasena" className="font-medium text-route hover:underline">
             ¿Olvidaste tu contraseña?
           </Link>
