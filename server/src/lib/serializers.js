@@ -86,6 +86,8 @@ export function serializeProduct(product) {
     price: Number(product.price),
     compareAtPrice: product.compareAtPrice !== null && product.compareAtPrice !== undefined ? Number(product.compareAtPrice) : null,
     stock: product.stock,
+    ratingCount: product.ratingCount ?? 0,
+    ratingSum: product.ratingSum ?? 0,
     featured: product.featured,
     bestSeller: product.bestSeller,
     image: product.image || images[0] || null,

@@ -8,7 +8,7 @@ function getFrom() {
   return process.env.EMAIL_FROM || 'TecRuta <no-reply@tecruta.com>'
 }
 
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, idempotencyKey }) {
   if (!process.env.RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY no está configurado en server/.env — no se puede enviar correo.')
   }
@@ -19,6 +19,7 @@ async function sendEmail({ to, subject, html }) {
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     },
     body: JSON.stringify({ from: getFrom(), to, subject, html }),
   })
@@ -78,4 +79,11 @@ export async function sendStaffActivationEmail({ to, code, activationUrl }) {
     intro: `Un administrador autorizó tu cuenta. Entra a <a href="${activationUrl}">Panel TecRuta · Activar cuenta</a>, solicita un código nuevo si este vence y establece tu propia contraseña. Código válido durante 15 minutos.`,
     code,
   }) })
+}
+
+export async function sendReviewInvitation({ to, productUrl, idempotencyKey }) {
+  // productUrl is constructed from a configured HTTPS origin and encoded slug.
+  const safeUrl = productUrl.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;')
+  return sendEmail({ to, idempotencyKey, subject: '¿Cómo fue tu compra en TecRuta?',
+    html: `<p>Tu pedido fue entregado. Puedes compartir tu experiencia del producto desde tu cuenta.</p><p><a href="${safeUrl}">Escribir una reseña</a></p>` })
 }

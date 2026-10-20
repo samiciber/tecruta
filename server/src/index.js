@@ -22,6 +22,7 @@ import { newsletterRouter } from './routes/newsletter.routes.js'
 import { inventoryRouter } from './routes/inventory.routes.js'
 import { posRouter } from './routes/pos.routes.js'
 import { staffRouter } from './routes/staff.routes.js'
+import { reviewsRouter, reviewAdminRouter } from './routes/reviews.routes.js'
 
 export function createApp({ orders = ordersRouter, admin = adminRouter, inventory = inventoryRouter, staff = staffRouter, auth = authRouter } = {}) {
   validateRuntimeEnv()
@@ -50,6 +51,8 @@ export function createApp({ orders = ordersRouter, admin = adminRouter, inventor
   app.use('/api/auth', auth)
   app.use('/api/orders', orders)
   app.use('/api/pos', posRouter)
+  app.use('/api/reviews', reviewsRouter)
+  app.use('/api/admin/reviews', reviewAdminRouter)
   // Inventory roles differ from the ADMIN-only routers mounted below.
   app.use('/api/admin/inventory', inventory)
   app.use('/api/admin/staff', staff)
