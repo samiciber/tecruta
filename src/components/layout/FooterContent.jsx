@@ -4,6 +4,7 @@ import { Instagram, Music2, Facebook, Youtube, Linkedin, Mail, MessageCircle } f
 import { api } from '../../services/api.js'
 import { useCachedResource } from '../../hooks/useCachedResource.js'
 import NewsletterForm from './NewsletterForm.jsx'
+import {BusinessDetails} from './ShopInformation.jsx'
 const icons = { instagram: Instagram, tiktok: Music2, facebook: Facebook, youtube: Youtube, linkedin: Linkedin }
 const linkClass = 'rounded-sm text-sm text-ink-soft hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-route dark:text-paper/80 dark:focus-visible:ring-sky-300'
 function FooterLink({ href, children }) { return href.startsWith('/') ? <Link className={linkClass} to={href}>{children}</Link> : <a className={linkClass} href={href} target="_blank" rel="noopener noreferrer">{children}</a> }
@@ -11,6 +12,7 @@ export default function FooterContent() {
   const { data, loading, error, refresh } = useCachedResource('footer', api.getFooter, { fallback: null })
   if (!data) return <footer className="border-t border-paper-line p-6 text-center text-sm dark:border-night-line">{loading ? 'Cargando información del sitio…' : <p role="status">No pudimos cargar la información del sitio. <button className="underline" onClick={refresh}>Reintentar</button></p>}</footer>
   return <footer className="storefront-footer break-words border-t border-paper-line bg-paper-surface text-ink dark:border-night-line dark:bg-night-surface dark:text-paper">
+    <BusinessDetails/>
     <div className="container-tr py-10">
       {error && <p role="status" className="mb-4 text-sm">No se pudo actualizar la información; mostramos la última versión disponible. <button onClick={refresh} className="underline">Reintentar</button></p>}
       <div className={`grid gap-8 ${data.newsletter.enabled ? 'lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]' : ''}`}>

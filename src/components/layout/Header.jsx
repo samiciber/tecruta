@@ -11,6 +11,7 @@ import NavPanel from './header/NavPanel.jsx'
 import { useNav } from '../../hooks/useSiteContent.js'
 import { useCart } from '../../hooks/useCart.js'
 import { storeConfig } from '../../config/storeConfig.js'
+import { ShopTopStrip } from './ShopInformation.jsx'
 
 // Pasa a ocultarse al bajar (solo escritorio) después de estos píxeles.
 const HIDE_SCROLL_THRESHOLD = 120
@@ -136,6 +137,7 @@ export default function Header() {
             (hijos de la fila 1) quedan por encima, completos. */}
       {panel && <div aria-hidden="true" className={`fixed inset-0 bg-black/50 ${panel?.startsWith('search') ? 'z-[15]' : 'z-0'}`} onClick={close} />}
 
+      <ShopTopStrip/>
       {/* Fila 1 */}
       <div className="relative z-20 bg-header">
         <div className={`${WRAP} flex h-14 items-center gap-3 lg:h-16 lg:gap-5 xl:gap-6`}>

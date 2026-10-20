@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { storeBusinessSchema } from './storeBusinessSchema.js'
 import { homeLayoutSchema } from './homeSchemas.js'
 import { footerSchema, legalPagesSchema } from './footerContent.js'
 
@@ -254,6 +255,7 @@ export const homeCirclesSchema = z.object({
 })
 
 export const SITE_SETTING_SCHEMAS = {
+  storeBusiness: storeBusinessSchema,
   footerContent: footerSchema,
   legalPages: legalPagesSchema,
   seasonalPromo: seasonalPromoSchema,
