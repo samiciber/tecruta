@@ -5,6 +5,7 @@ export default function Rating({ count, sum, rating }) {
   if (!value) return null
   return (
     <span
+      role="img"
       className="review-rating"
       aria-label={`${value.toFixed(1)} de 5 estrellas${count ? `, ${reviewCountLabel(count)}` : ''}`}
     >

@@ -34,7 +34,7 @@ const CategoryDirectory = lazy(() => import('./pages/CategoryDirectory.jsx'))
 
 function PageFallback() {
   return (
-    <div className="flex min-h-[50vh] items-center justify-center">
+    <div className="flex min-h-screen items-center justify-center">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-route border-t-transparent" />
     </div>
   )

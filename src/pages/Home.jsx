@@ -6,7 +6,7 @@ export { HomeView } from '../components/home/HomeView.jsx'
 
 function HomeSkeleton() {
   return (
-    <div aria-busy="true" aria-label="Cargando contenido de inicio">
+    <div className="min-h-screen" aria-busy="true" aria-label="Cargando contenido de inicio">
       <div className="h-[320px] animate-pulse bg-gradient-to-br from-header to-route-dark sm:h-[420px]" />
       <div className="container-tr space-y-5 py-8">
         <div className="h-8 w-56 animate-pulse rounded bg-gray-200 dark:bg-white/10" />
