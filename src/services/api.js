@@ -82,7 +82,7 @@ export const api = {
     const query = new URLSearchParams(entries).toString()
     return request(`/api/products${query ? `?${query}` : ''}`, options)
   },
-  getProductBySlug: (slug) => request(`/api/products/${encodeURIComponent(slug)}`),
+  getProductBySlug: (slug, options = {}) => request(`/api/products/${encodeURIComponent(slug)}`, options),
   getCategories: () => request('/api/categories'),
   getPaymentMethods: (options = {}) => request('/api/payment-methods', options),
 
@@ -93,7 +93,7 @@ export const api = {
   getStores: () => request('/api/stores'),
   getSiteSettings: () => request('/api/site-settings'),
   getCategoryTree: () => request('/api/categories/tree'),
-  getCategoryDetail: (slug) => request(`/api/categories/${encodeURIComponent(slug)}`),
+  getCategoryDetail: (slug, options = {}) => request(`/api/categories/${encodeURIComponent(slug)}`, options),
   getHome: (options = {}) => request('/api/home', { cache: 'no-store', ...options }),
 
   auth: {

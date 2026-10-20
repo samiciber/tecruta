@@ -4,7 +4,8 @@ import '../storefront.css'
 import {ShopWhatsApp} from '../components/layout/ShopInformation.jsx'
 import { CartProvider } from '../context/CartContext.jsx'
 import { SavedProvider } from '../context/SavedContext.jsx'
+import StoreSeo from '../components/layout/StoreSeo.jsx'
 
 export default function StoreRoot() {
-  return <CartProvider><SavedProvider><div className="storefront"><App /><ShopWhatsApp/></div></SavedProvider></CartProvider>
+  return <CartProvider><SavedProvider><div className="storefront"><StoreSeo/><App /><ShopWhatsApp/></div></SavedProvider></CartProvider>
 }

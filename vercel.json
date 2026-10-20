@@ -1,7 +1,55 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|googlebot|bingbot|WhatsApp|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot).*"
+        }
+      ],
+      "destination": "/api/share?path=/"
+    },
+    {
+      "source": "/:kind(producto|categoria|marca)/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|googlebot|bingbot|WhatsApp|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot).*"
+        }
+      ],
+      "destination": "/api/share?path=/:kind/:slug"
+    },
+    {
+      "source": "/:page(catalogo|marcas|ayuda)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|googlebot|bingbot|WhatsApp|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot).*"
+        }
+      ],
+      "destination": "/api/share?path=/:page"
+    },
+    {
+      "source": "/legal/:type(terminos|privacidad)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(Googlebot|googlebot|bingbot|WhatsApp|facebookexternalhit|Twitterbot|LinkedInBot|Slackbot).*"
+        }
+      ],
+      "destination": "/api/share?path=/legal/:type"
+    },
+    {
+      "source": "/((?!api/|assets/|robots.txt|manifest.webmanifest|favicon).*)",
       "destination": "/index.html"
     }
   ],
@@ -39,6 +87,19 @@
         {
           "key": "X-Robots-Tag",
           "value": "noindex, nofollow, noarchive"
+        }
+      ]
+    },
+    {
+      "source": "/:private(admin|pos|panel|mi-cuenta|cuenta|carrito|checkout|iniciar-sesion|crear-cuenta|recuperar-contrasena|verificar-correo|mis-pedidos|mis-direcciones|elementos-guardados|pagos|mi-tarjeta|planes|auth)/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store"
         }
       ]
     }
