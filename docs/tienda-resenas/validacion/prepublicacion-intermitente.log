@@ -1,0 +1,456 @@
+TAP version 13
+# Subtest: API: cuentas y permisos reales, sin confiar en el rol del JWT
+ok 1 - API: cuentas y permisos reales, sin confiar en el rol del JWT
+  ---
+  duration_ms: 4740.9511
+  type: 'test'
+  ...
+# Subtest: SKU, fabricante e internos: ceros iniciales y unicidad cruzada concurrente
+ok 2 - SKU, fabricante e internos: ceros iniciales y unicidad cruzada concurrente
+  ---
+  duration_ms: 157.6755
+  type: 'test'
+  ...
+# Subtest: Borrador idempotente, confirmaciones concurrentes y costo conocido
+ok 3 - Borrador idempotente, confirmaciones concurrentes y costo conocido
+  ---
+  duration_ms: 111.6589
+  type: 'test'
+  ...
+# Subtest: Todos los motivos de entrada/salida se confirman; stock y asiento son atomicos
+ok 4 - Todos los motivos de entrada/salida se confirman; stock y asiento son atomicos
+  ---
+  duration_ms: 248.3869
+  type: 'test'
+  ...
+# Subtest: Dos salidas simultaneas no consumen la misma ultima unidad
+ok 5 - Dos salidas simultaneas no consumen la misma ultima unidad
+  ---
+  duration_ms: 60.4431
+  type: 'test'
+  ...
+# Subtest: Reversion enlazada, unica, inmutable y sin negativos
+ok 6 - Reversion enlazada, unica, inmutable y sin negativos
+  ---
+  duration_ms: 96.7791
+  type: 'test'
+  ...
+# Subtest: Pedidos web pendientes: reserva, reintentos, pago y cancelacion concurrente
+ok 7 - Pedidos web pendientes: reserva, reintentos, pago y cancelacion concurrente
+  ---
+  duration_ms: 144.7906
+  type: 'test'
+  ...
+# Subtest: Dos compradores para ultima unidad; pedido fallido se revierte completo
+ok 8 - Dos compradores para ultima unidad; pedido fallido se revierte completo
+  ---
+  duration_ms: 1061.9641
+  type: 'test'
+  ...
+# Subtest: Editor de producto exige motivo y registra diferencia sin costo historico
+ok 9 - Editor de producto exige motivo y registra diferencia sin costo historico
+  ---
+  duration_ms: 93.1576
+  type: 'test'
+  ...
+# Subtest: Kardex filtrable y CSV seguro; lectura persiste en solicitudes nuevas
+ok 10 - Kardex filtrable y CSV seguro; lectura persiste en solicitudes nuevas
+  ---
+  duration_ms: 93.3454
+  type: 'test'
+  ...
+# Subtest: Upgrade con cantidades existentes: saldo inicial una vez y cancelacion heredada
+ok 11 - Upgrade con cantidades existentes: saldo inicial una vez y cancelacion heredada
+  ---
+  duration_ms: 11317.4546
+  type: 'test'
+  ...
+# Subtest: Clave de origen concurrente aplica un solo ingreso y rechaza otra operacion
+ok 12 - Clave de origen concurrente aplica un solo ingreso y rechaza otra operacion
+  ---
+  duration_ms: 94.5916
+  type: 'test'
+  ...
+# Subtest: Pedido de varias lineas falla entero y reversion sin stock queda sin aplicar
+ok 13 - Pedido de varias lineas falla entero y reversion sin stock queda sin aplicar
+  ---
+  duration_ms: 315.6892
+  type: 'test'
+  ...
+# Subtest: Esquema Prisma y migraciones coinciden en la base desechable
+ok 14 - Esquema Prisma y migraciones coinciden en la base desechable
+  ---
+  duration_ms: 1352.468
+  type: 'test'
+  ...
+# Subtest: Importes decimales exactos y filtros de dias America/Lima
+ok 15 - Importes decimales exactos y filtros de dias America/Lima
+  ---
+  duration_ms: 11480.3789
+  type: 'test'
+  ...
+# Subtest: Permisos API y caja individual; descuentos y devoluciones reservados a admin
+ok 16 - Permisos API y caja individual; descuentos y devoluciones reservados a admin
+  ---
+  duration_ms: 784.0856
+  type: 'test'
+  ...
+# Subtest: Escaneo identifica ceros y busqueda devuelve DTO pequeño sobre indices
+ok 17 - Escaneo identifica ceros y busqueda devuelve DTO pequeño sobre indices
+  ---
+  duration_ms: 145.7345
+  type: 'test'
+  ...
+# Subtest: Venta simultanea repetida cobra, descuenta y registra Kardex exactamente una vez; vuelto
+ok 18 - Venta simultanea repetida cobra, descuenta y registra Kardex exactamente una vez; vuelto
+  ---
+  duration_ms: 306.847
+  type: 'test'
+  ...
+# Subtest: Pagos combinados: solo efectivo cambia caja, referencia y verificacion manual obligatorias
+ok 19 - Pagos combinados: solo efectivo cambia caja, referencia y verificacion manual obligatorias
+  ---
+  duration_ms: 485.146
+  type: 'test'
+  ...
+# Subtest: Pendiente no cobra ni reserva; confirmar revalida precio/stock y pago
+ok 20 - Pendiente no cobra ni reserva; confirmar revalida precio/stock y pago
+  ---
+  duration_ms: 397.9561
+  type: 'test'
+  ...
+# Subtest: Respuesta perdida tras COMMIT: error de conexion y reintento recuperan una sola venta
+ok 21 - Respuesta perdida tras COMMIT: error de conexion y reintento recuperan una sola venta
+  ---
+  duration_ms: 351.9392
+  type: 'test'
+  ...
+# Subtest: Venta web y POS concurrentes comparten la ultima unidad y rollback financiero
+ok 22 - Venta web y POS concurrentes comparten la ultima unidad y rollback financiero
+  ---
+  duration_ms: 1261.3134
+  type: 'test'
+  ...
+# Subtest: Cobrar pedido web no descuenta otra vez; no duplicar cobro, cancelacion ni reposicion
+ok 23 - Cobrar pedido web no descuenta otra vez; no duplicar cobro, cancelacion ni reposicion
+  ---
+  duration_ms: 474.2076
+  type: 'test'
+  ...
+# Subtest: Devoluciones parciales, dañadas y descuento prorrateado: no devolver de mas
+ok 24 - Devoluciones parciales, dañadas y descuento prorrateado: no devolver de mas
+  ---
+  duration_ms: 448.9055
+  type: 'test'
+  ...
+# Subtest: Caja: apertura unica, movimientos autorizados, cierre exacto y cerrado inmutable
+ok 25 - Caja: apertura unica, movimientos autorizados, cierre exacto y cerrado inmutable
+  ---
+  duration_ms: 237.3568
+  type: 'test'
+  ...
+# Subtest: Confirmacion y cierre concurrentes: cierre incluye venta o venta revierte sin afectar stock
+ok 26 - Confirmacion y cierre concurrentes: cierre incluye venta o venta revierte sin afectar stock
+  ---
+  duration_ms: 148.9294
+  type: 'test'
+  ...
+# Subtest: Configuracion de metodos y pagos combinados se verifica en servidor
+ok 27 - Configuracion de metodos y pagos combinados se verifica en servidor
+  ---
+  duration_ms: 164.6857
+  type: 'test'
+  ...
+# Error del servidor: Error unknown
+# Subtest: Reportes, CSV, historiales y adaptador fiscal desactivado sin emision simulada
+ok 28 - Reportes, CSV, historiales y adaptador fiscal desactivado sin emision simulada
+  ---
+  duration_ms: 216.7553
+  type: 'test'
+  ...
+# Subtest: Migracion coincide con Prisma y no altera saldos previos
+ok 29 - Migracion coincide con Prisma y no altera saldos previos
+  ---
+  duration_ms: 1404.9622
+  type: 'test'
+  ...
+# Subtest: Pendiente cancelado conserva motivo y stock; faltante al cobrar revierte pagos
+ok 30 - Pendiente cancelado conserva motivo y stock; faltante al cobrar revierte pagos
+  ---
+  duration_ms: 371.8854
+  type: 'test'
+  ...
+# Subtest: Dos devoluciones simultaneas con claves distintas no reembolsan la misma unidad
+ok 31 - Dos devoluciones simultaneas con claves distintas no reembolsan la misma unidad
+  ---
+  duration_ms: 470.2905
+  type: 'test'
+  ...
+# Subtest: Devolucion sin efectivo o importe obsoleto no aplica movimientos parciales
+ok 32 - Devolucion sin efectivo o importe obsoleto no aplica movimientos parciales
+  ---
+  duration_ms: 445.892
+  type: 'test'
+  ...
+# Subtest: Admin no marca pagado desde una captura y devolucion parcial bloquea despacho integro
+ok 33 - Admin no marca pagado desde una captura y devolucion parcial bloquea despacho integro
+  ---
+  duration_ms: 487.3741
+  type: 'test'
+  ...
+# Subtest: sin compra entregada, invitado, personal y otro dueño no pueden reseñar
+ok 34 - sin compra entregada, invitado, personal y otro dueño no pueden reseñar
+  ---
+  duration_ms: 11738.2041
+  type: 'test'
+  ...
+# Subtest: validación de calificación, títulos y contenido sin HTML o enlaces
+ok 35 - validación de calificación, títulos y contenido sin HTML o enlaces
+  ---
+  duration_ms: 122.1911
+  type: 'test'
+  ...
+# Subtest: una reseña por compra y por usuario/producto incluso con envíos simultáneos
+ok 36 - una reseña por compra y por usuario/producto incluso con envíos simultáneos
+  ---
+  duration_ms: 168.1369
+  type: 'test'
+  ...
+# Subtest: solo ADMIN modera; aprobar concurrentemente cuenta una sola vez y audita
+ok 37 - solo ADMIN modera; aprobar concurrentemente cuenta una sola vez y audita
+  ---
+  duration_ms: 160.5503
+  type: 'test'
+  ...
+# Subtest: rechazar, re-rechazar y volver a aprobar mantienen cantidad y suma
+ok 38 - rechazar, re-rechazar y volver a aprobar mantienen cantidad y suma
+  ---
+  duration_ms: 190.4145
+  type: 'test'
+  ...
+# Subtest: voto útil concurrente idempotente, autor rechazado y reseñas ocultas protegidas
+ok 39 - voto útil concurrente idempotente, autor rechazado y reseñas ocultas protegidas
+  ---
+  duration_ms: 187.2827
+  type: 'test'
+  ...
+# Subtest: cursores, filtros, privacidad y portada solo con tres aprobadas de cualquier nota
+ok 40 - cursores, filtros, privacidad y portada solo con tres aprobadas de cualquier nota
+  ---
+  duration_ms: 335.6073
+  type: 'test'
+  ...
+# Subtest: límite de intentos devuelve 429
+ok 41 - límite de intentos devuelve 429
+  ---
+  duration_ms: 193.7231
+  type: 'test'
+  ...
+# Subtest: restricciones SQL y migración sincronizadas con Prisma
+ok 42 - restricciones SQL y migración sincronizadas con Prisma
+  ---
+  duration_ms: 1321.0219
+  type: 'test'
+  ...
+# Subtest: invitaciones desactivadas no conectan ni envían; activadas idempotentes y ventana segura
+ok 43 - invitaciones desactivadas no conectan ni envían; activadas idempotentes y ventana segura
+  ---
+  duration_ms: 109.8987
+  type: 'test'
+  ...
+# Subtest: invitaciones omiten compras repetidas ya reseñadas antes de limitar el lote
+ok 44 - invitaciones omiten compras repetidas ya reseñadas antes de limitar el lote
+  ---
+  duration_ms: 1638.7152
+  type: 'test'
+  ...
+# Subtest: envío incierto conserva clave, no marca éxito sin confirmación y no reintenta tras 23 horas
+ok 45 - envío incierto conserva clave, no marca éxito sin confirmación y no reintenta tras 23 horas
+  ---
+  duration_ms: 128.7026
+  type: 'test'
+  ...
+# Subtest: upgrade aditivo desde main conserva productos, pedidos y cuentas anteriores
+ok 46 - upgrade aditivo desde main conserva productos, pedidos y cuentas anteriores
+  ---
+  duration_ms: 7045.1287
+  type: 'test'
+  ...
+# Subtest: crear personal sin correo, alias único y auditoría sin credenciales
+ok 47 - crear personal sin correo, alias único y auditoría sin credenciales
+  ---
+  duration_ms: 16190.2926
+  type: 'test'
+  ...
+# Subtest: actualización de personal conserva cuentas reales previas y solo habilita recuperación del titular
+ok 48 - actualización de personal conserva cuentas reales previas y solo habilita recuperación del titular
+  ---
+  duration_ms: 6685.6862
+  type: 'test'
+  ...
+# Subtest: usuario obligatorio, cambio forzado de contraseña y revocación del acceso temporal
+not ok 49 - usuario obligatorio, cambio forzado de contraseña y revocación del acceso temporal
+  ---
+  duration_ms: 19.954
+  type: 'test'
+  location: 'C:\\Users\\samue\\Proyectos\\tecruta\\tecruta\\tecruta-tienda-resenas\\server\\prisma\\tests\\staff-system.test.mjs:63:1'
+  failureType: 'testCodeFailure'
+  error: 'fetch failed'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    node:internal/deps/undici/undici:14900:13
+    async request (file:///C:/Users/samue/Proyectos/tecruta/tecruta/tecruta-tienda-resenas/server/prisma/tests/staff-system.test.mjs:13:17)
+    async TestContext.<anonymous> (file:///C:/Users/samue/Proyectos/tecruta/tecruta/tecruta-tienda-resenas/server/prisma/tests/staff-system.test.mjs:64:60)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: sin Google ni recuperación para trabajadores; clientes conservan recuperación
+ok 50 - sin Google ni recuperación para trabajadores; clientes conservan recuperación
+  ---
+  duration_ms: 505.5658
+  type: 'test'
+  ...
+# Subtest: restablecimiento administrativo no revela contraseñas y exige cambio nuevamente
+not ok 51 - restablecimiento administrativo no revela contraseñas y exige cambio nuevamente
+  ---
+  duration_ms: 886.9137
+  type: 'test'
+  location: 'C:\\Users\\samue\\Proyectos\\tecruta\\tecruta\\tecruta-tienda-resenas\\server\\prisma\\tests\\staff-system.test.mjs:88:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    200 !== 401
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 401
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/samue/Proyectos/tecruta/tecruta/tecruta-tienda-resenas/server/prisma/tests/staff-system.test.mjs:91:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: suspender con caja abierta revoca todas las sesiones y conserva caja/historial
+not ok 52 - suspender con caja abierta revoca todas las sesiones y conserva caja/historial
+  ---
+  duration_ms: 906.4772
+  type: 'test'
+  location: 'C:\\Users\\samue\\Proyectos\\tecruta\\tecruta\\tecruta-tienda-resenas\\server\\prisma\\tests\\staff-system.test.mjs:96:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    200 !== 401
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 401
+  actual: 200
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/samue/Proyectos/tecruta/tecruta/tecruta-tienda-resenas/server/prisma/tests/staff-system.test.mjs:100:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: temporal caducada, sesiones inactivas y protección de administrador principal
+not ok 53 - temporal caducada, sesiones inactivas y protección de administrador principal
+  ---
+  duration_ms: 1563.3282
+  type: 'test'
+  location: 'C:\\Users\\samue\\Proyectos\\tecruta\\tecruta\\tecruta-tienda-resenas\\server\\prisma\\tests\\staff-system.test.mjs:112:1'
+  failureType: 'testCodeFailure'
+  error: 'jwt must be provided'
+  code: 'ERR_TEST_FAILURE'
+  name: 'JsonWebTokenError'
+  ...
+# Subtest: conciliación administrativa de caja suspendida deja responsable, conteo y un único cierre
+not ok 54 - conciliación administrativa de caja suspendida deja responsable, conteo y un único cierre
+  ---
+  duration_ms: 980.1561
+  type: 'test'
+  location: 'C:\\Users\\samue\\Proyectos\\tecruta\\tecruta\\tecruta-tienda-resenas\\server\\prisma\\tests\\staff-system.test.mjs:122:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    409 !== 200
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 200
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/samue/Proyectos/tecruta/tecruta/tecruta-tienda-resenas/server/prisma/tests/staff-system.test.mjs:128:81)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: auditoría paginada inmutable y sin secretos; migraciones coinciden con Prisma
+ok 55 - auditoría paginada inmutable y sin secretos; migraciones coinciden con Prisma
+  ---
+  duration_ms: 1395.9554
+  type: 'test'
+  ...
+# Subtest: recuperación exclusiva del titular conserva usuario y revoca sesiones anteriores
+ok 56 - recuperación exclusiva del titular conserva usuario y revoca sesiones anteriores
+  ---
+  duration_ms: 512.3329
+  type: 'test'
+  ...
+# Subtest: Google comercial no vincula personal y mantiene acceso de clientes
+ok 57 - Google comercial no vincula personal y mantiene acceso de clientes
+  ---
+  duration_ms: 438.582
+  type: 'test'
+  ...
+# Subtest: TOTP RFC 6238, alta real, desafío, códigos de respaldo de un uso y desactivación
+ok 58 - TOTP RFC 6238, alta real, desafío, códigos de respaldo de un uso y desactivación
+  ---
+  duration_ms: 1507.8991
+  type: 'test'
+  ...
+# Subtest: Cloudinary optimiza originales y transformaciones sin cambiar otros hosts o firmas
+ok 59 - Cloudinary optimiza originales y transformaciones sin cambiar otros hosts o firmas
+  ---
+  duration_ms: 3.0094
+  type: 'test'
+  ...
+# Subtest: JSON-LD solo con reseñas y texto escapado sin cierre de script
+ok 60 - JSON-LD solo con reseñas y texto escapado sin cierre de script
+  ---
+  duration_ms: 0.7766
+  type: 'test'
+  ...
+# Subtest: sesión solo en sessionStorage: elimina token persistente y no lo adopta
+ok 61 - sesión solo en sessionStorage: elimina token persistente y no lo adopta
+  ---
+  duration_ms: 0.8436
+  type: 'test'
+  ...
+# Subtest: datos comerciales opcionales, RUC y URL seguros
+ok 62 - datos comerciales opcionales, RUC y URL seguros
+  ---
+  duration_ms: 7.2386
+  type: 'test'
+  ...
+# Subtest: migración nueva exclusivamente aditiva e historial anterior intacto
+ok 63 - migración nueva exclusivamente aditiva e historial anterior intacto
+  ---
+  duration_ms: 2.0874
+  type: 'test'
+  ...
+1..63
+# tests 63
+# suites 0
+# pass 58
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 107308.1885

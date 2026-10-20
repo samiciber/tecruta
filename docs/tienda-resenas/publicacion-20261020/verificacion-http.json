@@ -1,0 +1,92 @@
+{
+  "at": "2026-10-20T07:15:29.389Z",
+  "products": 149,
+  "checks": [
+    {
+      "path": "/api/health",
+      "status": 200,
+      "revision": "55aa0a6a2c7ead4b4f0a9333a40a4ea59e735388"
+    },
+    {
+      "path": "/api/reviews/recent",
+      "status": 200,
+      "count": 0
+    },
+    {
+      "path": "/api/reviews/products/cmvfodb68000h2s7b6ybhbh5w?limit=3",
+      "status": 200,
+      "summary": {
+        "count": 0,
+        "sum": 0,
+        "average": null,
+        "distribution": [
+          {
+            "rating": 5,
+            "count": 0
+          },
+          {
+            "rating": 4,
+            "count": 0
+          },
+          {
+            "rating": 3,
+            "count": 0
+          },
+          {
+            "rating": 2,
+            "count": 0
+          },
+          {
+            "rating": 1,
+            "count": 0
+          }
+        ]
+      }
+    },
+    {
+      "path": "/api/admin/reviews",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/inventory/summary",
+      "status": 401
+    },
+    {
+      "path": "/api/admin/staff",
+      "status": 401
+    },
+    {
+      "path": "/api/pos/config",
+      "status": 401
+    },
+    {
+      "corsOrigin": "https://www.tecruta.com",
+      "status": 200,
+      "allowOrigin": "https://www.tecruta.com"
+    },
+    {
+      "corsOrigin": "https://tecruta-panel.vercel.app",
+      "status": 200,
+      "allowOrigin": "https://tecruta-panel.vercel.app"
+    },
+    {
+      "corsOrigin": "https://example.com",
+      "status": 200,
+      "allowOrigin": null
+    },
+    {
+      "site": "https://www.tecruta.com",
+      "status": 200,
+      "js": "/assets/index-CWQhlMNE.js",
+      "correctApi": true,
+      "noindex": false
+    },
+    {
+      "site": "https://tecruta-panel.vercel.app",
+      "status": 200,
+      "js": "/assets/index-DVpDGM2A.js",
+      "correctApi": true,
+      "noindex": true
+    }
+  ]
+}

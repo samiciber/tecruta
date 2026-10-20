@@ -9,8 +9,9 @@ import {totp,base32} from '../../src/lib/staffSecurity.js'
 import {hash,challenge} from '../../src/lib/authSecurity.js'
 let rt,base,limits,bcrypt,adminToken,worker,workerToken,permanent,mail=[],owner
 const initial=randomBytes(20).toString('hex'),nextPassword=randomBytes(20).toString('hex')
+// Synchronous migration checks can outlive an idle HTTP socket; each QA request opens its own connection.
 async function request(path,{body,token=adminToken,method=body?'POST':'GET'}={}){
- const response=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined,redirect:'manual'})
+ const response=await fetch(base+path,{method,headers:{'Content-Type':'application/json','Connection':'close',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined,redirect:'manual'})
  return {status:response.status,data:await response.json().catch(()=>null),location:response.headers.get('location')}
 }
 const login=(identifier,password=initial)=>request('/api/auth/staff-login',{token:null,body:{identifier,password}})
