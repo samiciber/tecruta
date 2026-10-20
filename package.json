@@ -27,7 +27,13 @@
     "preview:store-style": "node scripts/preview-store-style.mjs",
     "qa:store-style-ui": "node scripts/verify-store-style-ui.mjs",
     "test:reviews": "node --test server/prisma/tests/product-reviews.test.mjs server/tests/store-reviews.test.mjs",
-    "preview:reviews": "node scripts/preview-store-reviews.mjs"
+    "preview:reviews": "node scripts/preview-store-reviews.mjs",
+    "test": "node scripts/quality.mjs unit",
+    "test:all": "node scripts/quality.mjs all",
+    "lint": "eslint .",
+    "check:syntax": "node scripts/quality.mjs syntax",
+    "build:qa": "node scripts/quality.mjs build",
+    "format:reviews": "prettier --check src/components/product/ProductReviews.jsx src/components/product/ReviewCard.jsx src/components/product/Rating.jsx src/components/home/CustomerReviews.jsx src/pages/admin/AdminReviews.jsx src/utils/reviewJsonLd.js"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",
@@ -41,7 +47,9 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.6.1",
+    "eslint": "9.39.1",
     "postcss": "^8.5.30",
+    "prettier": "3.6.2",
     "tailwindcss": "^3.4.19",
     "vite": "^6.4.4"
   },

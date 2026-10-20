@@ -1,0 +1,57 @@
+name: Calidad de tienda
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tienda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: qa_ci
+          POSTGRES_DB: qa_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qa_ci -d qa_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm ci --prefix server --ignore-scripts
+      - run: node scripts/qa-generate-client.mjs
+      - run: npm run lint
+      - run: npm run check:syntax
+      - run: npm run build:qa
+      - run: npm audit --omit=dev && npm audit --prefix server --omit=dev
+      - run: node scripts/qa-service-postgres.mjs
+        env:
+          TECRUTA_QA_SERVICE_URL: postgresql://qa_ci@127.0.0.1:5432/qa_ci
+      - run: npm test
+      - run: npm test --prefix server
+      - run: git diff --check
+  historicos:
+    # Visible debt report; never masquerades as part of the green acceptance set.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts && npm ci --prefix server --ignore-scripts
+      - run: node scripts/qa-generate-client.mjs
+      - run: npm run test:all

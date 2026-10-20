@@ -13,7 +13,8 @@
     "seed": "node prisma/seed.js",
     "make-admin": "node prisma/make-admin.js",
     "seed:nav": "node prisma/seed-nav.js",
-    "migrate:banners": "node prisma/migrate-banners.js"
+    "migrate:banners": "node prisma/migrate-banners.js",
+    "test": "node ../scripts/quality.mjs integration"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

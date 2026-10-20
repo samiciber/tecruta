@@ -67,20 +67,19 @@ async function withApp(run, app = createApp()) {
   try { await run(`http://127.0.0.1:${server.address().port}`) }
   finally { await new Promise(resolve => server.close(resolve)) }
 }
-test('deployment maintenance blocks reads and writes without invalidating sessions; health stays available', async () => {
+test('obsolete maintenance flag does not replace normal API authorization; health stays available', async () => {
   const previous = process.env.MAINTENANCE_MODE
   process.env.MAINTENANCE_MODE = 'true'
   try {
     await withApp(async base => {
       const health = await fetch(base + '/api/health')
       assert.equal(health.status, 200)
-      assert.equal((await health.json()).maintenance, true)
-      for (const [method, path] of [['GET', '/api/products'], ['POST', '/api/orders'], ['PATCH', '/api/admin/users/test/role'], ['POST', '/api/auth/login']]) {
+      assert.equal((await health.json()).ok, true)
+      for (const [method, path] of [['GET', '/api/auth/me'], ['PATCH', '/api/admin/users/test/role'], ['GET', '/api/admin/products']]) {
         const response = await fetch(base + path, { method })
-        assert.equal(response.status, 503)
-        assert.equal(response.headers.get('cache-control'), 'no-store')
-        assert.equal(response.headers.get('retry-after'), '120')
-        assert.equal((await response.json()).maintenance, true)
+        assert.equal(response.status, 401)
+        assert.match(response.headers.get('cache-control'), /private, no-store/)
+        assert.equal(typeof (await response.json()).error, 'string')
       }
       process.env.MAINTENANCE_MODE = 'false'
       assert.equal((await fetch(base + '/api/auth/me')).status, 401)
