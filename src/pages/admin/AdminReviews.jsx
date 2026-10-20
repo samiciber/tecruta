@@ -1,0 +1,18 @@
+import React,{useEffect,useState} from 'react'
+import {useAuth} from '../../hooks/useAuth.js'
+import {api} from '../../services/api.js'
+function ReviewRow({row,onChange,token}){
+ const [reason,setReason]=useState(row.rejectionReason||''),[reply,setReply]=useState(row.storeReply||''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ async function save(body){setBusy(true);setError('');try{await api.reviews.moderate(row.id,body,token);onChange()}catch(e){setError(e.message)}finally{setBusy(false)}}
+ return <article className="mb-5 rounded-lg border border-paper-line bg-paper-surface p-5 dark:border-night-line dark:bg-night-surface"><h2 className="font-bold">{row.product.name}</h2><p>{row.name} · {row.rating} / 5 · Compra verificada</p><p>{row.title}</p><p className="my-4 whitespace-pre-wrap break-words">{row.text}</p><p>{new Date(row.createdAt).toLocaleString('es-PE',{timeZone:'America/Lima'})}</p>
+ {error&&<p role="alert">{error}</p>}<div className="my-4 flex flex-wrap gap-3"><button className="btn-primary" disabled={busy||row.status==='APPROVED'} onClick={()=>save({status:'APPROVED'})}>Aprobar</button><label className="min-w-0 flex-1">Motivo de rechazo<input className="input-base w-full" value={reason} onChange={e=>setReason(e.target.value)} maxLength={500}/></label><button className="btn-secondary" disabled={busy||reason.trim().length<5} onClick={()=>save({status:'REJECTED',rejectionReason:reason})}>Rechazar</button></div>
+ <label className="block">Respuesta de la tienda<textarea className="input-base block w-full" rows={3} maxLength={1000} value={reply} onChange={e=>setReply(e.target.value)}/></label><button className="btn-secondary mt-3" disabled={busy} onClick={()=>save({storeReply:reply})}>Guardar respuesta</button></article>
+}
+export default function AdminReviews(){
+ const {user,token}=useAuth(),[status,setStatus]=useState('PENDING'),[data,setData]=useState(null),[error,setError]=useState(''),[revision,setRevision]=useState(0),[loading,setLoading]=useState(false)
+ const reload=()=>setRevision(v=>v+1)
+ useEffect(()=>{let active=true;setData(null);setError('');setLoading(true);if(user?.role==='ADMIN')api.reviews.moderation({status},token).then(value=>{if(active)setData(value)}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[status,token,user?.role,revision])
+ if(user?.role!=='ADMIN')return <p role="alert">Solo el administrador puede moderar reseñas.</p>
+ async function more(){setLoading(true);try{const page=await api.reviews.moderation({status,...data.next},token);setData(value=>({...page,items:[...value.items,...page.items]}))}catch(e){setError(e.message)}finally{setLoading(false)}}
+ return <section><h1 className="text-2xl font-bold">Reseñas de productos</h1><p className="my-3">Publica, rechaza con motivo o responde a compras verificadas. Cada acción queda registrada.</p><div className="mb-5 flex flex-wrap gap-3" role="group" aria-label="Estado de reseñas">{Object.entries({PENDING:'Pendientes',APPROVED:'Aprobadas',REJECTED:'Rechazadas'}).map(([value,label])=><button key={value} aria-pressed={value===status} className={value===status?'btn-primary':'btn-secondary'} disabled={loading} onClick={()=>setStatus(value)}>{label}</button>)}</div>{error&&<p role="alert">{error} <button onClick={reload}>Reintentar</button></p>}{loading&&<p role="status">Cargando reseñas…</p>}{data?.items.map(row=><ReviewRow key={row.id} row={row} token={token} onChange={reload}/>)}{data&&!data.items.length&&<p>No hay reseñas en este estado.</p>}{data?.next&&<button className="btn-secondary" disabled={loading} onClick={more}>Ver más</button>}</section>
+}

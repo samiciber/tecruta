@@ -46,6 +46,15 @@ async function request(path, { method = 'GET', body, token, headers = {}, signal
 }
 
 export const api = {
+  reviews: {
+    list: (productId, params = {}, options = {}) => request(`/api/reviews/products/${encodeURIComponent(productId)}?${new URLSearchParams(Object.entries(params).filter(([,v])=>v !== '' && v != null))}`, options),
+    recent: () => request('/api/reviews/recent'),
+    eligibility: (productId, token) => request(`/api/reviews/products/${encodeURIComponent(productId)}/eligibility`, { token }),
+    create: (productId, body, token) => request(`/api/reviews/products/${encodeURIComponent(productId)}`, { method:'POST',body,token }),
+    helpful: (id, token) => request(`/api/reviews/${encodeURIComponent(id)}/helpful`, { method:'POST',body:{},token }),
+    moderation: (params, token) => request(`/api/admin/reviews?${new URLSearchParams(params)}`, { token }),
+    moderate: (id, body, token) => request(`/api/admin/reviews/${encodeURIComponent(id)}`, { method:'PATCH',body,token }),
+  },
   pos: {
     config: token => request('/api/pos/config', { token }),
     setConfig: (body, token) => request('/api/pos/config', { method: 'PUT', body, token }),

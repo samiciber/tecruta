@@ -10,6 +10,8 @@ import StaffAudit from '../pages/panel/StaffAudit.jsx'
 const AdminLayout = lazy(() => import('../pages/admin/AdminLayout.jsx'))
 const Pos = lazy(() => import('../pages/pos/Pos.jsx'))
 const pages = {
+  'datos-comerciales': lazy(() => import('../pages/admin/AdminBusiness.jsx')),
+  resenas: lazy(() => import('../pages/admin/AdminReviews.jsx')),
   mas: lazy(() => import('../pages/admin/AdminMore.jsx')),
   productos: lazy(() => import('../pages/admin/AdminProducts.jsx')),
   pedidos: lazy(() => import('../pages/admin/AdminOrders.jsx')),

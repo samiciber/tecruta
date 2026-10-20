@@ -8,6 +8,7 @@ export const panelGroups = [
     ['/auditoria', 'Historial del personal', 'Consultar quién hizo cada cambio de acceso.'],
   ] },
   { id: 'catalogo', title: 'Catálogo', description: 'Los productos que vendes en tienda y en la web.', items: [
+    ['/resenas', 'Reseñas de productos', 'Moderar opiniones verificadas y responder como tienda.'],
     ['/productos', 'Productos', 'Crear productos y editar nombres, precios y contenido.'],
     ['/categorias', 'Categorías', 'Organizar las familias de productos.'],
     ['/marcas', 'Marcas', 'Administrar las marcas del catálogo.'],
@@ -22,6 +23,7 @@ export const panelGroups = [
     ['/footer', 'Pie de página y legales', 'Editar enlaces y textos del pie de la tienda.'],
   ] },
   { id: 'configuracion', title: 'Configuración', description: 'Ajustes que se utilizan ocasionalmente.', items: [
+    ['/datos-comerciales', 'Datos comerciales', 'Razón social, RUC, garantía, envíos y Libro de Reclamaciones.'],
     ['/pagos', 'Métodos de pago', 'Configurar los métodos disponibles para cobrar.'],
     ['/tiendas', 'Tiendas y contacto', 'Editar los datos de las tiendas.'],
     ['/busquedas', 'Búsquedas populares', 'Editar las sugerencias de búsqueda de la tienda.'],
