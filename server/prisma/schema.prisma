@@ -601,6 +601,7 @@ model OrderItem {
   review ProductReview?
   reviewInvitation ReviewInvitation?
 
+  @@index([orderId, productId])
   @@map("order_items")
 }
 
@@ -612,6 +613,7 @@ model OrderStatusHistory {
   note      String?
   createdAt DateTime    @default(now())
 
+  @@index([orderId, status, createdAt])
   @@map("order_status_history")
 }
 
@@ -820,6 +822,7 @@ model ProductReview {
   @@index([productId, status, createdAt, id])
   @@index([productId, status, helpfulCount, createdAt, id])
   @@index([status, createdAt, id])
+  @@index([moderatedById])
   @@map("product_reviews")
 }
 
@@ -831,6 +834,7 @@ model ReviewHelpfulVote {
   user User @relation(fields: [userId], references: [id], onDelete: Restrict)
   createdAt DateTime @default(now())
   @@unique([reviewId, userId])
+  @@index([userId])
   @@map("review_helpful_votes")
 }
 

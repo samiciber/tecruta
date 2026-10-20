@@ -55,7 +55,10 @@ export async function moderateReview(db, reviewId, actorId, body) {
       ...(body.storeReply !== undefined ? { storeReply: body.storeReply || null, repliedAt: new Date() } : {}),
       moderatedById: actorId, moderatedAt: new Date(),
     } })
-    await audit(tx, actorId, 'REVIEW_MODERATED', reviewId, { before: row.status, after: status, replyChanged: body.storeReply !== undefined, productId: row.productId })
+    await audit(tx, actorId, 'REVIEW_MODERATED', reviewId, { before: row.status, after: status, replyChanged: body.storeReply !== undefined, productId: row.productId,
+      ...(body.status === 'REJECTED' ? { rejectionReason: body.rejectionReason } : {}),
+      ...(body.storeReply !== undefined ? { storeReply: body.storeReply || null } : {}),
+    })
     return { id: updated.id, status: updated.status }
   })
 }

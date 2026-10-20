@@ -1,8 +1,9 @@
 import {before,after,test} from 'node:test'
 import assert from 'node:assert/strict'
 import {createInventoryRuntime} from './helpers/inventory-runtime.mjs'
-import {runPrisma} from './helpers/isolated-runtime.mjs'
+import {runPrisma,runDocker,createPrismaWorkspace} from './helpers/isolated-runtime.mjs'
 import {join} from 'node:path'
+import * as fs from 'node:fs'
 let rt,base,p,line,review,other,otherLine,limits,db
 async function request(path,{user=rt?.customer,body,method=body?'POST':'GET'}={}) {
  const response=await fetch(base+path,{method,headers:{'Content-Type':'application/json',...(user?{Authorization:`Bearer ${rt.auth(user)}`}:{})},body:body?JSON.stringify(body):undefined})
@@ -99,6 +100,7 @@ test('límite de intentos devuelve 429',async()=>{
 test('restricciones SQL y migración sincronizadas con Prisma',async()=>{
  await assert.rejects(db.$executeRaw`UPDATE product_reviews SET rating=6 WHERE id=${review.id}`)
  await assert.rejects(db.$executeRaw`UPDATE products SET "ratingSum"=999 WHERE id=${p.id}`)
+ await assert.rejects(db.$executeRaw`UPDATE product_reviews SET status='REJECTED', "rejectionReason"=NULL WHERE id=${review.id}`)
  const schema=join(rt.tempRoot,'schema/schema.prisma')
  let output
  try {output=runPrisma({root:rt.root,tempRoot:rt.tempRoot,schemaPath:schema,dotenvPath:join(rt.tempRoot,'qa-empty-dotenv'),databaseUrl:process.env.DATABASE_URL,args:['migrate','diff','--from-url',process.env.DATABASE_URL,'--to-schema-datamodel',schema,'--exit-code']})} catch(e) {console.log(String(e.stdout));throw e}
@@ -113,4 +115,52 @@ test('invitaciones desactivadas no conectan ni envían; activadas idempotentes y
  const send=async message=>{sent++;assert.match(message.idempotencyKey,/^review-invitation\//);assert.ok(message.productUrl.endsWith('#resenas'));return{id:'qa-provider-result'}}
  await Promise.all([runReviewInvitations({db,env,send}),runReviewInvitations({db,env,send})]);assert.equal(sent,1)
  await runReviewInvitations({db,env,send});assert.equal(sent,1)
+})
+
+test('invitaciones omiten compras repetidas ya reseñadas antes de limitar el lote',async()=>{
+ const {runReviewInvitations}=await import('../../src/lib/reviewInvitations.js')
+ // More than one whole batch of repeat purchases must not starve new buyers.
+ for(let i=0;i<101;i++)await order(rt.customer)
+ const buyer=await db.user.create({data:{email:'qa-invite-later@example.test',nombre:'QA',apellido:'Lote',verified:true,passwordHash:'synthetic'}})
+ const item=await order(buyer);let sent=0
+ const env={REVIEW_INVITATIONS_ENABLED:'true',REVIEW_INVITATION_DAYS:'7',STORE_ORIGIN:'https://store.example.test'}
+ await runReviewInvitations({db,env,send:async()=>{sent++;return{id:'qa-later'}}})
+ assert.equal(sent,1);assert.ok((await db.reviewInvitation.findUnique({where:{orderItemId:item.id}})).sentAt)
+})
+
+test('envío incierto conserva clave, no marca éxito sin confirmación y no reintenta tras 23 horas',async()=>{
+ const {runReviewInvitations}=await import('../../src/lib/reviewInvitations.js')
+ const buyer=await db.user.create({data:{email:'qa-invite-uncertain@example.test',nombre:'QA',apellido:'Incierto',verified:true,passwordHash:'synthetic'}})
+ const item=await order(buyer),now=new Date(),keys=[]
+ const env={REVIEW_INVITATIONS_ENABLED:'true',STORE_ORIGIN:'https://store.example.test'}
+ await assert.rejects(runReviewInvitations({db,env,now,send:async message=>{keys.push(message.idempotencyKey);throw Error('Synthetic connection loss')}}))
+ const claim=await db.reviewInvitation.findUnique({where:{orderItemId:item.id}});assert.equal(claim.sentAt,null)
+ await assert.rejects(runReviewInvitations({db,env,now,send:async message=>{keys.push(message.idempotencyKey);return{}}}))
+ assert.equal(keys[0],keys[1]);assert.equal((await db.reviewInvitation.findUnique({where:{id:claim.id}})).sentAt,null)
+ const result=await runReviewInvitations({db,env,now:new Date(now.getTime()+24*3600000),send:async()=>{throw Error('No debe reenviar')}})
+ assert.equal(result.sent,0)
+})
+
+test('upgrade aditivo desde main conserva productos, pedidos y cuentas anteriores',()=>{
+ const name='qa_reviews_upgrade'
+ runDocker(['exec',rt.container,'psql','-X','-v','ON_ERROR_STOP=1','-U','qa_final_home','-d','qa_final_home','-c','CREATE DATABASE '+name])
+ const url=new URL(process.env.DATABASE_URL);url.pathname='/'+name
+ const workspace=createPrismaWorkspace({tempRoot:rt.tempRoot,name:'reviews-upgrade',schemaSource:join(rt.root,'server/prisma/schema.prisma'),migrationsSource:join(rt.root,'server/prisma/migrations'),excludedMigrations:['20261020000000_product_reviews']})
+ const migrate=()=>runPrisma({root:rt.root,tempRoot:rt.tempRoot,schemaPath:workspace.schemaPath,dotenvPath:process.env.DOTENV_CONFIG_PATH,databaseUrl:url.href,args:['migrate','deploy','--schema',workspace.schemaPath]})
+ migrate()
+ const sql=input=>runDocker(['exec','-i',rt.container,'psql','-X','-qAt','-v','ON_ERROR_STOP=1','-U','qa_final_home','-d',name],{input}).trim()
+ sql(`INSERT INTO users(id,email,"passwordHash",nombre,apellido,role,verified,"updatedAt") VALUES ('qa-preserve','qa-preserve@example.test','synthetic-hash','QA','Conservar','CUSTOMER',true,'2026-01-01');
+ INSERT INTO categories(id,slug,name) VALUES ('qa-category-preserve','qa-preserve','QA');
+ INSERT INTO products(id,slug,sku,name,price,stock,tags,"categoryId","updatedAt") VALUES ('qa-product-preserve','qa-preserve','QA-PRESERVE','QA conservar',17.90,0,'{}','qa-category-preserve','2026-01-01');
+ INSERT INTO orders(id,"userId","customerNombre","customerApellido","customerCorreo","customerCelular","deliveryType",departamento,provincia,distrito,subtotal,total,status,"updatedAt") VALUES ('qa-order-preserve','qa-preserve','QA','Conservar','qa-preserve@example.test','900000000','PICKUP','QA','QA','QA',17.90,17.90,'DELIVERED','2026-01-01');
+ INSERT INTO order_items(id,"orderId","productId",name,quantity,"unitPrice") VALUES ('qa-line-preserve','qa-order-preserve','qa-product-preserve','QA conservar',1,17.90);`)
+ const snapshot=`SELECT jsonb_build_object('users',(SELECT jsonb_agg(to_jsonb(u)) FROM users u),'products',(SELECT jsonb_agg(to_jsonb(p)-'ratingCount'-'ratingSum') FROM products p),'orders',(SELECT jsonb_agg(to_jsonb(o)) FROM orders o),'items',(SELECT jsonb_agg(to_jsonb(i)) FROM order_items i),'inventory',(SELECT count(*) FROM inventory_movements));`
+ const before=JSON.parse(sql(snapshot))
+ // Copy only the new migration after the old schema has been applied.
+ const {readFileSync,mkdirSync,writeFileSync}=fs
+ const path=join(workspace.migrationsPath,'20261020000000_product_reviews');mkdirSync(path)
+ writeFileSync(join(path,'migration.sql'),readFileSync(join(rt.root,'server/prisma/migrations/20261020000000_product_reviews/migration.sql')))
+ migrate();assert.deepEqual(JSON.parse(sql(snapshot)),before)
+ assert.equal(sql('SELECT count(*) FROM product_reviews'),'0')
+ assert.equal(sql('SELECT count(*) FROM products WHERE "ratingCount"=0 AND "ratingSum"=0'),'1')
 })

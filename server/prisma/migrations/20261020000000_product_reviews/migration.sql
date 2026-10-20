@@ -1,4 +1,6 @@
 -- Additive only. No historical reviews or ratings are manufactured.
+BEGIN;
+SET LOCAL lock_timeout = '5s';
 CREATE TYPE "ReviewStatus" AS ENUM ('PENDING','APPROVED','REJECTED');
 ALTER TABLE products ADD COLUMN "ratingCount" INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN "ratingSum" INTEGER NOT NULL DEFAULT 0,
@@ -15,21 +17,27 @@ CREATE TABLE product_reviews (
  "moderatedAt" TIMESTAMP(3), "repliedAt" TIMESTAMP(3),
  "helpfulCount" INTEGER NOT NULL DEFAULT 0 CHECK ("helpfulCount" >= 0),
  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL,
- CONSTRAINT review_rejection_reason_check CHECK (status <> 'REJECTED' OR char_length(btrim("rejectionReason")) >= 5)
+ CONSTRAINT review_rejection_reason_check CHECK (status <> 'REJECTED' OR ("rejectionReason" IS NOT NULL AND char_length(btrim("rejectionReason")) >= 5))
 );
 CREATE UNIQUE INDEX "product_reviews_orderItemId_key" ON product_reviews("orderItemId");
 CREATE UNIQUE INDEX "product_reviews_userId_productId_key" ON product_reviews("userId","productId");
 CREATE INDEX "product_reviews_productId_status_createdAt_id_idx" ON product_reviews("productId",status,"createdAt",id);
 CREATE INDEX "product_reviews_productId_status_helpfulCount_createdAt_id_idx" ON product_reviews("productId",status,"helpfulCount","createdAt",id);
 CREATE INDEX "product_reviews_status_createdAt_id_idx" ON product_reviews(status,"createdAt",id);
+CREATE INDEX "product_reviews_moderatedById_idx" ON product_reviews("moderatedById");
 CREATE TABLE review_helpful_votes (
  id TEXT PRIMARY KEY, "reviewId" TEXT NOT NULL REFERENCES product_reviews(id) ON DELETE RESTRICT ON UPDATE CASCADE,
  "userId" TEXT NOT NULL REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX "review_helpful_votes_reviewId_userId_key" ON review_helpful_votes("reviewId","userId");
+CREATE INDEX "review_helpful_votes_userId_idx" ON review_helpful_votes("userId");
 CREATE TABLE review_invitations (
  id TEXT PRIMARY KEY, "orderItemId" TEXT NOT NULL REFERENCES order_items(id) ON DELETE RESTRICT ON UPDATE CASCADE,
  "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "sentAt" TIMESTAMP(3), "providerId" TEXT
 );
 CREATE UNIQUE INDEX "review_invitations_orderItemId_key" ON review_invitations("orderItemId");
+-- Support read-only purchase eligibility and the invitation delivery lookup.
+CREATE INDEX "order_items_orderId_productId_idx" ON order_items("orderId","productId");
+CREATE INDEX "order_status_history_orderId_status_createdAt_idx" ON order_status_history("orderId",status,"createdAt");
+COMMIT;

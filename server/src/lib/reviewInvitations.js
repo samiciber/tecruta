@@ -8,12 +8,26 @@ export async function runReviewInvitations({ db, env = process.env, send = sendR
   if (origin.protocol !== 'https:' || origin.username || origin.password || origin.pathname !== '/' || origin.search || origin.hash) throw new Error('STORE_ORIGIN debe ser un origen HTTPS sin ruta.')
   const cutoff = new Date(now.getTime() - days * 86400000)
   // Bound batches. Never infer delivery time from order creation/updatedAt.
-  const lines = await db.orderItem.findMany({ where: { review: null, order: { status: 'DELIVERED', user: { role:'CUSTOMER',verified:true,isSuspended:false,email:{not:null} }, statusHistory: { some: { status:'DELIVERED',createdAt:{lte:cutoff} } } },
-    OR: [{reviewInvitation:null},{reviewInvitation:{sentAt:null,startedAt:{gte:new Date(now.getTime()-23*3600000)}}}] },
-    orderBy:{id:'asc'},take:100,include:{order:{include:{user:true,statusHistory:{where:{status:'DELIVERED'},orderBy:{createdAt:'desc'},take:1}}},product:{select:{slug:true}}} })
+  // Exclude previously reviewed products before LIMIT, so repeat purchases
+  // cannot permanently fill a batch and starve later eligible customers.
+  const retryAfter = new Date(now.getTime() - 23 * 3600000)
+  const candidates = await db.$queryRaw`
+    SELECT oi.id FROM order_items oi
+    JOIN orders o ON o.id=oi."orderId"
+    JOIN users u ON u.id=o."userId"
+    LEFT JOIN review_invitations invite ON invite."orderItemId"=oi.id
+    WHERE o.status='DELIVERED' AND u.role='CUSTOMER' AND u.verified
+      AND NOT u."isSuspended" AND u.email IS NOT NULL
+      AND (invite.id IS NULL OR (invite."sentAt" IS NULL AND invite."startedAt">=${retryAfter}))
+      AND (SELECT max(h."createdAt") FROM order_status_history h
+           WHERE h."orderId"=o.id AND h.status='DELIVERED')<=${cutoff}
+      AND NOT EXISTS (SELECT 1 FROM product_reviews r
+                      WHERE r."userId"=u.id AND r."productId"=oi."productId")
+    ORDER BY oi.id LIMIT 100`
+  const lines = await db.orderItem.findMany({ where: { id:{in:candidates.map(row=>row.id)} },
+    orderBy:{id:'asc'},include:{order:{include:{user:true}},product:{select:{slug:true}}} })
   let sent = 0
   for (const line of lines) {
-    if (line.order.statusHistory[0]?.createdAt > cutoff) continue
     if (await db.productReview.findUnique({where:{userId_productId:{userId:line.order.userId,productId:line.productId}}})) continue
     // Persist the start before contacting the provider, so uncertainty never
     // causes automatic delivery beyond the provider's idempotency window.
@@ -27,6 +41,7 @@ export async function runReviewInvitations({ db, env = process.env, send = sendR
       const order = await tx.order.findUnique({where:{id:line.orderId},include:{user:true}})
       if (order.status !== 'DELIVERED' || order.user?.role !== 'CUSTOMER' || order.user.isSuspended || !order.user.verified || !order.user.email) return
       const result = await send({to:order.user.email, productUrl:`${origin.origin}/producto/${encodeURIComponent(line.product.slug)}#resenas`,idempotencyKey:`review-invitation/${claim.id}`})
+      if (typeof result?.id !== 'string' || !result.id) throw new Error('El proveedor no confirmó el envío con un identificador.')
       await tx.reviewInvitation.update({where:{id:claim.id},data:{sentAt:now,providerId:result.id}})
       sent++
     },{timeout:20000})
