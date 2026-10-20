@@ -579,6 +579,7 @@ model Order {
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]
+  emailDeliveries   OrderEmailDelivery[]
   posSale           PosSale?
 
   createdAt         DateTime     @default(now())
@@ -846,4 +847,22 @@ model ReviewInvitation {
   sentAt DateTime?
   providerId String?
   @@map("review_invitations")
+}
+
+model OrderEmailDelivery {
+  id String @id
+  orderId String
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  status OrderStatus
+  state String @default("PENDING")
+  firstAttemptAt DateTime?
+  lastAttemptAt DateTime?
+  sentAt DateTime?
+  providerId String?
+  attempts Int @default(0)
+  lastErrorCode String?
+  createdAt DateTime @default(now())
+  @@unique([orderId, status], map: "order_email_deliveries_order_status_key")
+  @@index([state, createdAt, id], map: "order_email_deliveries_state_created_idx")
+  @@map("order_email_deliveries")
 }

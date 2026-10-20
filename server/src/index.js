@@ -77,5 +77,10 @@ const PORT = process.env.PORT || 4000
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   app.listen(PORT, () => {
     console.log(`✔ API de TecRuta corriendo en http://localhost:${PORT}`)
+    if (process.env.ORDER_EMAILS_ENABLED === 'true') {
+      void Promise.all([import('./lib/orderEmails.js'), import('./lib/prisma.js')])
+        .then(([{ startOrderEmailWorker }, { prisma }]) => startOrderEmailWorker({ db: prisma }))
+        .catch(() => console.error('ORDER_EMAIL_WORKER_START_FAILED'))
+    }
   })
 }

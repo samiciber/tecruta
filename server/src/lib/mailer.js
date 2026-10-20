@@ -87,3 +87,31 @@ export async function sendReviewInvitation({ to, productUrl, idempotencyKey }) {
   return sendEmail({ to, idempotencyKey, subject: '¿Cómo fue tu compra en TecRuta?',
     html: `<p>Tu pedido fue entregado. Puedes compartir tu experiencia del producto desde tu cuenta.</p><p><a href="${safeUrl}">Escribir una reseña</a></p>` })
 }
+
+const htmlText = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;')
+const headings = {
+  PENDING: 'Recibimos tu pedido',
+  PAID: 'Pago confirmado',
+  SHIPPED: 'Tu pedido fue enviado',
+  DELIVERED: 'Tu pedido fue entregado',
+  CANCELLED: 'Tu pedido fue cancelado',
+}
+
+// Account/phone/CCI/QR fields are deliberately excluded. Long digit sequences
+// and links in configurable instructions are redacted, never copied blindly.
+export function orderEmailTemplate({ order, status, business = {} }) {
+  if (!headings[status]) throw new Error('Unsupported order notification')
+  const money = value => Number(value).toLocaleString('es-PE', { style: 'currency', currency: 'PEN', minimumFractionDigits: 2 })
+  const method = order.paymentMethod
+  const instructions = typeof method?.config?.instructions === 'string'
+    ? method.config.instructions.slice(0, 2000).replace(/https?:\/\/\S+/gi, '[enlace omitido]').replace(/(?:\d[\s.-]*){6,}/g, '[dato de pago omitido]') : ''
+  const rows = order.items.map(item => `<tr><td style="padding:8px 0">${htmlText(item.name)} × ${item.quantity}</td><td style="text-align:right">${htmlText(money(item.unitPrice))}</td></tr>`).join('')
+  const payment = status === 'PENDING' && method
+    ? `<h2 style="font-size:16px">Pago: ${htmlText(method.label)}</h2>${instructions ? `<p>${htmlText(instructions)}</p>` : ''}<p>Consulta los datos completos del método seleccionado en la tienda. El pago requiere confirmación del equipo.</p>` : ''
+  const terms = ['shippingText', 'warrantyText'].map(key => typeof business[key] === 'string' && business[key].trim() ? `<p>${htmlText(business[key].slice(0, 2000))}</p>` : '').join('')
+  return { subject: `${headings[status]} — TecRuta`, html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;color:#1a1a1a"><h1 style="font-size:20px">${headings[status]}</h1><p>Referencia: ${htmlText(order.id)}</p><table style="width:100%">${rows}</table><p><strong>Total: ${htmlText(money(order.total))}</strong></p>${payment}${terms}<p style="font-size:12px;color:#555">El equipo de TecRuta</p></div>` }
+}
+
+export async function sendOrderStatusEmail({ order, status, business, idempotencyKey }) {
+  return sendEmail({ to: order.customerCorreo, ...orderEmailTemplate({ order, status, business }), idempotencyKey })
+}
