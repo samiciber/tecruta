@@ -12,7 +12,7 @@ export function CircleVisual({ label, image }) {
   const initial = (label || '?').trim().charAt(0).toUpperCase()
   return (
     <span
-      className={`${CIRCLE_SIZE} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-focus-visible:ring-4 group-focus-visible:ring-header group-focus-visible:ring-offset-2 dark:bg-white/10 dark:group-focus-visible:ring-sky-300 dark:group-focus-visible:ring-offset-night`}
+      className={`store-category-visual ${CIRCLE_SIZE} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-md group-focus-visible:ring-4 group-focus-visible:ring-header group-focus-visible:ring-offset-2 dark:bg-white/10 dark:group-focus-visible:ring-sky-300 dark:group-focus-visible:ring-offset-night`}
     >
       {image ? (
         <img
@@ -41,7 +41,7 @@ export default function CircleItem({ label, to, image, external = false, preview
       <span className="mt-2 line-clamp-2 w-full text-center text-sm font-medium leading-snug text-ink dark:text-paper">{label}</span>
     </>
   )
-  const cls = `group flex ${ITEM_WIDTH} shrink-0 snap-start flex-col items-center rounded-lg focus-visible:outline-none`
+  const cls = `store-category-link group flex ${ITEM_WIDTH} shrink-0 snap-start flex-col items-center rounded-lg focus-visible:outline-none`
   if (preview) return <span className={cls}>{inner}</span>
   return external ? (
     <a href={to} target="_blank" rel="noopener noreferrer" className={cls}>{inner}</a>

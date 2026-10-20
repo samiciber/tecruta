@@ -59,10 +59,10 @@ function SplitRow({ section }) {
 }
 
 function EditorialTiles({ section }) {
-  return <Section section={section}><div className={`${surface} p-4 sm:p-6`}>
+  return <Section section={section}><div className={`store-editorial ${surface} p-4 sm:p-6`}>
     {section.title && <h2 className={`${heading} mb-5`}>{section.title}</h2>}
     <div className={`grid grid-cols-2 gap-4 ${section.columns === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
-      {section.items.map(item => <ContentLink key={item.id} href={item.href} className="flex h-full min-w-0 flex-col rounded-xl text-ink dark:text-paper">
+      {section.items.map(item => <ContentLink key={item.id} href={item.href} className="store-editorial-card flex h-full min-w-0 flex-col rounded-xl text-ink dark:text-paper">
         <ContentImage item={item} className="aspect-[4/3] w-full rounded-xl bg-paper object-cover dark:bg-night" />
         <h3 className="mt-3 break-words font-display text-base font-semibold">{item.title}</h3>
         {item.description && <p className="mt-2 break-words text-sm text-ink-soft dark:text-paper/70">{item.description}</p>}

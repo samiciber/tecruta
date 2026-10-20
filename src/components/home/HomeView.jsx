@@ -41,7 +41,7 @@ export function HomeView({ data, error, refresh }) {
     || (data.sections.some((section) => section.type === 'guestStrip') && !isAuthenticated && !authLoading)
 
   return (
-    <div className="min-h-screen bg-paper dark:bg-night">
+    <div className="storefront-home min-h-screen bg-paper dark:bg-night">
       {error && (
         <div role="status" className="container-tr pt-3">
           <p className="rounded-lg bg-amber-50 p-3 text-sm text-ink dark:bg-night-surface dark:text-paper">No pudimos actualizar el Home; se conserva el último contenido válido. <button type="button" onClick={refresh} className="font-semibold underline">Reintentar</button></p>
@@ -57,7 +57,7 @@ export function HomeView({ data, error, refresh }) {
       {data.sections.map((section, index) => (
         <div
           key={section.id}
-          className={`${section.appearance?.tone === 'soft' ? 'bg-route-soft dark:bg-route-softDark' : ''} ${section.appearance?.density === 'compact' ? '[&>section]:py-4' : ''}`}
+          className={`storefront-section ${section.appearance?.tone === 'soft' ? 'bg-route-soft dark:bg-route-softDark' : ''} ${section.appearance?.density === 'compact' ? '[&>section]:py-4' : ''}`}
           style={index > 1 ? { contentVisibility: 'auto', containIntrinsicSize: '560px' } : undefined}
         >
           {section.type === 'hero' && data.hero && (

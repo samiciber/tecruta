@@ -78,7 +78,7 @@ export default function CategoryShowcase({ items: suppliedItems, title: supplied
   const title = suppliedTitle || cfg?.title || 'Compra por categoría'
 
   return (
-    <section id="categorias" aria-labelledby="circles-title" aria-busy={loading || undefined} className="container-tr py-6 sm:py-10">
+    <section id="categorias" aria-labelledby="circles-title" aria-busy={loading || undefined} className="store-category-shelf container-tr py-6 sm:py-10">
       <h2 id="circles-title" className="mb-5 font-display text-2xl font-bold tracking-tight text-ink dark:text-paper sm:text-3xl">{title}</h2>
       {loading ? (
         <Skeleton />
@@ -97,7 +97,7 @@ export default function CategoryShowcase({ items: suppliedItems, title: supplied
           <ul
             ref={scroller}
             aria-label={title}
-            className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 sm:gap-6"
+            className="store-category-list scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 sm:gap-6"
           >
             {items.map((c) => (
               <li key={c.key} className="shrink-0">

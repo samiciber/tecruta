@@ -127,7 +127,7 @@ export default function Header() {
   )
 
   return (
-    <header className={`sticky top-0 z-50 text-white transition-transform duration-300 ${hidden ? 'lg:-translate-y-full' : ''}`}>
+    <header className={`storefront-header sticky top-0 z-50 text-white transition-transform duration-300 ${hidden ? 'lg:-translate-y-full' : ''}`}>
       {/* Capas (de abajo arriba): página < velo < fila 2 < fila 1.
           - Paneles de la fila 2 (Menú, Acuerdos…): velo en z-0, bajo ambas filas,
             para que su botón y su panel queden nítidos.

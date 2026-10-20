@@ -10,7 +10,7 @@ function FooterLink({ href, children }) { return href.startsWith('/') ? <Link cl
 export default function FooterContent() {
   const { data, loading, error, refresh } = useCachedResource('footer', api.getFooter, { fallback: null })
   if (!data) return <footer className="border-t border-paper-line p-6 text-center text-sm dark:border-night-line">{loading ? 'Cargando información del sitio…' : <p role="status">No pudimos cargar la información del sitio. <button className="underline" onClick={refresh}>Reintentar</button></p>}</footer>
-  return <footer className="break-words border-t border-paper-line bg-paper-surface text-ink dark:border-night-line dark:bg-night-surface dark:text-paper">
+  return <footer className="storefront-footer break-words border-t border-paper-line bg-paper-surface text-ink dark:border-night-line dark:bg-night-surface dark:text-paper">
     <div className="container-tr py-10">
       {error && <p role="status" className="mb-4 text-sm">No se pudo actualizar la información; mostramos la última versión disponible. <button onClick={refresh} className="underline">Reintentar</button></p>}
       <div className={`grid gap-8 ${data.newsletter.enabled ? 'lg:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]' : ''}`}>

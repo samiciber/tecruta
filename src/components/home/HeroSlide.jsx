@@ -116,7 +116,7 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
   }
 
   return (
-    <div className={`relative ${isInlineBanner ? 'min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'h-full'} w-full overflow-hidden bg-gradient-to-br from-header to-route-dark ${className}`}>
+    <div className={`store-hero-slide relative ${isInlineBanner ? 'min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'h-full'} w-full overflow-hidden bg-gradient-to-br from-header to-route-dark ${className}`}>
       {media}
       {mobileFocus && !mobile && (
         <div aria-hidden="true" className={`absolute inset-0 sm:hidden ${mobileImageShade[mobileTextSide] || mobileImageShade.center}`} />
@@ -126,8 +126,8 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
       <div className={`${isInlineBanner ? 'relative min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'absolute inset-0'} flex ${sz.pad} ${controls ? sz.padControls : ''} ${position}`}>
         <div className={`${mobileTextWidth} ${align} ${color === 'dark' ? 'text-ink' : 'text-white'} ${isInlineBanner ? '[overflow-wrap:anywhere]' : ''}`}>
           {slide.eyebrow && <p className="mb-2 text-xs font-semibold uppercase tracking-widest opacity-90">{slide.eyebrow}</p>}
-          {slide.title && <h2 className={`font-display font-extrabold leading-[1.05] tracking-tight ${sz.title}`}>{slide.title}</h2>}
-          {slide.description && <p className={`mt-3 ${sz.desc}`}>{slide.description}</p>}
+          {slide.title && <h2 className={`store-hero-title font-display font-extrabold leading-[1.05] tracking-tight ${sz.title}`}>{slide.title}</h2>}
+          {slide.description && <p className={`store-hero-description mt-3 ${sz.desc}`}>{slide.description}</p>}
           {buttons.length > 0 && (
             <div className={`mt-5 flex flex-wrap gap-3 ${BUTTONS_JUSTIFY[slide.textAlign] ?? 'justify-start'}`}>
               {buttons.map((b, i) => {

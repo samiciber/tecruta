@@ -56,8 +56,8 @@ export function ProductCarousel({ id, title, tabs, panel, countdown, endsAt, emb
   }
 
   return (
-    <section className={embedded ? 'h-full min-w-0' : 'container-tr py-6 sm:py-10'} aria-labelledby={`home-products-title-${id}`}>
-      <div className={`grid h-full gap-5 rounded-2xl border border-paper-line bg-paper-surface p-4 dark:border-night-line dark:bg-night-surface sm:p-6 ${panel ? 'lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.34fr)]' : ''}`}>
+    <section className={embedded ? 'store-product-section h-full min-w-0' : 'store-product-section container-tr py-6 sm:py-10'} aria-labelledby={`home-products-title-${id}`}>
+      <div className={`store-product-collection grid h-full gap-5 rounded-2xl border border-paper-line bg-paper-surface p-4 dark:border-night-line dark:bg-night-surface sm:p-6 ${panel ? 'lg:grid-cols-[minmax(0,1fr)_minmax(220px,0.34fr)]' : ''}`}>
         <div className="min-w-0">
           <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
             <div className="min-w-0">

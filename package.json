@@ -23,7 +23,9 @@
     "qa:staff-ui": "node scripts/verify-staff-system-ui.mjs",
     "qa:panel-ui": "node scripts/verify-staff-system-ui.mjs",
     "qa:workspace-ui": "node scripts/verify-panel-workspace-ui.mjs",
-    "qa:pos-recovery-ui": "node scripts/verify-pos-recovery-ui.mjs"
+    "qa:pos-recovery-ui": "node scripts/verify-pos-recovery-ui.mjs",
+    "preview:store-style": "node scripts/preview-store-style.mjs",
+    "qa:store-style-ui": "node scripts/verify-store-style-ui.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

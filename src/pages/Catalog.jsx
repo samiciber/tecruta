@@ -93,15 +93,15 @@ export default function Catalog() {
   }, [categorySlug])
 
   return (
-    <div className="container-tr py-8">
-      <div className="mb-6 flex flex-col gap-1">
+    <div className="store-catalog container-tr py-8">
+      <div className="store-catalog-heading mb-6 flex flex-col gap-1">
         <h1 className="font-display text-2xl font-bold text-ink dark:text-paper sm:text-3xl">
           {category ? category.name : query ? `Resultados para "${query}"` : 'Todos los productos'}
         </h1>
         {category?.description && <p className="text-sm text-ink-soft dark:text-paper/60">{category.description}</p>}
       </div>
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="store-catalog-toolbar mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchBar value={query} onChange={(v) => updateParams({ q: v })} className="sm:max-w-sm" />
         <div className="flex items-center gap-2 sm:ml-auto">
           <button type="button" onClick={() => setMobileFiltersOpen(true)} className="btn-secondary lg:hidden">
@@ -114,7 +114,7 @@ export default function Catalog() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24">
+          <div className="store-catalog-filters sticky top-24">
             <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clearFilters} brands={brands} priceBounds={priceBounds} />
           </div>
         </aside>
