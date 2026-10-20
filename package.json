@@ -25,7 +25,9 @@
     "qa:workspace-ui": "node scripts/verify-panel-workspace-ui.mjs",
     "qa:pos-recovery-ui": "node scripts/verify-pos-recovery-ui.mjs",
     "preview:store-style": "node scripts/preview-store-style.mjs",
-    "qa:store-style-ui": "node scripts/verify-store-style-ui.mjs"
+    "qa:store-style-ui": "node scripts/verify-store-style-ui.mjs",
+    "test:reviews": "node --test server/prisma/tests/product-reviews.test.mjs server/tests/store-reviews.test.mjs",
+    "preview:reviews": "node scripts/preview-store-reviews.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.122.0",

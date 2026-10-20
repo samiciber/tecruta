@@ -115,3 +115,12 @@
 .dark .storefront .store-product-detail .text-signal-green{color:#92e8bb}
 .dark .storefront .store-product-detail .text-signal-amber{color:#ffcf82}
 .dark .storefront .store-product-detail .text-signal-red{color:#ff9dad}
+/* These selectors must outrank shared dark-mode button/media utilities. */
+.storefront .store-product-card .store-product-media{background:#fff}
+.storefront .store-product-card .store-product-buy,
+.storefront .store-product-detail .shop-purchase{background:var(--shop-buy);color:#172538;border-color:#bd9200}
+.storefront .store-product-card .store-product-buy:not(:disabled):hover,
+.storefront .store-product-detail .shop-purchase:not(:disabled):hover{background:#ffdc59}
+.storefront .store-product-card .store-product-buy:disabled,
+.storefront .store-product-detail .shop-purchase:disabled{background:var(--shop-page);color:var(--shop-muted);border-color:var(--shop-line)}
+.storefront input::placeholder,.storefront textarea::placeholder{color:var(--shop-muted);opacity:1}

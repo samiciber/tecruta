@@ -81,6 +81,7 @@ export default function ProductDetail() {
   }
 
   const product = current.product
+  const gallery = product.images?.length ? product.images : product.image ? [product.image] : []
   const related = index.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
 
   const category = getCategoryBySlug(product.category)
@@ -130,7 +131,7 @@ export default function ProductDetail() {
             <div className="aspect-square overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
               <Product3DViewer
                 modelUrl={product.model3DUrl}
-                posterUrl={product.model3DPoster || product.images[0]}
+                posterUrl={product.model3DPoster || gallery[0]}
                 alt={product.name}
                 hotspots={Array.isArray(product.hotspots) ? product.hotspots : []}
                 onFallback={() => setViewMode('photos')}
@@ -149,11 +150,11 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                <img src={optimizeImage(product.images[Math.min(activeImage, product.images.length - 1)],1200)} width="1200" height="1200" fetchPriority="high" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" />
+                {gallery.length ? <img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" fetchPriority="high" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /> : <p className="p-8 text-center">Imagen no disponible</p>}
               </div>
-              {product.images.length > 1 && (
+              {gallery.length > 1 && (
                 <div className="mt-3 flex gap-2">
-                  {product.images.map((img, i) => (
+                  {gallery.map((img, i) => (
                     <button
                       key={i}
                       type="button"
