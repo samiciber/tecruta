@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: sin compra entregada, invitado, personal y otro dueño no pueden reseñar
+ok 1 - sin compra entregada, invitado, personal y otro dueño no pueden reseñar
+  ---
+  duration_ms: 5836.6843
+  type: 'test'
+  ...
+# Subtest: validación de calificación, títulos y contenido sin HTML o enlaces
+ok 2 - validación de calificación, títulos y contenido sin HTML o enlaces
+  ---
+  duration_ms: 64.9231
+  type: 'test'
+  ...
+# Subtest: una reseña por compra y por usuario/producto incluso con envíos simultáneos
+ok 3 - una reseña por compra y por usuario/producto incluso con envíos simultáneos
+  ---
+  duration_ms: 105.5705
+  type: 'test'
+  ...
+# Subtest: solo ADMIN modera; aprobar concurrentemente cuenta una sola vez y audita
+ok 4 - solo ADMIN modera; aprobar concurrentemente cuenta una sola vez y audita
+  ---
+  duration_ms: 96.2591
+  type: 'test'
+  ...
+# Subtest: rechazar, re-rechazar y volver a aprobar mantienen cantidad y suma
+ok 5 - rechazar, re-rechazar y volver a aprobar mantienen cantidad y suma
+  ---
+  duration_ms: 122.0447
+  type: 'test'
+  ...
+# Subtest: voto útil concurrente idempotente, autor rechazado y reseñas ocultas protegidas
+ok 6 - voto útil concurrente idempotente, autor rechazado y reseñas ocultas protegidas
+  ---
+  duration_ms: 129.2851
+  type: 'test'
+  ...
+# Subtest: cursores, filtros, privacidad y portada solo con tres aprobadas de cualquier nota
+ok 7 - cursores, filtros, privacidad y portada solo con tres aprobadas de cualquier nota
+  ---
+  duration_ms: 213.7739
+  type: 'test'
+  ...
+# Subtest: límite de intentos devuelve 429
+ok 8 - límite de intentos devuelve 429
+  ---
+  duration_ms: 116.6736
+  type: 'test'
+  ...
+# Subtest: restricciones SQL y migración sincronizadas con Prisma
+ok 9 - restricciones SQL y migración sincronizadas con Prisma
+  ---
+  duration_ms: 497.34
+  type: 'test'
+  ...
+# Subtest: invitaciones desactivadas no conectan ni envían; activadas idempotentes y ventana segura
+ok 10 - invitaciones desactivadas no conectan ni envían; activadas idempotentes y ventana segura
+  ---
+  duration_ms: 66.7744
+  type: 'test'
+  ...
+# Subtest: invitaciones omiten compras repetidas ya reseñadas antes de limitar el lote
+ok 11 - invitaciones omiten compras repetidas ya reseñadas antes de limitar el lote
+  ---
+  duration_ms: 1145.942
+  type: 'test'
+  ...
+# Subtest: envío incierto conserva clave, no marca éxito sin confirmación y no reintenta tras 23 horas
+ok 12 - envío incierto conserva clave, no marca éxito sin confirmación y no reintenta tras 23 horas
+  ---
+  duration_ms: 78.9231
+  type: 'test'
+  ...
+# Subtest: upgrade aditivo desde main conserva productos, pedidos y cuentas anteriores
+ok 13 - upgrade aditivo desde main conserva productos, pedidos y cuentas anteriores
+  ---
+  duration_ms: 3193.941
+  type: 'test'
+  ...
+# Subtest: Cloudinary optimiza originales y transformaciones sin cambiar otros hosts o firmas
+ok 14 - Cloudinary optimiza originales y transformaciones sin cambiar otros hosts o firmas
+  ---
+  duration_ms: 1.1128
+  type: 'test'
+  ...
+# Subtest: JSON-LD solo con reseñas y texto escapado sin cierre de script
+ok 15 - JSON-LD solo con reseñas y texto escapado sin cierre de script
+  ---
+  duration_ms: 0.2658
+  type: 'test'
+  ...
+# Subtest: sesión solo en sessionStorage: elimina token persistente y no lo adopta
+ok 16 - sesión solo en sessionStorage: elimina token persistente y no lo adopta
+  ---
+  duration_ms: 0.2291
+  type: 'test'
+  ...
+# Subtest: datos comerciales opcionales, RUC y URL seguros
+ok 17 - datos comerciales opcionales, RUC y URL seguros
+  ---
+  duration_ms: 3.6934
+  type: 'test'
+  ...
+# Subtest: migración nueva exclusivamente aditiva e historial anterior intacto
+ok 18 - migración nueva exclusivamente aditiva e historial anterior intacto
+  ---
+  duration_ms: 0.835
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13445.3993
