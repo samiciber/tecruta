@@ -16,8 +16,10 @@ export function optimizeImage(url, width) {
   const size = Number.isFinite(Number(width)) ? Math.max(64,Math.min(2560,Math.round(Number(width)))) : 800
   const parts=m[2].split('/'),transforms=[]
   while (/^(?:(?:a|ac|ar|b|bo|c|co|d|dn|dpr|e|f|fl|g|h|l|o|pg|q|r|t|u|w|x|y|z)_)/.test(parts[0])) transforms.push(parts.shift())
-  const existing=transforms.flatMap(part=>part.split(',')).filter(part=>!/^([fqw])_/.test(part))
-  return `${m[1]}${[...existing,'f_auto','q_auto',...(existing.some(part=>part.startsWith('c_'))?[]:['c_limit']),`w_${size}`].join(',')}/${parts.join('/')}`
+  // Preserve chained crops/overlays and their dimensions. Delivery sizing is
+  // a final stage, never a merge that changes the meaning of existing stages.
+  if (/^f_auto,q_auto,c_limit,w_\d+$/.test(transforms.at(-1)||'')) transforms.pop()
+  return `${m[1]}${[...transforms,`f_auto,q_auto,c_limit,w_${size}`,...parts].join('/')}`
 }
 
 // srcset solo si es Cloudinary (en otro host no hay forma de pedir otro tamaño).

@@ -1,4 +1,4 @@
-import React, {useCallback,useEffect,useState} from 'react'
+import React, {useCallback,useEffect,useRef,useState} from 'react'
 import {Link} from 'react-router-dom'
 import {api} from '../../services/api.js'
 import {useAuth} from '../../hooks/useAuth.js'
@@ -10,18 +10,62 @@ export default function ProductReviews({product}) {
   const {token,user}=useAuth(), [data,setData]=useState(null),[eligibility,setEligibility]=useState(null)
   const [sort,setSort]=useState('recent'),[rating,setRating]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState(''),[voted,setVoted]=useState([]),[reload,setReload]=useState(0)
   const [form,setForm]=useState({rating:5,title:'',text:''})
+  const operationScope=useRef(0)
+  useEffect(()=>{
+    operationScope.current++
+    setBusy(false);setVoted([])
+    return()=>{operationScope.current++}
+  },[product.id,token])
+  useEffect(()=>{
+    const refresh=()=>{if(document.visibilityState==='visible')setReload(value=>value+1)}
+    window.addEventListener('focus',refresh)
+    return()=>window.removeEventListener('focus',refresh)
+  },[])
   useEffect(()=>{let active=true;setData(null);setError('');setLoading(true)
     api.reviews.list(product.id,{sort,rating}).then(value=>{if(active)setData(value)}).catch(e=>{if(active)setError(e.message)}).finally(()=>{if(active)setLoading(false)})
     return()=>{active=false}
-  },[product.id,sort,rating,reload])
+  },[product.id,sort,rating,reload,token])
   useEffect(()=>{let active=true;setEligibility(null)
     if(token)api.reviews.eligibility(product.id,token).then(value=>{if(active)setEligibility(value)}).catch(e=>{if(active)setEligibility({eligible:false,message:e.message})})
     return()=>{active=false}
   },[product.id,token,reload])
   useEffect(()=>{setMessage('');setVoted([]);setForm({rating:5,title:'',text:''})},[product.id])
-  async function submit(e){e.preventDefault();if(busy)return;setBusy(true);setError('');try{await api.reviews.create(product.id,{...form,orderItemId:eligibility.orderItemId},token);setMessage('Reseña enviada. Se publicará después de la revisión de la tienda.');setReload(v=>v+1)}catch(e){setError(e.message)}finally{setBusy(false)}}
-  const helpful=useCallback(async id=>{if(!token){setError('Inicia sesión como cliente para marcar una reseña como útil.');return}setBusy(true);setError('');try{const result=await api.reviews.helpful(id,token);setVoted(v=>[...v,id]);setData(value=>({...value,items:value.items.map(row=>row.id===id?{...row,helpfulCount:result.helpfulCount}:row)}))}catch(e){setError(e.message)}finally{setBusy(false)}},[token])
-  async function more(){setBusy(true);try{const page=await api.reviews.list(product.id,{sort,rating,cursor:data.nextCursor});setData(value=>({...page,items:[...value.items,...page.items.filter(row=>!value.items.some(old=>old.id===row.id))]}))}catch(e){setError(e.message)}finally{setBusy(false)}}
+  async function submit(e){
+    e.preventDefault()
+    if(busy||!eligibility?.eligible)return
+    const scope=operationScope.current
+    setBusy(true);setError('')
+    try{
+      await api.reviews.create(product.id,{...form,orderItemId:eligibility.orderItemId},token)
+      if(scope!==operationScope.current)return
+      setMessage('Reseña enviada. Se publicará después de la revisión de la tienda.')
+      setReload(v=>v+1)
+    }catch(e){if(scope===operationScope.current)setError(e.message)}
+    finally{if(scope===operationScope.current)setBusy(false)}
+  }
+  const helpful=useCallback(async id=>{
+    if(!token){setError('Inicia sesión como cliente para marcar una reseña como útil.');return}
+    const scope=operationScope.current
+    setBusy(true);setError('')
+    try{
+      const result=await api.reviews.helpful(id,token)
+      if(scope!==operationScope.current)return
+      setVoted(v=>[...v,id])
+      setData(value=>value?{...value,items:value.items.map(row=>row.id===id?{...row,helpfulCount:result.helpfulCount}:row)}:value)
+    }catch(e){if(scope===operationScope.current)setError(e.message)}
+    finally{if(scope===operationScope.current)setBusy(false)}
+  },[token])
+  async function more(){
+    if(busy||!data?.nextCursor)return
+    const scope=operationScope.current
+    setBusy(true);setError('')
+    try{
+      const page=await api.reviews.list(product.id,{sort,rating,cursor:data.nextCursor})
+      if(scope!==operationScope.current)return
+      setData(value=>value?{...page,items:[...value.items,...page.items.filter(row=>!value.items.some(old=>old.id===row.id))]}:value)
+    }catch(e){if(scope===operationScope.current)setError(e.message)}
+    finally{if(scope===operationScope.current)setBusy(false)}
+  }
   const schema=reviewJsonLd(product,data)
   return <section id="resenas" className="product-reviews" aria-labelledby="reviews-title">
     {schema && <script type="application/ld+json" dangerouslySetInnerHTML={{__html:schema}}/>}

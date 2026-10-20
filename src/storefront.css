@@ -105,3 +105,13 @@
 .review-distribution meter::-moz-meter-bar{background:var(--shop-blue)}
 
 .storefront-header>.bg-header :is(button,a,input):focus-visible,.shop-top-strip a:focus-visible{outline-color:#fff}
+
+/* Keep secondary copy readable instead of inheriting low-opacity utilities. */
+.storefront :is(.store-product-detail,.store-catalog,.storefront-footer) [class*="text-ink-soft/"],
+.dark .storefront :is(.store-product-detail,.store-catalog,.storefront-footer) [class*="text-paper/"]{color:var(--shop-muted)}
+.storefront .store-product-detail .text-signal-green{color:#126239}
+.storefront .store-product-detail .text-signal-amber{color:#764500}
+.storefront .store-product-detail .text-signal-red{color:#9b1c31}
+.dark .storefront .store-product-detail .text-signal-green{color:#92e8bb}
+.dark .storefront .store-product-detail .text-signal-amber{color:#ffcf82}
+.dark .storefront .store-product-detail .text-signal-red{color:#ff9dad}
