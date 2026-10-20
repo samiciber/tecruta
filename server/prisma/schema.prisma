@@ -100,6 +100,9 @@ model User {
   posPayments PosPayment[]
   posRefunds PosRefund[]
   posOperations PosOperation[]
+  reviews ProductReview[] @relation("ReviewAuthor")
+  moderatedReviews ProductReview[] @relation("ReviewModerator")
+  reviewVotes ReviewHelpfulVote[]
 
   @@map("users")
 }
@@ -335,6 +338,9 @@ model Product {
   price            Decimal        @db.Decimal(10, 2)
   compareAtPrice   Decimal?       @db.Decimal(10, 2)
   stock            Int            @default(0)
+  ratingCount      Int            @default(0)
+  ratingSum        Int            @default(0)
+  reviews          ProductReview[]
   featured         Boolean        @default(false)
   bestSeller       Boolean        @default(false)
   image            String?
@@ -592,6 +598,8 @@ model OrderItem {
   name      String // copia del nombre al momento de la venta (histórico)
   quantity  Int
   unitPrice Decimal @db.Decimal(10, 2)
+  review ProductReview?
+  reviewInvitation ReviewInvitation?
 
   @@map("order_items")
 }
@@ -778,4 +786,60 @@ model PosOperation {
 
   @@index([userId, createdAt])
   @@map("pos_operations")
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ProductReview {
+  id String @id @default(cuid())
+  productId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  userId String
+  user User @relation("ReviewAuthor", fields: [userId], references: [id], onDelete: Restrict)
+  orderItemId String @unique
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  rating Int
+  title String? @db.VarChar(80)
+  text String @db.VarChar(1000)
+  status ReviewStatus @default(PENDING)
+  storeReply String? @db.VarChar(1000)
+  rejectionReason String? @db.VarChar(500)
+  moderatedById String?
+  moderatedBy User? @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: Restrict)
+  moderatedAt DateTime?
+  repliedAt DateTime?
+  helpfulCount Int @default(0)
+  votes ReviewHelpfulVote[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([userId, productId])
+  @@index([productId, status, createdAt, id])
+  @@index([productId, status, helpfulCount, createdAt, id])
+  @@index([status, createdAt, id])
+  @@map("product_reviews")
+}
+
+model ReviewHelpfulVote {
+  id String @id @default(cuid())
+  reviewId String
+  review ProductReview @relation(fields: [reviewId], references: [id], onDelete: Restrict)
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  @@unique([reviewId, userId])
+  @@map("review_helpful_votes")
+}
+
+model ReviewInvitation {
+  id String @id @default(cuid())
+  orderItemId String @unique
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  startedAt DateTime @default(now())
+  sentAt DateTime?
+  providerId String?
+  @@map("review_invitations")
 }
