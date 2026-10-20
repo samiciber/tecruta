@@ -7,7 +7,7 @@ import { DEFAULT_HOME_CIRCLES } from '../utils/homeCircles.js'
 // al volver a la pestaña y tras guardar en el admin) y tienen un respaldo
 // mínimo si la API falla: solo las 4 píldoras y los enlaces rápidos.
 
-const DEFAULT_PROMO = { label: 'Fútbol americano de otoño', href: '/catalogo', visible: true }
+const DEFAULT_PROMO = { label: '', href: '/catalogo', visible: false }
 
 const withIds = (items) =>
   items.map((it, i) => ({ id: `fb-${i}`, children: [], position: i, visible: true, href: null, ...it }))

@@ -76,7 +76,7 @@ export const api = {
     },
   },
   getFooter: () => request('/api/footer'),
-  getLegal: type => request(`/api/legal/${encodeURIComponent(type)}`),
+  getLegal: (type, options = {}) => request(`/api/legal/${encodeURIComponent(type)}`, options),
   subscribe: body => request('/api/newsletter/subscribe', { method: 'POST', body }),
   getProducts: (params = {}, options = {}) => {
     const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== '')

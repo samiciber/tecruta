@@ -100,3 +100,19 @@ test('robots, cabeceras privadas y rewrites conservan recursos y funciones', () 
   assert.ok(config.rewrites.some(row => row.has?.some(condition => condition.key === 'user-agent')))
   assert.ok(config.headers.some(row => row.headers.some(header => header.key === 'X-Robots-Tag')))
 })
+
+test('legales vacíos no se indexan y nunca reciben un contrato de respaldo', async () => {
+  for (const body of ['', '   ', 'Documento sintético QA: contenido configurado.']) {
+    const res = response()
+    await createShareHandler({ origin, load: async () => ({ title: 'Privacidad QA', body }) })(request('/legal/privacidad'), res)
+    assert.equal(res.statusCode, 200)
+    if (body.trim()) {
+      assert.ok(res.body.includes(body))
+      assert.equal(res.body.includes('noindex'), false)
+    } else {
+      assert.match(res.body, /noindex, follow/)
+      assert.match(res.body, /Este documento aún no está publicado/)
+    }
+    assert.equal(res.body.includes('Aceptas'), false)
+  }
+})

@@ -23,7 +23,7 @@ export default function StoreSeo() {
   useEffect(() => {
     const controller = new AbortController()
     const [type, slug] = pathname.split('/').slice(1)
-    const load = type === 'producto' ? api.getProductBySlug : type === 'categoria' ? api.getCategoryDetail : null
+    const load = type === 'producto' ? api.getProductBySlug : type === 'categoria' ? api.getCategoryDetail : type === 'legal' ? api.getLegal : null
     if (!load || !slug) return
     let decoded
     try { decoded = decodeURIComponent(slug) }
@@ -35,7 +35,7 @@ export default function StoreSeo() {
   }, [pathname])
   const entity = pathname.startsWith('/marca/') ? brands.find(row => '/marca/' + encodeURIComponent(row.slug) === pathname)
     : state.path === pathname ? state.entity : null
-  const meta = pageMetadata(pathname, { entity, origin: STORE_ORIGIN, missing: state.path === pathname && state.missing })
+  const meta = pageMetadata(pathname, { entity, origin: STORE_ORIGIN, missing: state.path === pathname && (state.missing || (pathname.startsWith('/legal/') && !entity?.body?.trim())) })
   useEffect(() => {
     document.title = meta.title
     setMeta('name', 'description', meta.description)

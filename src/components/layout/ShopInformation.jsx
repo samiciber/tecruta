@@ -3,6 +3,7 @@ import {MessageCircle} from 'lucide-react'
 import {api} from '../../services/api.js'
 import {useCachedResource} from '../../hooks/useCachedResource.js'
 import {useSiteSettings} from '../../hooks/useSiteContent.js'
+import {useLocation} from 'react-router-dom'
 export function ShopTopStrip(){
  const {data:footer}=useCachedResource('footer',api.getFooter,{fallback:null})
  const {data:methods}=useCachedResource('shop-payment-labels',api.getPaymentMethods,{fallback:[]})
@@ -12,7 +13,9 @@ export function ShopTopStrip(){
  return <div className="shop-top-strip"><div className="container-tr"><span>{labels.length ? `Medios de pago: ${labels.join(' · ')}` : ''}</span>{whatsapp&&<a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer">Consultas por WhatsApp</a>}</div></div>
 }
 export function ShopWhatsApp(){
+ const {pathname}=useLocation()
  const {data}=useCachedResource('footer',api.getFooter,{fallback:null})
+ if(pathname==='/checkout')return null
  if(!/^\d{7,15}$/.test(data?.whatsapp||''))return null
  return <a className="shop-whatsapp" href={`https://wa.me/${data.whatsapp}`} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp"><MessageCircle aria-hidden="true" width="24" height="24"/></a>
 }

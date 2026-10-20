@@ -27,7 +27,7 @@
       "destination": "/api/share?path=/:kind/:slug"
     },
     {
-      "source": "/:page(catalogo|marcas|ayuda)",
+      "source": "/:page(catalogo|categorias|marcas|ayuda)",
       "has": [
         {
           "type": "header",

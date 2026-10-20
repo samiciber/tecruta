@@ -39,7 +39,7 @@ export default function MobileMenu({ open, onClose }) {
       ...cats,
       ...(cats.length === 0 ? [{ kind: 'link', label: 'Todos los productos', to: '/catalogo' }] : []),
       { kind: 'heading', label: 'Más en TecRuta' },
-      nav('Acuerdos', menus.acuerdos),
+      nav('Ofertas', menus.acuerdos),
       nav('Soporte y Servicios', menus.soporte),
       nav('Descubre', menus.descubre),
       nav('Más', menus.mas),

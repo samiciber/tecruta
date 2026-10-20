@@ -177,8 +177,8 @@ export default function Header() {
           <Pill id="menu" label="Menú" icon={MenuIcon} panel={panel} onToggle={toggle}>
             {(ref) => <MenuPanel triggerRef={ref} onClose={close} />}
           </Pill>
-          <Pill id="acuerdos" label="Acuerdos" panel={panel} onToggle={toggle}>
-            {(ref) => <NavPanel id="panel-acuerdos" title="Acuerdos" items={menus.acuerdos} width="w-[22rem]" triggerRef={ref} onClose={close} />}
+          <Pill id="acuerdos" label="Ofertas" panel={panel} onToggle={toggle}>
+            {(ref) => <NavPanel id="panel-acuerdos" title="Ofertas" items={menus.acuerdos} width="w-[22rem]" triggerRef={ref} onClose={close} />}
           </Pill>
           <Pill id="soporte" label="Soporte y Servicios" panel={panel} onToggle={toggle}>
             {(ref) => <NavPanel id="panel-soporte" title="Soporte y Servicios" items={menus.soporte} width="w-[26rem]" triggerRef={ref} onClose={close} />}

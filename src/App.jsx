@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Header from './components/layout/Header.jsx'
 import Footer from './components/layout/Footer.jsx'
-import MobileCartBar from './components/cart/MobileCartBar.jsx'
+import MobileStoreNav from './components/layout/MobileStoreNav.jsx'
 import { PANEL_ORIGIN, legacyPanelPath } from './app/urls.js'
 import { CatalogAvailability } from './components/ui/CatalogAvailability.jsx'
 
@@ -30,6 +30,7 @@ const SavedItems = lazy(() => import('./pages/account/SavedItems.jsx'))
 const BrandsPage = lazy(() => import('./pages/Brands.jsx'))
 const BrandPage = lazy(() => import('./pages/BrandPage.jsx'))
 const CategoryPage = lazy(() => import('./pages/CategoryPage.jsx'))
+const CategoryDirectory = lazy(() => import('./pages/CategoryDirectory.jsx'))
 
 function PageFallback() {
   return (
@@ -61,6 +62,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/catalogo" element={<Catalog />} />
+            <Route path="/categorias" element={<CategoryDirectory />} />
             <Route path="/producto/:slug" element={<ProductDetail />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/ayuda" element={<Help />} />
@@ -89,7 +91,7 @@ export default function App() {
         </Suspense>
       </main>
       <Footer />
-      <MobileCartBar />
+      <MobileStoreNav />
     </div>
   )
 }

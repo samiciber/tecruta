@@ -21,19 +21,15 @@ export const SOON = '/proximamente'
 // ----- Respaldo mínimo del frontend (no duplica el árbol) ----------------
 export const FALLBACK_PILLS = [
   { key: 'menu', label: 'Menú' },
-  { key: 'acuerdos', label: 'Acuerdos' },
+  { key: 'acuerdos', label: 'Ofertas' },
   { key: 'soporte', label: 'Soporte y Servicios' },
   { key: 'descubre', label: 'Descubre' },
 ]
 
 export const FALLBACK_QUICK_LINKS = [
-  { type: 'PROMO', label: 'Fútbol americano de otoño', href: '/catalogo' },
-  { type: 'LINK', label: 'Mejores ofertas', href: '/catalogo' },
-  { type: 'LINK', label: 'Oferta del día', href: '/catalogo' },
-  { type: 'LINK', label: 'Ideas de regalos', href: SOON },
-  { type: 'LINK', label: 'Mis membresías de TecRuta', href: SOON },
-  { type: 'LINK', label: 'Tarjetas de crédito', href: SOON },
-  { type: 'LINK', label: 'Tarjetas regalo', href: SOON },
+  { type: 'LINK', label: 'Catálogo', href: '/catalogo' },
+  { type: 'LINK', label: 'Marcas', href: '/marcas' },
+  { type: 'LINK', label: 'Ayuda', href: '/ayuda' },
 ]
 
 // ----- Categorías heredadas (se ocultan en la tienda) ---------------------

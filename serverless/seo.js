@@ -51,6 +51,7 @@ export function createShareHandler({ load = fetchPublicJson, origin = process.en
       let entity, schema
       if (type === 'producto' || type === 'categoria') entity = await load('/api/' + (type === 'producto' ? 'products' : 'categories') + '/' + encodeURIComponent(decodeURIComponent(encoded)))
       if (type === 'marca') entity = (await load('/api/brands')).all.find(row => row.slug === decodeURIComponent(encoded))
+      if (type === 'legal') entity = await load('/api/legal/' + encodeURIComponent(encoded))
       if (['producto', 'categoria', 'marca'].includes(type) && !entity) return sendBody(req, res, 'Página no encontrada', 'text/plain', 404)
       if (type === 'producto') {
         schema = productStructuredData(entity, origin)
@@ -63,8 +64,12 @@ export function createShareHandler({ load = fetchPublicJson, origin = process.en
       }
       if (path === '/') schema = organizationStructuredData((await load('/api/site-settings')).storeBusiness, origin)
       const meta = pageMetadata(path, { entity, origin })
+      if (type === 'legal' && !entity?.body?.trim()) {
+        meta.noindex = true
+        res.setHeader('X-Robots-Tag', 'noindex, follow')
+      }
       const head = `<title>${escapeMarkup(meta.title)}</title><meta name="description" content="${escapeMarkup(meta.description)}"><link rel="canonical" href="${escapeMarkup(meta.canonical)}"><meta property="og:title" content="${escapeMarkup(meta.title)}"><meta property="og:description" content="${escapeMarkup(meta.description)}"><meta property="og:type" content="${meta.type}"><meta property="og:url" content="${escapeMarkup(meta.canonical)}"><meta name="twitter:card" content="${meta.image ? 'summary_large_image' : 'summary'}"><meta name="twitter:title" content="${escapeMarkup(meta.title)}"><meta name="twitter:description" content="${escapeMarkup(meta.description)}">${meta.image ? `<meta property="og:image" content="${escapeMarkup(meta.image)}"><meta name="twitter:image" content="${escapeMarkup(meta.image)}">` : ''}${schema ? `<script type="application/ld+json">${safeJsonLd(schema)}</script>` : ''}`
-      const body = `<!doctype html><html lang="es-PE"><head><meta charset="utf-8">${head}</head><body><h1>${escapeMarkup(entity?.name || meta.title)}</h1><p>${escapeMarkup(meta.description)}</p>${type === 'producto' ? `<p>Precio: S/ ${Number(entity.price).toFixed(2)}. ${entity.stock > 0 ? 'Disponible' : 'Agotado'}.</p>` : ''}<a href="${escapeMarkup(meta.canonical)}">Ver en TecRuta</a></body></html>`
+      const body = `<!doctype html><html lang="es-PE"><head><meta charset="utf-8">${head}${meta.noindex ? '<meta name="robots" content="noindex, follow">' : ''}</head><body><h1>${escapeMarkup(entity?.name || entity?.title || meta.title)}</h1><p>${escapeMarkup(type === 'legal' ? entity?.body?.trim() || 'Este documento aún no está publicado.' : meta.description)}</p>${type === 'producto' ? `<p>Precio: S/ ${Number(entity.price).toFixed(2)}. ${entity.stock > 0 ? 'Disponible' : 'Agotado'}.</p>` : ''}<a href="${escapeMarkup(meta.canonical)}">Ver en TecRuta</a></body></html>`
       return sendBody(req, res, body, 'text/html')
     } catch { return sendBody(req, res, 'Información temporalmente no disponible', 'text/plain', 503) }
   }

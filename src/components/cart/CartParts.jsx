@@ -37,7 +37,7 @@ export function MiniProductCard({ product, onRemove }) {
         <strong>{product.brand}</strong> - {product.name}
       </Link>
       <div className="mt-auto pt-2">
-        {discount > 0 && <span className="block text-[11px] font-bold text-ink dark:text-paper">Top Deal</span>}
+        {discount > 0 && <span className="block text-[11px] font-bold text-ink dark:text-paper">Oferta</span>}
         <BigPrice value={product.price} />
         {product.compareAtPrice > product.price && (
           <span className="block text-xs text-ink-soft line-through dark:text-paper/50">{formatCurrency(product.compareAtPrice)}</span>
