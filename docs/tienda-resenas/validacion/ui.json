@@ -1,0 +1,40 @@
+{
+  "dateLima": "2026-10-20",
+  "type": "manual-browser-and-read-only-DOM",
+  "browser": "Edge",
+  "viewportsCss": [
+    390,
+    1280
+  ],
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "screens": [
+    "portada",
+    "catalogo",
+    "producto",
+    "resenas",
+    "moderacion"
+  ],
+  "checked": {
+    "horizontalOverflow": false,
+    "mobilePurchaseButtonHeight": 44,
+    "productMainImageOnlyFallback": true,
+    "darkPurchaseButtonBackground": "rgb(255, 207, 36)",
+    "darkPurchaseButtonText": "rgb(23, 37, 56)",
+    "pendingNotPublic": true,
+    "pendingSurvivesReload": true,
+    "helpfulVoteCountOne": true,
+    "storeReplySurvivesReload": true,
+    "adminApproveAndReject": true,
+    "rejectionReasonRetained": true
+  },
+  "captureCount": 21,
+  "notes": [
+    "Opiniones y cuentas sintéticas únicamente en PostgreSQL local.",
+    "Capturas durante diferentes estados de moderación; no son datos del negocio.",
+    "No es auditoría WCAG automatizada ni Lighthouse.",
+    "Se descartó una captura incompleta de recarga; persistencia verificada por el árbol accesible y pruebas."
+  ]
+}
