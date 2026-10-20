@@ -6,7 +6,7 @@ import { ProductCarousel } from './ProductCarousel.jsx'
 import { optimizeImage, imageSrcSet } from '../../utils/imageUrl.js'
 
 function ContentImage({ item, className, fallbackAlt = '' }) {
-  return <picture>{item.imageMobile && <source media="(max-width: 767px)" srcSet={imageSrcSet(item.imageMobile, [480, 768]) || item.imageMobile} />}<img src={optimizeImage(item.image, 1280)} srcSet={imageSrcSet(item.image, [480, 768, 1280])} sizes="(max-width: 767px) 100vw, 50vw" alt={item.imageAlt || fallbackAlt} loading="lazy" decoding="async" className={className} /></picture>
+  return <picture>{item.imageMobile && <source media="(max-width: 767px)" srcSet={imageSrcSet(item.imageMobile, [480, 768]) || item.imageMobile} />}<img src={optimizeImage(item.image, 1280)} srcSet={imageSrcSet(item.image, [480, 768, 1280])} sizes="(max-width: 767px) 100vw, 50vw" alt={item.imageAlt || fallbackAlt} loading="lazy" decoding="async" width="1280" height="800" className={className} /></picture>
 }
 
 const surface = 'rounded-xl2 border border-paper-line bg-paper-surface dark:border-night-line dark:bg-night-surface'
@@ -38,6 +38,7 @@ function Section({ section, children }) {
 }
 
 export const SECTION_LABELS = {
+  reviews: 'Opiniones verificadas (mínimo 3)',
   splitRow: 'Fila dividida', editorialTiles: 'Tiles editoriales', brands: 'Comprar por marca', benefits: 'Beneficios',
   supportLinks: 'Accesos de soporte', legalText: 'Texto legal', useSelections: 'Selecciones por espacio o uso',
 }
@@ -74,7 +75,7 @@ function EditorialTiles({ section }) {
 function BrandItem({ item }) {
   const [failed, setFailed] = useState(false)
   return <ContentLink href={item.href} className={`${surface} flex min-h-28 min-w-0 flex-col items-center justify-center gap-3 p-4 text-center font-semibold text-ink dark:text-paper`}>
-    {item.image && !failed && <img src={item.image} alt="" loading="lazy" onError={() => setFailed(true)} className="h-12 max-w-full rounded bg-white object-contain p-1" />}
+    {item.image && !failed && <img src={optimizeImage(item.image,240)} width="240" height="96" alt="" loading="lazy" onError={() => setFailed(true)} className="h-12 max-w-full rounded bg-white object-contain p-1" />}
     <span className="break-words">{item.title}</span>
   </ContentLink>
 }

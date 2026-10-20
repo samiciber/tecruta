@@ -4,6 +4,8 @@ import { ShoppingCart } from 'lucide-react'
 import { formatCurrency, calculateDiscountPercent } from '../../utils/formatCurrency.js'
 import { useCart } from '../../hooks/useCart.js'
 import SaveButton from './SaveButton.jsx'
+import Rating from './Rating.jsx'
+import { optimizeImage, imageSrcSet } from '../../utils/imageUrl.js'
 
 function ProductCard({ product, verifyOnAdd = false }) {
   const { addItem, addItemVerified, canAdd } = useCart()
@@ -35,7 +37,10 @@ function ProductCard({ product, verifyOnAdd = false }) {
         className="store-product-media relative block aspect-square overflow-hidden rounded-xl2 bg-paper-surface transition-shadow duration-300 group-hover:shadow-card dark:bg-night-surface"
       >
         <img
-          src={product.image}
+          src={optimizeImage(product.image, 600)}
+          srcSet={imageSrcSet(product.image,[300,450,600])}
+          sizes="(max-width: 639px) 46vw, (max-width: 1023px) 30vw, 280px"
+          width="600" height="600" decoding="async"
           alt={product.name}
           loading="lazy"
           className="h-full w-full object-contain p-3 transition-transform duration-500 ease-out group-hover:scale-105"
@@ -62,6 +67,8 @@ function ProductCard({ product, verifyOnAdd = false }) {
           {product.name}
         </Link>
 
+        <Rating count={product.ratingCount} sum={product.ratingSum}/>
+
         <div className="store-product-price mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
           <span className="font-mono text-lg font-bold text-ink dark:text-paper">{formatCurrency(product.price)}</span>
           {hasDiscount && (
@@ -85,7 +92,7 @@ function ProductCard({ product, verifyOnAdd = false }) {
           className="store-product-buy btn-secondary mt-2.5 w-full py-2 text-xs transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ShoppingCart className="h-3.5 w-3.5" />
-          {outOfStock ? 'Sin stock' : verifying ? 'Verificando…' : !canPurchase && verifyOnAdd ? 'Verificar y agregar' : !canPurchase ? 'Compra no disponible' : 'Agregar al carrito'}
+          {outOfStock ? 'Sin stock' : verifying ? 'Verificando…' : !canPurchase && verifyOnAdd ? 'Verificar y agregar' : !canPurchase ? 'Compra no disponible' : 'Agregar'}
         </button>
       </div>
     </div>

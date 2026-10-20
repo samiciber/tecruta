@@ -74,10 +74,10 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
   const cfg = carouselConfig || settings.heroCarousel || { intervalSeconds: 6, autoplay: true }
 
   const slides = useMemo(() => {
-    if (Array.isArray(suppliedSlides)) return suppliedSlides
+    if (Array.isArray(suppliedSlides)) return suppliedSlides.slice(0,3)
     const now = new Date()
     const live = (settings.homeBanners || []).filter((b) => (b.placement ?? 'hero') === 'hero' && isLive(b, now))
-    return live.length > 0 ? live : fallbackSlides(categories)
+    return (live.length > 0 ? live : fallbackSlides(categories)).slice(0,3)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppliedSlides, settings.homeBanners, categories])
 

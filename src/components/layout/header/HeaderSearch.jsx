@@ -1,3 +1,4 @@
+import {optimizeImage} from '../../../utils/imageUrl.js'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
@@ -126,7 +127,7 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
                     onClick={() => go(s.to)}
                     className={`flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-white/10 ${i === active ? 'bg-gray-100 dark:bg-white/10' : ''}`}
                   >
-                    {s.image ? <img src={s.image} alt="" className="h-9 w-9 rounded object-cover" /> : <span className="h-9 w-9 shrink-0" />}
+                    {s.image ? <img src={optimizeImage(s.image,96)} width="36" height="36" loading="lazy" alt="" className="h-9 w-9 rounded object-cover" /> : <span className="h-9 w-9 shrink-0" />}
                     <span className="min-w-0 flex-1 truncate">{s.label}</span>
                     <span className="shrink-0 text-xs text-ink-soft dark:text-paper/50">{s.kind}</span>
                   </button>

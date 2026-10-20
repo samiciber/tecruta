@@ -151,7 +151,7 @@ export async function resolveHome({ db, layout, settings = {}, now = new Date() 
       states.push(state(section, true))
       continue
     }
-    if (section.type === 'guestStrip') {
+    if (section.type === 'guestStrip' || section.type === 'reviews') {
       sections.push({ id: section.id, type: section.type, ...(section.message !== undefined ? { message: section.message } : {}), ...(section.buttonLabel !== undefined ? { buttonLabel: section.buttonLabel } : {}), ...(section.href !== undefined ? { href: section.href } : {}) })
       states.push(state(section, true))
       continue

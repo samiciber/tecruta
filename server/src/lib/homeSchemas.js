@@ -28,6 +28,7 @@ export const HOME_BENEFIT_ICONS = ['info', 'package', 'headphones', 'mapPin', 'h
 const sectionSchema = z.discriminatedUnion('type', [
   z.object({ ...base, type: z.literal('hero') }),
   z.object({ ...base, type: z.literal('circles') }),
+  z.object({ ...base, type: z.literal('reviews') }),
   z.object({ ...base, type: z.literal('guestStrip'), message: z.string().trim().min(1).max(300).optional(), buttonLabel: z.string().trim().min(1).max(60).optional(), href: href.optional() }),
   z.object({
     ...base, type: z.literal('splitRow'), title,
@@ -89,6 +90,9 @@ export const homeLayoutSchema = z.object({
   const ids = layout.sections.map((section) => section.id)
   if (new Set(ids).size !== ids.length) {
     ctx.addIssue({ code: 'custom', path: ['sections'], message: 'Los identificadores de sección deben ser únicos.' })
+  }
+  if (layout.sections.filter(section=>section.type==='reviews').length > 1) {
+    ctx.addIssue({code:'custom',path:['sections'],message:'Usa una sola sección de opiniones verificadas.'})
   }
   layout.sections.forEach((section, index) => {
     const checkIds = (items, path) => {

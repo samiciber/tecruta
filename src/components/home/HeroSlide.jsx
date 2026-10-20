@@ -93,7 +93,7 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
         : mobileTextSide === 'center'
           ? 'object-center'
           : 'object-[85%_center] sm:object-center'
-    const common = { alt: slide.imageAlt || '', loading, decoding: priority ? 'sync' : 'async', draggable: false, className: `absolute inset-0 h-full w-full object-cover ${mobileObjectPosition}` }
+    const common = { width:1920, height:600, alt: slide.imageAlt || '', loading, decoding: priority ? 'sync' : 'async', draggable: false, className: `absolute inset-0 h-full w-full object-cover ${mobileObjectPosition}` }
     if (priority) common.fetchpriority = 'high'
     if (size === 'mobile') {
       media = <img {...common} src={optimizeImage(mobile || desktop, 900)} />

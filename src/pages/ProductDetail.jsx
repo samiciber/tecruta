@@ -1,3 +1,7 @@
+import ProductReviews from '../components/product/ProductReviews.jsx'
+import Rating from '../components/product/Rating.jsx'
+import { optimizeImage } from '../utils/imageUrl.js'
+import { useSiteSettings } from '../hooks/useSiteContent.js'
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
 import React, { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -14,17 +18,11 @@ import { resolveCatalogDetail } from '../services/catalogDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
 
-// Mismas promesas reales que ya se muestran en TrustSection.jsx (home) —
-// se repiten aquí, resumidas, como el paso "Beneficios" que pide la
-// jerarquía de la ficha. No son texto nuevo inventado para esta página.
-const BENEFITS = [
-  { icon: Truck, label: 'Envíos a todo Perú' },
-  { icon: ShieldCheck, label: 'Pago seguro' },
-  { icon: MessageCircle, label: 'Atención personalizada' },
-]
 
 export default function ProductDetail() {
   const { slug } = useParams()
+  const { settings } = useSiteSettings()
+  const benefits = settings.storeBusiness?.benefits || []
   const { index, loading: loadingIndex, source } = useProductIndex()
   const { getCategoryBySlug } = useCategories()
   const { addItem, canAdd } = useCart()
@@ -90,7 +88,7 @@ export default function ProductDetail() {
   const outOfStock = product.stock <= 0
 
   return (
-    <div className="container-tr py-8">
+    <div className="store-product-detail container-tr py-8">
       <nav className="mb-6 flex items-center gap-1.5 text-xs text-ink-soft/70 dark:text-paper/50" aria-label="Ruta de navegación">
         <Link to="/" className="hover:text-route">Inicio</Link>
         <ChevronRight className="h-3 w-3" />
@@ -151,7 +149,7 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                <img src={product.images[Math.min(activeImage, product.images.length - 1)]} alt={product.name} className="h-auto max-h-[85vh] w-full" />
+                <img src={optimizeImage(product.images[Math.min(activeImage, product.images.length - 1)],1200)} width="1200" height="1200" fetchPriority="high" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" />
               </div>
               {product.images.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -163,7 +161,7 @@ export default function ProductDetail() {
                       aria-label={`Ver imagen ${i + 1} de ${product.name}`}
                       className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-route-soft transition-colors dark:bg-route-softDark ${activeImage === i ? 'border-route' : 'border-transparent'}`}
                     >
-                      <img src={img} alt="" className="h-full w-full object-contain" />
+                      <img src={optimizeImage(img,128)} width="64" height="64" loading="lazy" alt="" className="h-full w-full object-contain" />
                     </button>
                   ))}
                 </div>
@@ -176,10 +174,11 @@ export default function ProductDetail() {
           <span className="text-sm font-medium uppercase tracking-wide text-ink-soft/70 dark:text-paper/50">{product.brand}</span>
           <h1 className="font-display text-2xl font-bold text-ink dark:text-paper sm:text-3xl">{product.name}</h1>
           <p className="text-sm text-ink-soft dark:text-paper/60">{product.shortDescription}</p>
+          {product.ratingCount > 0 && <a href="#resenas"><Rating count={product.ratingCount} sum={product.ratingSum}/></a>}
 
           <div className="flex items-center gap-3">
             <span className="font-mono text-2xl font-bold text-ink dark:text-paper">{formatCurrency(product.price)}</span>
-            {product.compareAtPrice && (
+            {Number.isFinite(product.compareAtPrice) && product.compareAtPrice > product.price && (
               <>
                 <span className="font-mono text-sm text-ink-soft/60 line-through dark:text-paper/40">{formatCurrency(product.compareAtPrice)}</span>
                 <span className="rounded-full bg-signal-red/10 px-2 py-0.5 text-xs font-semibold text-signal-red">-{discount}%</span>
@@ -189,14 +188,7 @@ export default function ProductDetail() {
 
           <StockBadge stock={product.stock} className="w-fit" />
 
-          <div className="flex flex-wrap gap-x-5 gap-y-2 border-y border-paper-line py-3 dark:border-night-line">
-            {BENEFITS.map(({ icon: Icon, label }) => (
-              <span key={label} className="flex items-center gap-1.5 text-xs text-ink-soft dark:text-paper/60">
-                <Icon className="h-3.5 w-3.5 text-route" />
-                {label}
-              </span>
-            ))}
-          </div>
+          {benefits.length > 0 && <ul className="shop-benefits">{benefits.map(label=><li key={label}>{label}</li>)}</ul>}
 
           {!outOfStock && (
             <div className="flex items-center gap-3">
@@ -207,7 +199,7 @@ export default function ProductDetail() {
           {quantity > product.stock && !outOfStock && <p role="status" className="text-sm text-ink dark:text-paper">El stock cambió. Ajusta la cantidad antes de agregarlo.</p>}
 
           <div className="flex flex-col gap-2 sm:flex-row">
-            <button type="button" disabled={outOfStock || !canAdd(product) || quantity > product.stock} onClick={() => addItem(product, quantity)} className="btn-primary flex-1">
+            <button type="button" disabled={outOfStock || !canAdd(product) || quantity > product.stock} onClick={() => addItem(product, quantity)} className="shop-purchase btn-primary flex-1">
               <ShoppingCart className="h-4 w-4" />
               {outOfStock ? 'Sin stock' : 'Agregar al carrito'}
             </button>
@@ -243,6 +235,8 @@ export default function ProductDetail() {
           )}
         </div>
       </div>
+
+      <ProductReviews key={product.id} product={product}/>
 
       {related.length > 0 && (
         <Reveal as="section" className="mt-16">

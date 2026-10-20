@@ -7,6 +7,7 @@ import GuestStrip from './GuestStrip.jsx'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import HomeContentSection from './HomeContentSections.jsx'
+import CustomerReviews from './CustomerReviews.jsx'
 
 function CampaignSection({ section, refresh }) {
   const [now, setNow] = useState(Date.now())
@@ -57,13 +58,14 @@ export function HomeView({ data, error, refresh }) {
       {data.sections.map((section, index) => (
         <div
           key={section.id}
-          className={`storefront-section ${section.appearance?.tone === 'soft' ? 'bg-route-soft dark:bg-route-softDark' : ''} ${section.appearance?.density === 'compact' ? '[&>section]:py-4' : ''}`}
+          className={`storefront-section ${section.type === 'campaign' ? 'shop-campaign' : ''} ${section.appearance?.tone === 'soft' ? 'bg-route-soft dark:bg-route-softDark' : ''} ${section.appearance?.density === 'compact' ? '[&>section]:py-4' : ''}`}
           style={index > 1 ? { contentVisibility: 'auto', containIntrinsicSize: '560px' } : undefined}
         >
           {section.type === 'hero' && data.hero && (
-            <HeroSlider slides={data.hero.slides} carouselConfig={data.hero.config} />
+            <HeroSlider slides={data.hero.slides.slice(0,3)} carouselConfig={data.hero.config} />
           )}
           {section.type === 'guestStrip' && <GuestStrip {...section} />}
+          {section.type === 'reviews' && <CustomerReviews/>}
           {section.type === 'circles' && data.circles && (
             <CategoryShowcase items={data.circles.items} title={data.circles.title} />
           )}
@@ -73,6 +75,7 @@ export function HomeView({ data, error, refresh }) {
           <HomeContentSection section={section} />
         </div>
       ))}
+      {!data.states?.some(section=>section.type==='reviews') && <CustomerReviews/>}
     </div>
   )
 }

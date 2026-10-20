@@ -35,7 +35,7 @@ function createSection(type, categories, brands) {
   const additional = createAdditionalSection(type, newId)
   if (additional) return additional
   const id = newId()
-  if (type === 'hero' || type === 'circles' || type === 'guestStrip') return { id, type, active: true }
+  if (['hero','circles','guestStrip','reviews'].includes(type)) return { id, type, active: true }
   if (type === 'inlineBanners') return { id, type, active: true, slot: 'home-inline' }
   if (type === 'campaign') {
     return {
