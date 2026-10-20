@@ -46,6 +46,9 @@ UPDATE products p SET "searchText"=store_normalize_search(concat_ws(' ',p.name,p
   coalesce((SELECT name FROM brands WHERE id=p."brandId"),p.brand),
   (SELECT name FROM categories WHERE id=p."categoryId"),array_to_string(p.tags,' ')));
 -- pg_trgm already exists in the applied POS migration; no new extension.
+-- Flush deferred stock-integrity checks raised by the backfill before DDL.
+-- This validates existing balances and does not disable any constraint.
+SET CONSTRAINTS ALL IMMEDIATE;
 CREATE INDEX products_store_search_idx ON products USING GIN ("searchText" gin_trgm_ops);
 CREATE INDEX brands_store_search_idx ON brands USING GIN ("searchText" gin_trgm_ops);
 CREATE INDEX categories_store_search_idx ON categories USING GIN ("searchText" gin_trgm_ops);

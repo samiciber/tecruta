@@ -6,7 +6,7 @@ export const contentHref = z.string().trim().min(1).max(500).refine(value => {
   if (!validContentUrl(value)) return false
   if (!value.startsWith('/')) return true
   const path = value.split(/[?#]/)[0]
-  return ['/', '/catalogo', '/ayuda', '/marcas', '/pagos', '/mi-tarjeta', '/planes', '/elementos-guardados', '/iniciar-sesion', '/crear-cuenta', '/mis-pedidos', '/mis-direcciones', '/mi-cuenta'].includes(path) || /^\/(?:categoria|marca|producto)\/[^/]+$/.test(path) || /^\/legal\/(?:terminos|privacidad)$/.test(path)
+  return ['/', '/catalogo', '/categorias', '/ayuda', '/marcas', '/pagos', '/mi-tarjeta', '/planes', '/elementos-guardados', '/iniciar-sesion', '/crear-cuenta', '/mis-pedidos', '/mis-direcciones', '/mi-cuenta'].includes(path) || /^\/(?:categoria|marca|producto)\/[^/]+$/.test(path) || /^\/legal\/(?:terminos|privacidad)$/.test(path)
 }, 'Usa una ruta disponible o un enlace HTTPS válido, sin espacios ni credenciales.')
 const text = max => z.string().trim().max(max)
 const id = z.string().min(1).max(60)
@@ -31,15 +31,15 @@ export const footerSchema = z.object({
 })
 export const footerDefaults = footerSchema.parse({
   brand: storeConfig.name, description: storeConfig.description, contactTitle: 'Contacto',
-  contactLines: [storeConfig.location.city, storeConfig.hours.weekdays, storeConfig.hours.saturday],
-  email: storeConfig.social.email, whatsapp: storeConfig.whatsapp.number,
+  contactLines: [],
+  email: '', whatsapp: '',
   groups: [
-    { id: 'comprar', title: 'Comprar', visible: true, links: [{ id: 'catalogo', label: 'Productos', href: '/catalogo' }, { id: 'categorias', label: 'Categorías', href: '/catalogo' }, { id: 'ofertas', label: 'Ofertas', href: '/catalogo?ordenar=discount' }] },
+    { id: 'comprar', title: 'Comprar', visible: true, links: [{ id: 'catalogo', label: 'Productos', href: '/catalogo' }, { id: 'categorias', label: 'Categorías', href: '/categorias' }, { id: 'ofertas', label: 'Ofertas', href: '/catalogo?ordenar=discount' }] },
     { id: 'ayuda', title: 'Ayuda', visible: true, source: 'support', links: [] },
   ],
-  socials: Object.entries(storeConfig.social).filter(([key]) => key !== 'email').map(([platform, href]) => ({ id: platform, label: platform[0].toUpperCase() + platform.slice(1), platform, href })),
+  socials: [],
   newsletter: { enabled: true, title: 'Novedades de TecRuta', description: 'Deja tu correo para suscribirte a las novedades de TecRuta.', label: 'Correo electrónico', placeholder: 'tu@correo.com', consent: 'Acepto suscribirme y he leído la política de privacidad.', button: 'Suscribirme', success: 'Tu suscripción quedó registrada.' },
-  copyright: `${storeConfig.name}. ${storeConfig.location.city}.`,
+  copyright: storeConfig.name,
   legalLinks: [{ id: 'terminos', label: 'Términos', type: 'terminos' }, { id: 'privacidad', label: 'Privacidad', type: 'privacidad' }],
 })
 export function resolveFooter(settings) {
@@ -48,5 +48,6 @@ export function resolveFooter(settings) {
     ? (Array.isArray(settings.cartFooterLinks) ? settings.cartFooterLinks : []).filter(l => l.label && contentHref.safeParse(l.href).success).map((l, i) => ({ ...l, id: `support-${i}`, visible: true }))
     : g.links.filter(l => l.visible && l.label) })).filter(g => g.title && g.links.length), socials: footer.socials.filter(s => s.visible && s.label), legalLinks: footer.legalLinks.filter(l => l.visible && l.label) }
 }
-const legalPage = z.object({ title: text(120).min(1), body: text(18000).min(1) })
+// Empty documents are explicitly unpublished; administrators can save a draft.
+const legalPage = z.object({ title: text(120).min(1), body: text(18000) })
 export const legalPagesSchema = z.object({ terminos: legalPage, privacidad: legalPage })
