@@ -14,6 +14,9 @@ export function errorHandler(err, req, res, _next) {
   const status = err.status || 500
   // Never log request bodies, uploaded files or capabilities.
   if (status >= 500) console.error('Error del servidor:', err.name, err.code || 'unknown')
+  if (status >= 500 && process.env.ERROR_MONITOR_DSN) {
+    void import('../optional/errorMonitor.js').then(module => module.reportError(err)).catch(() => {})
+  }
   res.status(status).json({
     error: status === 500 ? 'Error interno del servidor.' : status === 413 ? 'El archivo o solicitud supera el tamaño permitido.' : err.type === 'entity.parse.failed' ? 'JSON inválido.' : err.message,
     ...(err.productId ? { productId: err.productId } : {}),

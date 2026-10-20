@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => {
       name: 'tecruta-application-html',
       transformIndexHtml(html) {
         if (!panel) return html
-        return html.replace(/<title>.*?<\/title>/, '<title>Panel TecRuta</title>')
+        return html.replace(/<link rel="manifest"[^>]+>/, '').replace(/<title>.*?<\/title>/, '<title>Panel TecRuta</title>')
           .replace('</head>', '<meta name="robots" content="noindex, nofollow, noarchive" /></head>')
       },
       generateBundle(_options, bundle) {

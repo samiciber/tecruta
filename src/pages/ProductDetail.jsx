@@ -4,6 +4,7 @@ import { optimizeImage } from '../utils/imageUrl.js'
 import { useSiteSettings } from '../hooks/useSiteContent.js'
 import ExpandableDescription from '../components/product/ExpandableDescription.jsx'
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { trackStoreEvent } from '../utils/storeEvents.js'
 import { Link, useParams } from 'react-router-dom'
 import { ShoppingCart, Zap, ChevronRight, Box, Images } from 'lucide-react'
 import StockBadge from '../components/product/StockBadge.jsx'
@@ -39,6 +40,7 @@ export default function ProductDetail() {
   const [detail, setDetail] = useState({ slug, status: 'loading' })
   const [retry, setRetry] = useState(0)
   const [zoomOpen, setZoomOpen] = useState(false)
+  const zoomTrigger = useRef(null)
   const viewedProduct = useRef(null)
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function ProductDetail() {
       const identity = result.status === 'ready' ? `${slug}:${result.product.id}` : null
       if (identity && viewedProduct.current !== identity) {
         viewedProduct.current = identity
+        trackStoreEvent('Vista de producto')
         setQuantity(1)
         setZoomOpen(false)
         setActiveImage(0)
@@ -159,7 +162,7 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                {gallery.length ? <button type="button" className="product-zoom-trigger" onClick={() => setZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}><img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" loading="eager" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /><span>Ampliar imagen</span></button> : <p className="p-8 text-center">Imagen no disponible</p>}
+                {gallery.length ? <button ref={zoomTrigger} type="button" className="product-zoom-trigger" onClick={() => setZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}><img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" loading="eager" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /><span>Ampliar imagen</span></button> : <p className="p-8 text-center">Imagen no disponible</p>}
               </div>
               {gallery.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -249,7 +252,7 @@ export default function ProductDetail() {
       </div>
 
       <ProductReviews key={product.id} product={product}/>
-      {zoomOpen && gallery.length > 0 && <Suspense fallback={<p role="status">Cargando ampliación…</p>}><ImageZoom images={gallery} active={Math.min(activeImage, gallery.length - 1)} name={product.name} onSelect={setActiveImage} onClose={() => setZoomOpen(false)} /></Suspense>}
+      {zoomOpen && gallery.length > 0 && <Suspense fallback={<p role="status">Cargando ampliación…</p>}><ImageZoom returnFocusRef={zoomTrigger} images={gallery} active={Math.min(activeImage, gallery.length - 1)} name={product.name} onSelect={setActiveImage} onClose={() => setZoomOpen(false)} /></Suspense>}
       <div className="product-mobile-buy"><strong>{formatCurrency(product.price)}</strong><button type="button" disabled={outOfStock || !canAdd(product) || quantity > product.stock} onClick={() => addItem(product, quantity)}>{outOfStock ? 'Agotado' : 'Agregar al carrito'}</button></div>
 
       {related.length > 0 && (

@@ -7,6 +7,7 @@ import { AuthContext } from './AuthContext.jsx'
 import { api } from '../services/api.js'
 import { productResource } from '../services/purchaseResources.js'
 import { canAddProduct, reviewCart, normalizeCart as sanitizeStoredCart } from '../utils/purchasePolicy.js'
+import { trackStoreEvent } from '../utils/storeEvents.js'
 
 export const CartContext = createContext(null)
 
@@ -146,6 +147,7 @@ export function CartProvider({ children }) {
         onAction: () => navigate('/carrito'),
       })
     }
+    trackStoreEvent('Agregar al carrito')
     return true
   }
 

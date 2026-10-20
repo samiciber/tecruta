@@ -1,0 +1,12 @@
+{
+  "id": "/",
+  "name": "TecRuta",
+  "short_name": "TecRuta",
+  "lang": "es-PE",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3D5AFE",
+  "icons": [{ "src": "/store-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

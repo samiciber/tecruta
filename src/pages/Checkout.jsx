@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { optimizeImage } from '../utils/imageUrl.js'
+import { trackStoreEvent } from '../utils/storeEvents.js'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Truck, Pencil } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
@@ -227,6 +228,7 @@ export default function Checkout() {
       setAttempt(current)
       const order = await submitAttempt(current, api.orders.create, token)
       setConfirmedOrder(order)
+      if (order.status !== 'CANCELLED') trackStoreEvent('Pedido creado')
       if (order.status !== 'CANCELLED') clearCart()
       try { forgetAttempt(window.sessionStorage) } catch {}
       setAttempt(null)

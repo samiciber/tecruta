@@ -49,7 +49,7 @@
       "destination": "/api/share?path=/legal/:type"
     },
     {
-      "source": "/((?!api/|assets/|robots.txt|manifest.webmanifest|favicon).*)",
+      "source": "/((?!api/|assets/|robots.txt|manifest.webmanifest|store-icon.svg|favicon).*)",
       "destination": "/index.html"
     }
   ],
