@@ -29,11 +29,12 @@ export async function reviewEligibility(db, productId, user) {
 export async function createReview(db, productId, userId, body) {
   return db.$transaction(async tx => {
     await authorize(tx, userId, 'CUSTOMER')
-    await lockProduct(tx, productId)
     const line = await tx.orderItem.findUnique({ where: { id: body.orderItemId } })
     if (!line || line.productId !== productId) fail(403, 'Necesitas una compra entregada de este producto.')
     const orders = await tx.$queryRaw`SELECT id, status, "userId" FROM orders WHERE id=${line.orderId} FOR SHARE`
     if (orders[0]?.userId !== userId || orders[0]?.status !== 'DELIVERED') fail(403, 'Necesitas una compra entregada de este producto.')
+    // Same order -> product lock order used by web order transitions.
+    await lockProduct(tx, productId)
     if (await tx.productReview.findUnique({ where: { userId_productId: { userId, productId } } })) fail(409, 'Ya enviaste una reseña de este producto.')
     const row = await tx.productReview.create({ data: { productId, userId, orderItemId: line.id, rating: body.rating, title: body.title || null, text: body.text } })
     return { id: row.id, status: row.status }

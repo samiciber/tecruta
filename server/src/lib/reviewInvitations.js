@@ -17,7 +17,8 @@ export async function runReviewInvitations({ db, env = process.env, send = sendR
     if (await db.productReview.findUnique({where:{userId_productId:{userId:line.order.userId,productId:line.productId}}})) continue
     // Persist the start before contacting the provider, so uncertainty never
     // causes automatic delivery beyond the provider's idempotency window.
-    const claim = await db.reviewInvitation.upsert({where:{orderItemId:line.id},create:{orderItemId:line.id,startedAt:now},update:{}})
+    await db.reviewInvitation.createMany({data:[{orderItemId:line.id,startedAt:now}],skipDuplicates:true})
+    const claim = await db.reviewInvitation.findUnique({where:{orderItemId:line.id}})
     if (claim.sentAt || now - claim.startedAt > 23 * 3600000) continue
     await db.$transaction(async tx => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`review-invite:${line.id}`},0))`
