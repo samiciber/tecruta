@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { optimizeImage } from '../utils/imageUrl.js'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import ProductBrowser from '../components/catalog/ProductBrowser.jsx'
@@ -15,7 +16,7 @@ function Tile({ tile }) {
   const inner = (
     <>
       <span className="block aspect-[4/3] w-full overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark">
-        {tile.image && <img src={tile.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />}
+        {tile.image && <img src={optimizeImage(tile.image, 600)} width="600" height="450" alt="" loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />}
       </span>
       <span className="mt-2 block text-center text-sm font-semibold text-ink group-hover:text-route dark:text-paper">{tile.title}</span>
     </>

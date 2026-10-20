@@ -17,6 +17,7 @@ import { useCategories } from '../hooks/useCategories.js'
 import { resolveCatalogDetail } from '../services/catalogDetail.js'
 import { formatCurrency, calculateDiscountPercent } from '../utils/formatCurrency.js'
 import { useCart } from '../hooks/useCart.js'
+import { api } from '../services/api.js'
 
 
 export default function ProductDetail() {
@@ -43,6 +44,7 @@ export default function ProductDetail() {
     resolveCatalogDetail({
       entry,
       source,
+      fetchProduct: api.getProductBySlug,
       loadFallback: category => import(`../data/products/${category}.js`).then(mod => mod.productos),
     }).then((result) => {
       if (!active) return

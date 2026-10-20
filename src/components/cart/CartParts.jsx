@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { optimizeImage } from '../../utils/imageUrl.js'
 import { Link } from 'react-router-dom'
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Heart } from 'lucide-react'
 import QuantitySelector from '../product/QuantitySelector.jsx'
@@ -30,7 +31,7 @@ export function MiniProductCard({ product, onRemove }) {
   return (
     <div className="flex h-full w-48 shrink-0 snap-start flex-col rounded-lg border border-gray-200 p-3 dark:border-night-line sm:w-52">
       <Link to={`/producto/${product.slug}`} className="block aspect-square overflow-hidden rounded bg-white">
-        <img src={product.image} alt="" loading="lazy" className="h-full w-full object-contain" />
+        {product.image && <img src={optimizeImage(product.image, 400)} width="400" height="400" alt="" loading="lazy" decoding="async" className="h-full w-full object-contain" />}
       </Link>
       <Link to={`/producto/${product.slug}`} className="mt-3 line-clamp-3 text-[13px] leading-snug text-ink hover:underline dark:text-paper">
         <strong>{product.brand}</strong> - {product.name}
@@ -125,7 +126,7 @@ export function CartPageItem({ item }) {
   return (
     <li className="flex min-w-0 flex-wrap gap-4 py-5 sm:flex-nowrap">
       <Link to={`/producto/${item.slug}`} className="h-24 w-24 shrink-0 overflow-hidden rounded bg-white">
-        <img src={item.image} alt="" className="h-full w-full object-contain" />
+        {item.image && <img src={optimizeImage(item.image, 192)} width="192" height="192" loading="lazy" decoding="async" alt="" className="h-full w-full object-contain" />}
       </Link>
       <div className="flex min-w-0 flex-1 basis-36 flex-col gap-1 sm:basis-0">
         <Link to={`/producto/${item.slug}`} className="line-clamp-2 text-sm font-medium text-ink hover:underline dark:text-paper"><strong>{item.brand}</strong> - {item.name}</Link>

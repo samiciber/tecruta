@@ -1,4 +1,5 @@
 import React from 'react'
+import { optimizeImage } from '../../utils/imageUrl.js'
 import { Link } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import QuantitySelector from '../product/QuantitySelector.jsx'
@@ -11,7 +12,7 @@ export default function CartItem({ item }) {
   return (
     <div className="flex gap-3 py-4">
       <Link to={`/producto/${item.slug}`} className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-route-soft dark:bg-route-softDark">
-        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+        {item.image && <img src={optimizeImage(item.image, 160)} width="160" height="160" loading="lazy" decoding="async" alt={item.name} className="h-full w-full object-cover" />}
       </Link>
       <div className="flex flex-1 flex-col gap-1">
         <Link to={`/producto/${item.slug}`} className="line-clamp-2 text-sm font-medium text-ink hover:text-route dark:text-paper">

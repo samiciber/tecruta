@@ -23,6 +23,7 @@ import { inventoryRouter } from './routes/inventory.routes.js'
 import { posRouter } from './routes/pos.routes.js'
 import { staffRouter } from './routes/staff.routes.js'
 import { reviewsRouter, reviewAdminRouter } from './routes/reviews.routes.js'
+import { publicCompression, publicResponsePolicy } from './middleware/publicResponses.js'
 
 export function createApp({ orders = ordersRouter, admin = adminRouter, inventory = inventoryRouter, staff = staffRouter, auth = authRouter, reviews = reviewsRouter, reviewAdmin = reviewAdminRouter } = {}) {
   validateRuntimeEnv()
@@ -32,7 +33,10 @@ export function createApp({ orders = ordersRouter, admin = adminRouter, inventor
   if (!Number.isInteger(proxyHops) || proxyHops < 0 || proxyHops > 5) throw new Error('TRUST_PROXY debe ser un entero entre 0 y 5.')
   app.set('trust proxy', proxyHops)
   app.disable('x-powered-by')
+  app.disable('etag')
   app.use(apiSecurityHeaders())
+  app.use(publicCompression())
+  app.use(publicResponsePolicy)
 
   const origins = corsOrigins()
   app.use(cors({ origin(origin, callback) { callback(null, !origin || origins.includes(origin)) },

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { optimizeImage } from '../../utils/imageUrl.js'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useProductIndex } from '../../hooks/useProductIndex.js'
@@ -30,7 +31,7 @@ export default function CartUpsell() {
         {suggestions.map((p) => (
           <div key={p.id} className="flex items-center gap-3">
             <Link to={`/producto/${p.slug}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-route-soft dark:bg-route-softDark">
-              <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+              {p.image && <img src={optimizeImage(p.image, 160)} width="160" height="160" loading="lazy" decoding="async" alt={p.name} className="h-full w-full object-cover" />}
             </Link>
             <div className="min-w-0 flex-1">
               <Link to={`/producto/${p.slug}`} className="line-clamp-1 text-xs font-medium text-ink hover:text-route dark:text-paper">

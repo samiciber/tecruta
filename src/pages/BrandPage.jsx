@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { optimizeImage } from '../utils/imageUrl.js'
 import { Link, useParams } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import ProductBrowser from '../components/catalog/ProductBrowser.jsx'
@@ -34,7 +35,7 @@ export default function BrandPage() {
         <span aria-current="page" className="text-ink dark:text-paper">{brand.name}</span>
       </nav>
       <div className="mb-6 flex items-center gap-4">
-        {brand.logo && <img src={brand.logo} alt="" className="h-12 w-24 object-contain" />}
+        {brand.logo && <img src={optimizeImage(brand.logo, 240)} width="240" height="120" loading="lazy" decoding="async" alt="" className="h-12 w-24 object-contain" />}
         <h1 className="font-display text-2xl font-bold text-ink dark:text-paper sm:text-3xl">{brand.name}</h1>
       </div>
 

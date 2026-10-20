@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { prisma } from '../lib/prisma.js'
-import { serializeProduct } from '../lib/serializers.js'
+import { serializeProduct, serializeProductCard, productCardSelect } from '../lib/serializers.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 
 export const productsRouter = Router()
@@ -36,13 +36,14 @@ productsRouter.get(
     if (featured === 'true') where.featured = true
     if (q) where.name = { contains: String(q), mode: 'insensitive' }
 
+    const cards = req.query.view === 'cards'
     const products = await prisma.product.findMany({
       where,
-      include: includeRelations,
+      ...(cards ? { select: productCardSelect } : { include: includeRelations }),
       orderBy: { createdAt: 'desc' },
     })
 
-    res.json(products.map(serializeProduct))
+    res.json(products.map(cards ? serializeProductCard : serializeProduct))
   }),
 )
 

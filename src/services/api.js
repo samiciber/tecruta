@@ -94,7 +94,7 @@ export const api = {
   getSiteSettings: () => request('/api/site-settings'),
   getCategoryTree: () => request('/api/categories/tree'),
   getCategoryDetail: (slug, options = {}) => request(`/api/categories/${encodeURIComponent(slug)}`, options),
-  getHome: (options = {}) => request('/api/home', { cache: 'no-store', ...options }),
+  getHome: (options = {}) => request('/api/home', { cache: 'no-cache', ...options }),
 
   auth: {
     register: (payload) => request('/api/auth/register', { method: 'POST', body: payload }),

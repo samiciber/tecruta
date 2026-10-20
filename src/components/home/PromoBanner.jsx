@@ -1,4 +1,5 @@
 import React from 'react'
+import { optimizeImage } from '../../utils/imageUrl.js'
 import { Link } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import { formatCurrency } from '../../utils/formatCurrency.js'
@@ -36,7 +37,8 @@ export default function PromoBanner({ eyebrow, title, description, ctaLabel = 'V
           className="group flex aspect-[4/3] items-center justify-center overflow-hidden rounded-xl2 bg-route-soft dark:bg-route-softDark"
         >
           <img
-            src={product.image}
+            src={optimizeImage(product.image, 900)}
+            width="900" height="675" loading="lazy" decoding="async"
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />

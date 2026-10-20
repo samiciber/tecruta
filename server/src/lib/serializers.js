@@ -107,6 +107,26 @@ export function serializeProduct(product) {
   }
 }
 
+// Explicit opt-in DTO: existing integrations retain the complete response.
+export const productCardSelect = {
+  id: true, slug: true, sku: true, name: true, brand: true, price: true,
+  compareAtPrice: true, stock: true, ratingCount: true, ratingSum: true,
+  featured: true, bestSeller: true, image: true, tags: true,
+  category: { select: { slug: true } }, brandRef: { select: { slug: true } },
+  images: { take: 1, orderBy: { position: 'asc' }, select: { url: true, position: true } },
+}
+export function serializeProductCard(product) {
+  return {
+    id: product.id, slug: product.slug, sku: product.sku, name: product.name,
+    brand: product.brand, category: product.category?.slug, brandSlug: product.brandRef?.slug ?? null,
+    price: Number(product.price), compareAtPrice: product.compareAtPrice == null ? null : Number(product.compareAtPrice),
+    stock: product.stock, ratingCount: product.ratingCount, ratingSum: product.ratingSum,
+    featured: product.featured, bestSeller: product.bestSeller, tags: product.tags,
+    image: product.image || product.images[0]?.url || null,
+    images: product.image ? [product.image] : product.images.map(row => row.url), summary: true,
+  }
+}
+
 // ---------------------------------------------------------------------
 // Navegación, marcas, tiendas (Bloque 1)
 // ---------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { optimizeImage } from '../utils/imageUrl.js'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Truck, Pencil } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
@@ -485,7 +486,7 @@ export default function Checkout() {
             <ul className="mb-4 flex flex-col gap-3">
               {items.map((item) => (
                 <li key={item.id} className="flex items-center gap-3 text-sm">
-                  <img src={item.image} alt={item.name} className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+                  {item.image && <img src={optimizeImage(item.image, 96)} width="96" height="96" loading="lazy" decoding="async" alt={item.name} className="h-12 w-12 shrink-0 rounded-lg object-cover" />}
                   <span className="flex-1 line-clamp-2 text-ink dark:text-paper">
                     {item.quantity}x {item.name}
                   </span>
