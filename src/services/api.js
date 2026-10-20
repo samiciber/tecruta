@@ -1,10 +1,7 @@
 // Cliente HTTP hacia la API de TecRuta (carpeta server/).
 //
-// Para el catálogo (getProducts/getProductBySlug/getCategories): si la
-// API no responde, quien llame debe atrapar el error — los hooks que las
-// usan (useProductIndex, ProductDetail) ya caen de vuelta a los datos
-// estáticos empaquetados en el frontend, así la tienda nunca deja de
-// funcionar por esto.
+// El catálogo muestra errores de disponibilidad y permite reintentar.
+// Nunca sustituye una caída de API por precios o existencias de ejemplo.
 //
 // Para auth (login/registro/etc.): no hay datos estáticos de respaldo
 // posibles (es información real de cuentas), así que si la API no

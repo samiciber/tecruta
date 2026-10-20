@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeftRight, CircleDollarSign, CircleHelp, Package, Truck } from 'lucide-react'
 import { BestSellersCard, CartPageItem, SavedItemsCard } from '../components/cart/CartParts.jsx'
-import WhatsAppBubble from '../components/ui/WhatsAppBubble.jsx'
 import { useCart } from '../hooks/useCart.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { useSiteSettings } from '../hooks/useSiteContent.js'
@@ -13,11 +12,11 @@ import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
 // Íconos fijos por posición; texto y destino son editables (Admin → Ajustes).
 const FOOTER_ICONS = [CircleHelp, Package, Truck, ArrowLeftRight, CircleDollarSign]
 const FOOTER_DEFAULT = [
-  { href: '/ayuda', label: 'Visita nuestro Centro de Apoyo' },
+  { href: '/ayuda', label: 'Centro de ayuda' },
   { href: '/mis-pedidos', label: 'Consulta el estado de tu pedido' },
-  { href: '/proximamente', label: 'Envío, entrega y recogida en tienda' },
-  { href: '/proximamente', label: 'Devoluciones e intercambios' },
-  { href: '/proximamente', label: 'Garantía de igualación de precio' },
+  { href: '/ayuda#envios', label: 'Información de envío' },
+  { href: '/ayuda#garantia', label: 'Información de garantía' },
+  { href: '/ayuda#pagos', label: 'Métodos de pago' },
 ]
 
 export default function Cart() {
@@ -97,7 +96,6 @@ export default function Cart() {
         </ul>
       </nav>
 
-      <WhatsAppBubble />
     </div>
   )
 }

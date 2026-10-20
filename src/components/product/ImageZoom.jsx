@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react'
 import { optimizeImage } from '../../utils/imageUrl.js'
 
-export default function ImageZoom({ images, active, name, onSelect, onClose }) {
+export default function ImageZoom({ images, active, name, onSelect, onClose, returnFocusRef }) {
   const ref = useRef(null)
   useEffect(() => {
     const dialog = ref.current
-    const previous = document.activeElement
+    const previous = returnFocusRef?.current || document.activeElement
     const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     dialog.showModal()

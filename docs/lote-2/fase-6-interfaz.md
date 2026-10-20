@@ -35,3 +35,10 @@ ningún contrato ni se ha modificado la base de producción.
 
 La comprobación visual local, de teclado, tamaños y temas se recoge en el informe
 de validación. El contenido QA no representa políticas comerciales reales.
+
+La revisión retiró también contactos, horarios y redes del respaldo estático
+del pie (los configurados se conservan), enlaces de igualación de precio que
+apuntaban a Próximamente y distintivos sin sustento de «pago verificado» o «envío
+asegurado» en checkout. Este último muestra solo benefits de Datos comerciales.
+El carrito utiliza el único chat global; se elimina su burbuja duplicada para
+que no cubra la navegación móvil. No cambia ningún cálculo ni validación de pago.
