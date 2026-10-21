@@ -1,5 +1,20 @@
 # Publicación futura y recuperación
 
+## Intento autorizado del 20 de octubre de 2026
+
+El dueño autorizó publicar este lote. Se verificaron las sesiones de Vercel,
+Render y Neon y se identificaron los despliegues anteriores, sin cambiarlos.
+La conexión Git HTTPS al repositorio falló por conexión restablecida/timeout;
+el conector GitHub mostró permiso de lectura sin escritura. No se publicaron
+commits, no se creó un respaldo nuevo ni se aplicaron migraciones o banderas.
+No se solicitaron ni se leyeron credenciales de producción.
+
+Antes de continuar: restablecer escritura en GitHub, comprobar la cabeza remota
+sin sobrescribir trabajo ajeno, tomar y verificar respaldo, publicar la API
+con las dos migraciones aditivas y luego los frontends. Mantener los optativos
+apagados y documentar la deuda histórica; no se declara aceptación integral.
+La autorización ya está dada: no hace falta pedirla de nuevo por este bloqueo.
+
 **No se ha publicado este lote, no se ha hecho push/merge a main y no se han
 aplicado migraciones a producción.** Cada fase requiere aprobación posterior.
 La tienda en operación conserva su versión y sus datos.

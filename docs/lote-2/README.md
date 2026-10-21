@@ -1,5 +1,16 @@
 # Lote 2: tienda completa
 
+## Publicación autorizada, pendiente de acceso
+
+El 20 de octubre de 2026 el dueño autorizó «esta bien publicalo».
+La comprobación de publicación encontró acceso activo a Vercel, Render y Neon,
+pero Git por HTTPS no pudo comunicarse con GitHub y el conector disponible
+solo permite leer el repositorio. No se hizo push, promoción, migración ni
+cambio de configuración de producción. La tienda conserva su versión anterior.
+La autorización se conserva; falta restablecer un acceso de escritura operativo
+al repositorio antes de preparar el respaldo y continuar con la API y frontend.
+Las notas siguientes describen la entrega local anterior a esa autorización.
+
 Trabajo local desde la rama de rediseño publicada. No se despliega, no se hace
 push ni merge a main, no se leen archivos .env reales ni se usa producción.
 Los datos sintéticos pertenecen exclusivamente a PostgreSQL local desechable.
