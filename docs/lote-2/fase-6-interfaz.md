@@ -42,3 +42,7 @@ apuntaban a Próximamente y distintivos sin sustento de «pago verificado» o «
 asegurado» en checkout. Este último muestra solo benefits de Datos comerciales.
 El carrito utiliza el único chat global; se elimina su burbuja duplicada para
 que no cubra la navegación móvil. No cambia ningún cálculo ni validación de pago.
+
+Se retiró del resumen del checkout el bloque independiente con condiciones de
+entrega escritas en storeConfig. El componente compartido FreeShippingBar ya
+presenta exclusivamente shippingText de Datos comerciales y se oculta si falta.

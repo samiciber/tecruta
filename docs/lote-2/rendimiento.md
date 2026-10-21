@@ -1,7 +1,7 @@
 # Rendimiento medido localmente
 
 20 de octubre de 2026 (Lima). Referencia: rama base de rediseño; después:
-este lote. Lighthouse 12.8.2 con Edge headless, builds Vite **production**,
+este lote en la revisión 5596ecf. Lighthouse 12.8.2 con Edge headless, builds Vite **production**,
 datos e imágenes sintéticos y PostgreSQL local desechable. Sin producción ni
 servicios privados. Las medidas de desarrollo se descartaron del informe.
 
@@ -14,8 +14,11 @@ scripts/performance-preview.mjs current`. Los puertos de medición son 5301 y
 
 El lanzador fuerza NODE_ENV=production y comprueba que el entrypoint cumple el
 presupuesto: 288349 bytes en la referencia y 295376 en el comparador nuevo. La
-entrega normal mide 295418; la diferencia corresponde a su configuración de
-orígenes frente a los de loopback del comparador. No se midió React de desarrollo.
+compilación normal de esa revisión medía 295418; la diferencia corresponde a su
+configuración de orígenes frente a los de loopback del comparador. La corrección
+final retiró el bloque de envío estático del checkout y sus imports; los builds
+y el presupuesto se repitieron después. La tabla conserva las medidas anteriores
+a esa corrección visual. No se midió React de desarrollo.
 
 Se ejecutó Lighthouse sobre la portada con performance y accessibility. Móvil:
 390×844, simulación de CPU 4×, RTT 150 ms y throughput 1638,4 Kbps. Escritorio:
@@ -42,9 +45,9 @@ Una muestra por combinación no establece una garantía de tiempo ni un percenti
 | Después | Escritorio | Primera | 96 | 100 | 665 | 0.1131 | 0 | 248611 |
 | Después | Escritorio | Repetida | 99 | 100 | 771 | 0.0259 | 0 | 248611 |
 
-El presupuesto de JavaScript principal se cumple: 288349 → 295418 bytes
-(+2,45 %; límite +10 %), gzip 91433 → 93919. Con optativos activados en una
-compilación solo en memoria, el principal mide 295737 y ambos módulos quedan
+El presupuesto final de JavaScript principal se cumple: 288349 → 295046 bytes
+(+2,32 %; límite +10 %), gzip 91433 → 93703. Con optativos activados en una
+compilación solo en memoria, el principal mide 295365 y ambos módulos quedan
 diferidos. Apagados no aparecen sus chunks en el manifest. Ver `bundle.json`.
 
 El cambio reduce el desplazamiento del pie mientras carga el inicio y corrige

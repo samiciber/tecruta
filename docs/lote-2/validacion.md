@@ -7,7 +7,7 @@
 - `npm test`: 55/55. `npm test --prefix server`: 73/73.
 - Batería completa: 199 pruebas, 144 correctas, 55 fallidas, ninguna omitida.
   Antes: 172/115/57. Los 55 fallos pertenecían al conjunto inicial; ver triage.
-- Ambos builds correctos sin descubrir .env. Bundle principal +2,45 %, por
+- Ambos builds correctos sin descubrir .env. Bundle principal +2,32 %, por
   debajo del presupuesto de +10 %. También se compiló en memoria con las
   banderas optativas habilitadas: sus módulos quedan en chunks diferidos.
 - ESLint sin errores (cinco advertencias de directivas antiguas); Prettier

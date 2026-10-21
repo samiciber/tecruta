@@ -1,10 +1,10 @@
 {
   "baseMainBytes": 288349,
-  "mainBytes": 295418,
-  "gzipBytes": 93919,
-  "growthPercent": 2.45,
+  "mainBytes": 295046,
+  "gzipBytes": 93703,
+  "growthPercent": 2.32,
   "maximumGrowthPercent": 10,
-  "optionalEnabledMainBytes": 295737,
+  "optionalEnabledMainBytes": 295365,
   "optionalModulesDeferred": true,
   "disabledBuildHasNoOptionalChunks": true
 }
