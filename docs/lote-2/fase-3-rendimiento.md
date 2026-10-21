@@ -34,7 +34,8 @@ de /api/health acorde con las condiciones del proveedor. No se cambian planes,
 alojamiento ni se configura un ping en esta entrega. Health comprueba proceso;
 la comprobación operativa del catálogo cubre también el acceso a la base.
 
-Las mediciones antes/después y las imágenes se completarán tras el pulido móvil.
+Las mediciones antes/después están en [rendimiento.md](rendimiento.md), y las
+capturas en [capturas/README.md](capturas/README.md). No son mediciones de producción.
 
 La utilidad Cloudinary también se aplica a miniaturas de carrito/checkout,
 productos recomendados, referencias de categoría y logos. Las imágenes tienen

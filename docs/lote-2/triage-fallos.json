@@ -1,0 +1,222 @@
+[
+  {
+    "name": "footer, layout preview and newsletter persist in disposable PostgreSQL with real routes",
+    "file": "final-home.integration.test.mjs"
+  },
+  {
+    "name": "Home routes persist and resolve the ADMIN layout against disposable PostgreSQL",
+    "file": "home-layout.integration.test.mjs"
+  },
+  {
+    "name": "upgrade from five migrations preserves every existing row and marks only the eight legacy slugs",
+    "file": "lote-2.test.mjs"
+  },
+  {
+    "name": "already matching schema and legacy data can be baselined without executing the migration again",
+    "file": "lote-2.test.mjs"
+  },
+  {
+    "name": "a failing statement rolls back the new schema and legacy update",
+    "file": "lote-2.test.mjs"
+  },
+  {
+    "name": "aggregates duplicates and computes exact server prices without trusting supplied totals",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "concurrent retries create one order and reserve stock once; changed payload/principal is rejected",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "simultaneous different orders never oversell; failed multi-product order fully rolls back",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "receipt enforces owner/admin/guest capability and returns only ok + receiptUrl",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "small default JSON, upload-specific limits, signatures and authorization precede uploader",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "cancellation restores stock once under concurrency; terminal and backwards transitions fail",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "legal delivery flow records each transition once; delivered order cannot cancel or return to paid",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "missing/invalid auth and idempotency keys never create an order; rate limits return 429",
+    "file": "lote-3.test.mjs"
+  },
+  {
+    "name": "migration preserves account/password/role, invalidates plaintext codes and matches schema from zero/history",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "registration/resend/recovery have identical 202 responses for new, existing, missing and failed-mail cases",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "verification hash expires, is single-use and succeeds once under simultaneous requests",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "five wrong attempts lock an account; resending cannot reset the limit; independent reset codes are protected",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "resend cooldown rotates hashes without resetting wrong-attempt count",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "state is random/cookie-bound, expires and only one concurrent callback reaches Google with PKCE",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "invalid Google claims and unverified local accounts are never linked or verified; existing other sub is not replaced",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "exchange URL contains no session token; per-tab verifier and one-use/60-second expiry are enforced",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "verified local account links without changing password/name/role; new Google account never inherits provider role",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "production OAuth cookie is host-only, Secure, HttpOnly and Lax with a short lifetime",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "logout-all, password change and recovery invalidate every previous version, including legacy/null version",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "revocation after callback prevents exchanging a pending Google login into a fresh session",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "database failures stay 500 for required/optional authentication; invalid JWT is 401",
+    "file": "lote-4.test.mjs"
+  },
+  {
+    "name": "creation accepts explicit/hidden IDs, no brand and nullable optional data",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "patch changes and clears both brand columns, preserving other fields and DTO parity",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "editing reconciles old text with its relation/name; unknown legacy text requires explicit repair",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "duplicate slug returns 409 and failed full edit leaves images, brand and price intact",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "deletion returns 409 for real foreign keys, 204 after unlinking and 404 when missing",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "concurrent product patches preserve coherent brand pairs and fields omitted by the other edit",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "brand rename while the product waits on its lock is read again before storing its name",
+    "file": "lote-6.test.mjs"
+  },
+  {
+    "name": "owner list ignores userId/orderId query overrides and excludes other users and guests",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "history is chronological with deterministic ties; internal notes/URLs stay private",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "receipt by ID denies another customer, ADMIN non-owner, guest order, missing order and no file before downloading",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "anonymous and invalid sessions cannot list orders or download a known receipt",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "owner gets only the PNG/PDF bytes with private cache and safe file headers",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "read endpoints leave orders, stock, receipts and history unchanged",
+    "file": "lote-9.test.mjs"
+  },
+  {
+    "name": "minimal migration: nullable alias, original tables/data/roles and no inventory/POS",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "upgrade from previous migrations preserves complete existing rows and produces no schema drift",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "ADMIN email and alias share an account; store still accepts email only",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "Google from panel and store returns to correct configured origin, conserves ADMIN and prevents code reuse",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "Google panel rejects customers and unknown accounts without creating or upgrading users",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "role is rechecked before exchange and in ADMIN API",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "state, cookie tampering, expiry, provider errors and external destinations fail closed",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "verified email recovery establishes password on Google account, keeps identity, invalidates sessions and consumes code once",
+    "file": "panel-access.test.mjs"
+  },
+  {
+    "name": "login real: ADMIN, CASHIER y WAREHOUSE; CUSTOMER rechazado en panel y válido en tienda",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "invitación individual, duplicados, activación privada y código de un uso",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "retirar acceso invalida sesiones y conserva la cuenta y el historial",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "no se cambia acceso con caja abierta; el endpoint anterior también lo protege",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "fallo de correo queda explícito y no simula activación ni entrega",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "un administrador autoriza otra cuenta ADMIN e invalida su sesión anterior",
+    "file": "panel.test.mjs"
+  },
+  {
+    "name": "exact CORS configuration and panel return destinations",
+    "file": "separation.test.mjs"
+  },
+  {
+    "name": "real API: both origins and ADMIN permissions work without inventory or POS migrations",
+    "file": "separation.test.mjs"
+  }
+]

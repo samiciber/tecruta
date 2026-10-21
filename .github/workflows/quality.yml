@@ -35,6 +35,7 @@ jobs:
       - run: npm run lint
       - run: npm run check:syntax
       - run: npm run build:qa
+      - run: node scripts/check-store-build.mjs
       - run: npm audit --omit=dev && npm audit --prefix server --omit=dev
       - run: node scripts/qa-service-postgres.mjs
         env:

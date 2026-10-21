@@ -1,0 +1,21 @@
+{
+  "unit": {
+    "exit": 0,
+    "tests": 55,
+    "pass": 55,
+    "fail": 0
+  },
+  "lint": {
+    "exit": 0
+  },
+  "syntax": {
+    "exit": 0,
+    "files": 101
+  },
+  "format": {
+    "exit": 0
+  },
+  "diffCheck": {
+    "exit": 0
+  }
+}

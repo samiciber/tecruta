@@ -24,8 +24,10 @@ Los pedidos ya están confirmados antes de intentar el correo.
 Reintentos automáticos solo durante 23 horas desde el primer intento. Después
 queda REVIEW y requiere conciliación con el proveedor; no reiniciar la clave
 ni borrar el registro de un resultado incierto. Para reactivar tras un periodo
-apagado, revisar el backlog antes: se enviarán los estados en cola en orden
-cronológico, incluidos los ocurridos mientras estaba apagado.
+apagado, revisar el backlog antes: se intentan los estados por fecha de cola e
+id, incluidos los ocurridos mientras estaba apagado. Workers concurrentes y el
+proveedor no garantizan el orden de llegada al buzón. Una cola de errores puede
+demorar eventos posteriores; este worker no ofrece un SLA de entrega.
 
 El correo enumera artículos, cantidades y total; no contiene sesiones, comprobantes
 privados, dirección, teléfono, documento, QR, cuenta ni CCI. Las instrucciones de

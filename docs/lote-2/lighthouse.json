@@ -1,0 +1,135 @@
+{
+  "tool": "Lighthouse 12.8.2 / Edge headless",
+  "mode": "production",
+  "scope": "Synthetic disposable loopback PostgreSQL only; not production infrastructure",
+  "compiledEntryBytes": {
+    "before": 288349,
+    "after": 295376
+  },
+  "configs": {
+    "movil": {
+      "method": "simulate",
+      "throttling": {
+        "rttMs": 150,
+        "throughputKbps": 1638.4,
+        "requestLatencyMs": 562.5,
+        "downloadThroughputKbps": 1474.5600000000002,
+        "uploadThroughputKbps": 675,
+        "cpuSlowdownMultiplier": 4
+      },
+      "disableStorageReset": true
+    },
+    "escritorio": {
+      "method": "simulate",
+      "throttling": {
+        "rttMs": 40,
+        "throughputKbps": 10240,
+        "requestLatencyMs": 0,
+        "downloadThroughputKbps": 0,
+        "uploadThroughputKbps": 0,
+        "cpuSlowdownMultiplier": 1
+      },
+      "disableStorageReset": true
+    }
+  },
+  "viewport": {
+    "mobile": {
+      "width": 390,
+      "height": 844
+    },
+    "desktop": {
+      "width": 1280,
+      "height": 900
+    }
+  },
+  "runs": [
+    {
+      "version": "antes",
+      "device": "movil",
+      "temperature": "frio",
+      "performance": 78,
+      "accessibility": 97,
+      "lcpMs": 2711,
+      "cls": 0.1647,
+      "tbtMs": 24,
+      "transferredBytes": 158566
+    },
+    {
+      "version": "antes",
+      "device": "movil",
+      "temperature": "caliente",
+      "performance": 76,
+      "accessibility": 97,
+      "lcpMs": 2874,
+      "cls": 0.1647,
+      "tbtMs": 79,
+      "transferredBytes": 158566
+    },
+    {
+      "version": "antes",
+      "device": "escritorio",
+      "temperature": "frio",
+      "performance": 71,
+      "accessibility": 97,
+      "lcpMs": 1560,
+      "cls": 0.3415,
+      "tbtMs": 0,
+      "transferredBytes": 256933
+    },
+    {
+      "version": "antes",
+      "device": "escritorio",
+      "temperature": "caliente",
+      "performance": 97,
+      "accessibility": 97,
+      "lcpMs": 706,
+      "cls": 0.101,
+      "tbtMs": 0,
+      "transferredBytes": 256933
+    },
+    {
+      "version": "despues",
+      "device": "movil",
+      "temperature": "frio",
+      "performance": 94,
+      "accessibility": 100,
+      "lcpMs": 2699,
+      "cls": 0.0379,
+      "tbtMs": 18,
+      "transferredBytes": 248036
+    },
+    {
+      "version": "despues",
+      "device": "movil",
+      "temperature": "caliente",
+      "performance": 93,
+      "accessibility": 100,
+      "lcpMs": 2867,
+      "cls": 0.0379,
+      "tbtMs": 19,
+      "transferredBytes": 247323
+    },
+    {
+      "version": "despues",
+      "device": "escritorio",
+      "temperature": "frio",
+      "performance": 96,
+      "accessibility": 100,
+      "lcpMs": 665,
+      "cls": 0.1131,
+      "tbtMs": 0,
+      "transferredBytes": 248611
+    },
+    {
+      "version": "despues",
+      "device": "escritorio",
+      "temperature": "caliente",
+      "performance": 99,
+      "accessibility": 100,
+      "lcpMs": 771,
+      "cls": 0.0259,
+      "tbtMs": 0,
+      "transferredBytes": 248611
+    }
+  ]
+}

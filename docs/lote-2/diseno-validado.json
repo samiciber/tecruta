@@ -1,0 +1,170 @@
+[
+  {
+    "page": "portada",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "catalogo",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "producto",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "carrito",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "checkout",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "cuenta",
+    "theme": "oscuro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "portada",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "catalogo",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "producto",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "carrito",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "checkout",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "cuenta",
+    "theme": "claro",
+    "width": 1280,
+    "inner": 1280,
+    "overflow": false
+  },
+  {
+    "page": "portada",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "catalogo",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "producto",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "carrito",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "checkout",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "cuenta",
+    "theme": "claro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "portada",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "catalogo",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "producto",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "carrito",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "checkout",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  },
+  {
+    "page": "cuenta",
+    "theme": "oscuro",
+    "width": 390,
+    "inner": 390,
+    "overflow": false
+  }
+]

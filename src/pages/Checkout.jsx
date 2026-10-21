@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { optimizeImage } from '../utils/imageUrl.js'
 import { trackStoreEvent } from '../utils/storeEvents.js'
 import { Link } from 'react-router-dom'
-import { ShoppingBag, Truck, Pencil } from 'lucide-react'
+import { ShoppingBag, Pencil } from 'lucide-react'
 import EmptyState from '../components/ui/EmptyState.jsx'
 import CheckoutSection from '../components/checkout/CheckoutSection.jsx'
 import CustomerForm from '../components/checkout/CustomerForm.jsx'
@@ -19,7 +19,6 @@ import { api } from '../services/api.js'
 import { loadAttempt, saveAttempt, forgetAttempt, submitAttempt, definitelyNotCreated } from '../services/checkoutOrder.js'
 import { buildConfirmedWhatsAppLink } from '../utils/whatsapp.js'
 import { formatCurrency } from '../utils/formatCurrency.js'
-import { storeConfig } from '../config/storeConfig.js'
 import { CartReviewNotice } from '../components/ui/CatalogAvailability.jsx'
 import { productResource, paymentResource } from '../services/purchaseResources.js'
 import { reviewCart } from '../utils/purchasePolicy.js'
@@ -515,19 +514,6 @@ export default function Checkout() {
             </div>
           </div>
 
-          <div className="rounded-xl2 border border-paper-line p-4 dark:border-night-line">
-            <h2 className="mb-3 flex items-center gap-2 font-display text-sm font-semibold text-ink dark:text-paper">
-              <Truck className="h-4 w-4 text-route" />
-              Entrega
-            </h2>
-            <ul className="space-y-2 text-sm text-ink-soft dark:text-paper/60">
-              {Object.values(storeConfig.shipping).map((option) => (
-                <li key={option.label}>
-                  <span className="font-medium text-ink dark:text-paper">{option.label}:</span> {option.detail}
-                </li>
-              ))}
-            </ul>
-          </div>
         </aside>
       </div>
     </div>
