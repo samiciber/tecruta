@@ -15,7 +15,7 @@ export default function Help() {
     <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
       <div className="space-y-8">
         {business.shippingText?.trim() && <section id="envios"><h2 className="mb-3 text-lg font-semibold">Envíos</h2><p className="whitespace-pre-line">{business.shippingText}</p></section>}
-        {business.warrantyText?.trim() && <section><h2 className="mb-3 text-lg font-semibold">Garantía</h2><p className="whitespace-pre-line">{business.warrantyText}</p></section>}
+        {business.warrantyText?.trim() && <section id="garantia"><h2 className="mb-3 text-lg font-semibold">Garantía</h2><p className="whitespace-pre-line">{business.warrantyText}</p></section>}
         <section id="pagos"><h2 className="mb-3 text-lg font-semibold">Métodos de pago</h2>
           {(!ready || !methods.length) && <p role="status">No hay métodos de pago verificados disponibles. <button type="button" className="underline" disabled={refreshing} onClick={() => void refresh().catch(() => {})}>Reintentar</button></p>}
           <ul className="space-y-3">{methods.map(method => <li key={method.key}><strong>{method.label}</strong>{method.config.instructions && <p>{method.config.instructions}</p>}</li>)}</ul>

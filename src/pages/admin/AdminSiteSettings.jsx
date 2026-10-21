@@ -8,11 +8,11 @@ import { Check, Field, SectionHeader } from '../../components/admin/adminUi.jsx'
 const DEFAULT_PROMO = { label: '', href: '/catalogo', visible: true }
 // Mismos valores/orden que el pie de /carrito (los íconos van fijos por posición).
 export const DEFAULT_CART_FOOTER = [
-  { label: 'Visita nuestro Centro de Apoyo', href: '/ayuda' },
+  { label: 'Centro de ayuda', href: '/ayuda' },
   { label: 'Consulta el estado de tu pedido', href: '/mis-pedidos' },
-  { label: 'Envío, entrega y recogida en tienda', href: '/proximamente' },
-  { label: 'Devoluciones e intercambios', href: '/proximamente' },
-  { label: 'Garantía de igualación de precio', href: '/proximamente' },
+  { label: 'Información de envío', href: '/ayuda#envios' },
+  { label: 'Información de garantía', href: '/ayuda#garantia' },
+  { label: 'Métodos de pago', href: '/ayuda#pagos' },
 ]
 const validHref = (h) => /^(\/|https?:\/\/)/.test(h)
 
