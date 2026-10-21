@@ -1,5 +1,9 @@
 # Publicación futura y recuperación
 
+**Actualización:** publicación autorizada realizada. El bloqueo de Git se resolvió.
+Ver [registro y límites comprobados](publicacion/README.md). Las instrucciones
+siguientes conservan el procedimiento preparado antes de publicar.
+
 ## Intento autorizado del 20 de octubre de 2026
 
 El dueño autorizó publicar este lote. Se verificaron las sesiones de Vercel,

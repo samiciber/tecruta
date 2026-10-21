@@ -1,0 +1,64 @@
+{
+  "revision": "8632f75",
+  "checks": [
+    {
+      "name": "health",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": null,
+      "revision": "8632f75f80dee7aa5b6c8ae6dccddaa5acbdc3f1"
+    },
+    {
+      "name": "catalog",
+      "status": 200,
+      "cache": "public, max-age=0, s-maxage=30, stale-while-revalidate=60",
+      "robots": null,
+      "products": 149
+    },
+    {
+      "name": "staffUnauthorized",
+      "status": 401,
+      "cache": "private, no-store",
+      "robots": null
+    },
+    {
+      "name": "sitemap",
+      "status": 200,
+      "cache": "public, max-age=0",
+      "robots": null
+    },
+    {
+      "name": "productBot",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": null,
+      "openGraph": true,
+      "structuredData": true
+    },
+    {
+      "name": "panel",
+      "status": 200,
+      "cache": "private, no-store",
+      "robots": "noindex, nofollow, noarchive"
+    },
+    {
+      "name": "etag",
+      "status": 304
+    },
+    {
+      "name": "cors",
+      "origin": "https://www.tecruta.com",
+      "allowed": "https://www.tecruta.com"
+    },
+    {
+      "name": "cors",
+      "origin": "https://tecruta-panel.vercel.app",
+      "allowed": "https://tecruta-panel.vercel.app"
+    },
+    {
+      "name": "cors",
+      "origin": "https://example.com",
+      "allowed": null
+    }
+  ]
+}

@@ -1,5 +1,13 @@
 # Lote 2: tienda completa
 
+## Publicado
+
+El acceso Git se recuperó y se publicó la revisión 8632f75 de esta rama,
+sin merge a main: API, tienda y panel. Se aplicaron las dos migraciones nuevas
+después de crear una copia aislada del esquema y los datos en Neon. Consulta el
+[registro de publicación](publicacion/README.md). Las notas siguientes conservan
+el historial de preparación y del bloqueo anterior, ya resuelto.
+
 ## Publicación autorizada, pendiente de acceso
 
 El 20 de octubre de 2026 el dueño autorizó «esta bien publicalo».
