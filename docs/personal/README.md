@@ -111,7 +111,7 @@ se gestiona en su sección propia.
   correspondientes y conservan sus referencias originales.
 
 Las sesiones del personal tienen duración máxima de 12 horas y caducan tras
-30 minutos de inactividad. «Recordar sesión» conserva el token en el navegador,
+60 minutos de inactividad. «Recordar sesión» conserva el token en el navegador,
 pero no extiende esos límites. Suspender, restablecer contraseña o cambiar
 permisos invalida las sesiones. El cierre de caja es una operación distinta del
 cierre de sesión: salir del panel no cierra ni modifica la caja.

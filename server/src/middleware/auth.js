@@ -27,7 +27,7 @@ export function createAuthMiddleware({ db = prisma, verify = verifyToken } = {})
       if (req.authChannel === 'panel') {
         if (typeof payload.sid !== 'string') return res.status(401).json({error:'Sesión inválida.'})
         const session = await db.staffSession.findUnique({where:{tokenHash:hash(payload.sid)}}), now = new Date()
-        if (!session || session.userId !== user.id || session.revokedAt || session.expiresAt <= now || now - session.lastSeenAt > 30 * 60000) return res.status(401).json({error:'La sesión del personal venció. Inicia nuevamente.'})
+        if (!session || session.userId !== user.id || session.revokedAt || session.expiresAt <= now || now - session.lastSeenAt > 60 * 60000) return res.status(401).json({error:'La sesión del personal venció. Inicia nuevamente.'})
         if (now - session.lastSeenAt > 60000) await db.staffSession.update({where:{id:session.id},data:{lastSeenAt:now}})
       }
       const path = req.originalUrl.split('?')[0]
