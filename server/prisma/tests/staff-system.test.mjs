@@ -116,7 +116,11 @@ test('temporal caducada, sesiones inactivas y protección de administrador princ
  await rt.db.user.update({where:{id:worker.id},data:{temporaryPasswordExpiresAt:null}})
  const result=await login('vendedor01',nextPassword)
  const {verifyToken}=await rt.load('server/src/lib/token.js');const payload=verifyToken(result.data.token)
- await rt.db.staffSession.update({where:{tokenHash:hash(payload.sid)},data:{lastSeenAt:new Date(Date.now()-31*60000)}})
+ await rt.db.staffSession.update({where:{tokenHash:hash(payload.sid)},data:{lastSeenAt:new Date(Date.now()-59*60000)}})
+ assert.equal((await request('/api/auth/me',{token:result.data.token})).status,200)
+ const refreshed=await rt.db.staffSession.findUnique({where:{tokenHash:hash(payload.sid)}})
+ assert.ok(Date.now()-refreshed.lastSeenAt.getTime()<60000)
+ await rt.db.staffSession.update({where:{tokenHash:hash(payload.sid)},data:{lastSeenAt:new Date(Date.now()-61*60000)}})
  assert.equal((await request('/api/auth/me',{token:result.data.token})).status,401)
 })
 test('conciliación administrativa de caja suspendida deja responsable, conteo y un único cierre',async()=>{
