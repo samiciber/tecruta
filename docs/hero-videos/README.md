@@ -1,5 +1,8 @@
 # Videos en el carrusel principal
 
+> Publicación autorizada el 30 de octubre: [estado y continuación](publicacion-20261030.md).
+> La rama ya se subió a GitHub; el contenido siguiente describe la preparación original.
+
 Implementación local en feature/hero-videos, sobre fix/produccion-panel-una-hora
 (9fef525), conservando lote 2 y el ajuste de sesión posterior. No se publicó,
 no se hizo push y no se cambió el contenido del negocio.

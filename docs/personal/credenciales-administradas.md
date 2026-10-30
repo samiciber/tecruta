@@ -1,5 +1,8 @@
 # Contraseñas asignadas por el administrador
 
+> [Estado de publicación autorizado el 30 de octubre](../hero-videos/publicacion-20261030.md):
+> rama subida a GitHub; publicación en producción pendiente de acceso a los paneles.
+
 Estado: preparado localmente en `feature/panel-credenciales-administradas`.
 No publicado. Esta actualización sustituye las instrucciones históricas sobre
 contraseñas temporales para las nuevas altas y restablecimientos del personal.
