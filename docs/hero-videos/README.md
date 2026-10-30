@@ -56,6 +56,8 @@ HTTPS, del propio sitio y blob, sin ampliar script-src ni connect-src.
 - PostgreSQL local desechable: dos pruebas nuevas correctas; rechazo anónimo,
   cliente, almacén y cajero; carga ADMIN con proveedor inyectado; persistencia
   y lectura pública de ambas URLs.
+- npm test --prefix server: batería vigente completa 75/75, incluidas esas dos
+  y las regresiones de inventario, POS, pedidos, reseñas, personal y búsqueda.
 - Ambos builds mediante build:qa (sin descubrir archivos .env), ESLint sin
   errores, comprobación de sintaxis y git diff --check.
 - La herramienta de navegador detuvo el acceso porque no pudo determinar la
