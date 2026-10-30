@@ -1,10 +1,29 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Trash2, Save, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
 import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import ProductForm, { productToFormValues } from './ProductForm.jsx'
+
+const PRODUCTS_PER_PAGE = 25
+
+function ProductPagination({ page, pages, total, onChange, position }) {
+  if (total <= PRODUCTS_PER_PAGE) return null
+  return <nav aria-label={`Páginas de productos (${position})`} className="flex flex-wrap items-center justify-between gap-3">
+    <p className="text-sm text-ink-soft dark:text-paper/70">25 productos por página</p>
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className="btn-secondary disabled:opacity-40" disabled={page <= 1} onClick={() => onChange(page - 1)}>Anterior</button>
+      <label className="flex items-center gap-2 text-sm" htmlFor={`products-page-${position}`}>Página
+        <select id={`products-page-${position}`} className="input-tr w-20" value={page} onChange={event => onChange(Number(event.target.value))}>
+          {Array.from({ length: pages }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}
+        </select>
+        <span>de {pages}</span>
+      </label>
+      <button type="button" className="btn-secondary disabled:opacity-40" disabled={page >= pages} onClick={() => onChange(page + 1)}>Siguiente</button>
+    </div>
+  </nav>
+}
 
 function ProductRow({ product, categories, token, onSaved, onDeleted }) {
   const toast = useContext(ToastContext)
@@ -87,7 +106,7 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
 
   return (
     <>
-      <tr className="border-b border-paper-line last:border-0 dark:border-night-line">
+      <tr data-unsaved={dirty || expanded ? 'true' : undefined} className="border-b border-paper-line last:border-0 dark:border-night-line">
         <td className="py-2.5 pr-3">
           <div className="flex items-center gap-2.5">
             <img src={product.image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
@@ -197,6 +216,9 @@ export default function AdminProducts() {
   useEffect(() => { const requested = new URLSearchParams(window.location.search).get('buscar'); if (requested !== null) setSearch(requested) }, [])
   const [showCreate, setShowCreate] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [page, setPage] = useState(1)
+  const listRef = useRef(null)
+  const summaryRef = useRef(null)
   useWorkspaceScroll(!loading)
 
   useEffect(() => {
@@ -222,6 +244,22 @@ export default function AdminProducts() {
     return products.filter((p) => p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q))
   }, [products, search])
 
+  const pages = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE))
+  const currentPage = Math.min(page, pages)
+  const start = (currentPage - 1) * PRODUCTS_PER_PAGE
+  const visibleProducts = filtered.slice(start, start + PRODUCTS_PER_PAGE)
+  useEffect(() => { setPage(1) }, [search])
+  useEffect(() => { if (page > pages) setPage(pages) }, [page, pages])
+  const changePage = next => {
+    if (next === currentPage) return
+    if (listRef.current?.querySelector('[data-unsaved="true"]') && !window.confirm('Hay cambios sin guardar o un editor abierto. Al cambiar de página se descartarán sus cambios pendientes. ¿Continuar?')) return
+    setPage(next)
+    window.requestAnimationFrame(() => {
+      summaryRef.current?.scrollIntoView({ block: 'center' })
+      summaryRef.current?.focus({ preventScroll: true })
+    })
+  }
+
   const handleSaved = (updated) => {
     setProducts((list) => list.map((p) => (p.id === updated.id ? updated : p)))
   }
@@ -234,6 +272,7 @@ export default function AdminProducts() {
     try {
       const created = await api.admin.createProduct(payload, token)
       setProducts((list) => [created, ...list])
+      setPage(1)
       setShowCreate(false)
       toast?.showToast('Producto creado.', 'success')
     } catch (err) {
@@ -250,6 +289,7 @@ export default function AdminProducts() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input
           type="search"
+          aria-label="Buscar productos por nombre o slug en todo el catálogo"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre o slug…"
@@ -273,7 +313,11 @@ export default function AdminProducts() {
         />
       )}
 
-      <div className="overflow-x-auto rounded-xl2 border border-paper-line dark:border-night-line">
+      <p ref={summaryRef} tabIndex={-1} role="status" className="rounded text-sm text-ink-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-route dark:text-paper/70">
+        {filtered.length ? `Mostrando ${start + 1}–${Math.min(start + PRODUCTS_PER_PAGE, filtered.length)} de ${filtered.length} productos` : '0 productos'}
+      </p>
+      <ProductPagination page={currentPage} pages={pages} total={filtered.length} onChange={changePage} position="superior" />
+      <div ref={listRef} className="overflow-x-auto rounded-xl2 border border-paper-line dark:border-night-line">
         <table className="w-full min-w-[860px] text-left">
           <thead>
             <tr className="border-b border-paper-line bg-paper text-xs uppercase tracking-wide text-ink-soft dark:border-night-line dark:bg-night dark:text-paper/50">
@@ -288,7 +332,7 @@ export default function AdminProducts() {
             </tr>
           </thead>
           <tbody className="px-3">
-            {filtered.map((product) => (
+            {visibleProducts.map((product) => (
               <ProductRow
                 key={product.id}
                 product={product}
@@ -301,6 +345,7 @@ export default function AdminProducts() {
           </tbody>
         </table>
       </div>
+      <ProductPagination page={currentPage} pages={pages} total={filtered.length} onChange={changePage} position="inferior" />
       {filtered.length === 0 && <p className="text-sm text-ink-soft dark:text-paper/60">No hay productos que coincidan con la búsqueda.</p>}
       <p className="text-xs text-ink-soft/70 dark:text-paper/40">
         Precio, "antes de", stock, destacado y best seller: cambia el valor y presiona <Save className="inline h-3 w-3" /> para
