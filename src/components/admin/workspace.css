@@ -1,4 +1,5 @@
-.workspace{--workspace-header:132px}
+.workspace{--workspace-header:132px;color-scheme:light}
+.dark .workspace{color-scheme:dark}
 .workspace-header{@apply sticky top-0 z-30 border-b border-paper-line bg-white dark:border-night-line dark:bg-night-surface;}
 .workspace-top{@apply mx-auto flex max-w-[1560px] items-center justify-between gap-3 px-4 py-3 sm:px-6;}
 .workspace-brand{@apply flex shrink-0 items-center gap-3 text-lg font-bold tracking-tight;}

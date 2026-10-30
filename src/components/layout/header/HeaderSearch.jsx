@@ -89,7 +89,7 @@ export default function HeaderSearch({ open, onOpen, onClose, idPrefix = 'search
   const listId = `${idPrefix}-panel`
   return (
     <div ref={wrapRef} className="relative min-w-0 flex-1">
-      <form onSubmit={submit} role="search" className="flex h-11 overflow-hidden rounded-md bg-white shadow-sm">
+      <form onSubmit={submit} role="search" className="store-header-search flex h-11 overflow-hidden rounded-md bg-white shadow-sm">
         <input
           ref={inputRef}
           type="search"

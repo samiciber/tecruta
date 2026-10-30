@@ -79,8 +79,10 @@ html.dark {
     @apply rounded-xl2 border border-paper-line bg-paper-surface shadow-card dark:border-night-line dark:bg-night-surface dark:shadow-card-dark;
   }
   .input-tr {
-    @apply w-full rounded-xl border border-paper-line bg-paper-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-soft/50 outline-none transition-colors focus:border-route dark:border-night-line dark:bg-night-surface dark:text-paper;
+    @apply w-full rounded-xl border border-paper-line bg-paper-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-soft outline-none transition-colors focus:border-route dark:border-night-line dark:bg-night-surface dark:text-paper dark:placeholder:text-paper/60;
+    color-scheme: light;
   }
+  .dark .input-tr { color-scheme: dark; }
   .route-dot {
     @apply inline-block h-1.5 w-1.5 rounded-full bg-route;
   }

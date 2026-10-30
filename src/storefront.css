@@ -1,11 +1,17 @@
 /* Store only: a single spacing/radius scale; no panel or POS selectors. */
-.storefront{--shop-page:#fbfaf7;--shop-surface:#fff;--shop-line:#d8dde5;--shop-text:#172538;--shop-muted:#526071;--shop-blue:#0046be;--shop-night:#0b2244;--shop-buy:#ffcf24;--shop-radius:8px;--shop-space:8px;background:var(--shop-page);color:var(--shop-text);min-height:100vh}
-.dark .storefront{--shop-page:#0c131f;--shop-surface:#151f2f;--shop-line:#3b485d;--shop-text:#f4f6fb;--shop-muted:#b5c0d0;--shop-blue:#99bbff;--shop-night:#091a34}
+.storefront{--shop-page:#fbfaf7;--shop-surface:#fff;--shop-line:#d8dde5;--shop-text:#172538;--shop-muted:#526071;--shop-blue:#0046be;--shop-night:#0b2244;--shop-buy:#ffcf24;--shop-radius:8px;--shop-space:8px;background:var(--shop-page);color:var(--shop-text);color-scheme:light;min-height:100vh}
+.dark .storefront{--shop-page:#0c131f;--shop-surface:#151f2f;--shop-line:#3b485d;--shop-text:#f4f6fb;--shop-muted:#b5c0d0;--shop-blue:#99bbff;--shop-night:#091a34;color-scheme:dark}
 .storefront main,.storefront .storefront-home{background:var(--shop-page)}
 .storefront .container-tr{max-width:1360px}
 .storefront :is(button,a,input,select,textarea):focus-visible{outline:3px solid var(--shop-blue);outline-offset:3px}
 .storefront button:disabled{cursor:not-allowed}
-.storefront :is(input,textarea,select){color:var(--shop-text)}
+/* This search surface stays light in both themes. Keep text, caret, placeholder
+   and native controls paired with its background instead of forcing the theme's
+   foreground onto every form field. Suggestions outside the form keep their theme. */
+.storefront .store-header-search{background:#fff;color:#172538;color-scheme:light}
+.storefront .store-header-search :is(input,button){color:#172538;caret-color:#172538}
+.storefront .store-header-search input::placeholder{color:#526071;opacity:1}
+.storefront .store-header-search input::selection{background:#c8dcff;color:#172538}
 .storefront-header{box-shadow:none}
 .storefront-header>.bg-header{background:#0046be}
 .dark .storefront-header>.bg-header{background:#132d53}
@@ -123,7 +129,7 @@
 .storefront .store-product-detail .shop-purchase:not(:disabled):hover{background:#ffdc59}
 .storefront .store-product-card .store-product-buy:disabled,
 .storefront .store-product-detail .shop-purchase:disabled{background:var(--shop-page);color:var(--shop-muted);border-color:var(--shop-line)}
-.storefront input::placeholder,.storefront textarea::placeholder{color:var(--shop-muted);opacity:1}
+.storefront .input-tr::placeholder{color:var(--shop-muted);opacity:1}
 
 /* Compact product opinions with accessible disclosure. */
 .storefront .product-reviews{font-size:14px;max-width:960px}

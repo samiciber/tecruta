@@ -18,6 +18,6 @@ export default function ProductShare({ product }) {
       <a href={`https://wa.me/?text=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">Compartir por WhatsApp</a>
     </div>
     <p role="status">{message}</p>
-    {message.startsWith('No se pudo copiar') && <label>Enlace del producto<input readOnly value={url} onFocus={event => event.target.select()} /></label>}
+    {message.startsWith('No se pudo copiar') && <label>Enlace del producto<input className="input-tr" readOnly value={url} onFocus={event => event.target.select()} /></label>}
   </section>
 }
