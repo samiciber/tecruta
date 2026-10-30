@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync, symlinkSync } from 'node:fs'
 import { join, resolve, sep } from 'node:path'
 
 const dockerContext = process.platform === 'win32' ? 'desktop-linux' : 'default'
@@ -113,7 +113,11 @@ function assertDisposableUrl(value, description) {
 export function runPrisma({ root, tempRoot, schemaPath, dotenvPath, databaseUrl, args }) {
   const sandbox = resolve(tempRoot) + sep
   const schema = resolve(schemaPath)
-  const isolatedCwd = resolve(tempRoot, '..')
+  const isolatedCwd = resolve(tempRoot)
+  // Resolve the pinned Prisma generator in this QA sandbox, never a stale
+  // package accidentally installed in the global temporary directory.
+  const dependencies = join(tempRoot, 'node_modules')
+  if (!existsSync(dependencies)) symlinkSync(join(root, 'server', 'node_modules'), dependencies, process.platform === 'win32' ? 'junction' : 'dir')
   assert.ok(schema.startsWith(sandbox), 'El schema Prisma debe estar dentro del sandbox temporal.')
   assert.equal(containsEnvFile(tempRoot), false, 'El sandbox de Prisma no debe contener archivos .env.')
   assert.equal(existsSync(join(isolatedCwd, '.env')), false, 'El cwd aislado de Prisma no debe contener un archivo .env.')

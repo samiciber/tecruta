@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import HeroSlide from './HeroSlide.jsx'
+import { heroAdvanceDelay } from '../../utils/heroMedia.js'
 import { storeConfig } from '../../config/storeConfig.js'
 import { useCategories } from '../../hooks/useCategories.js'
 import { useSiteSettings } from '../../hooks/useSiteContent.js'
@@ -68,6 +69,8 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
   const [userPaused, setUserPaused] = useState(false)
   // Los cambios automáticos NO se anuncian; solo los manuales (aria-live polite).
   const [announce, setAnnounce] = useState(false)
+  const [videoResult, setVideoResult] = useState(null)
+  const [pageHidden, setPageHidden] = useState(document.hidden)
   const swipe = useRef(null)
   const regionRef = useRef(null)
 
@@ -84,7 +87,16 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
   const count = slides.length
   const multi = count > 1
   const autoplayOn = multi && cfg.autoplay !== false && !reduced
-  const paused = hoverPaused || focusPaused || userPaused
+  const paused = hoverPaused || focusPaused || userPaused || pageHidden
+  const videoActive = slides[active]?.mediaType === 'video' && slides[active]?.videoDesktop
+  useEffect(() => {
+    const update = () => setPageHidden(document.hidden)
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [])
+  const videoEnded = useCallback(() => setVideoResult('ended'), [])
+  const videoFailed = useCallback(() => setVideoResult('failed'), [])
+  useEffect(() => setVideoResult(null), [slides[active]?.id, slides[active]?.videoDesktop])
 
   // Si cambia la cantidad de slides (revalidación), el índice no se pasa de rango.
   useEffect(() => {
@@ -92,16 +104,20 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
   }, [count, active])
 
   const goTo = useCallback((i, manual) => {
+    if (!count) return
+    setVideoResult(null)
     setAnnounce(Boolean(manual))
     setActive(((i % count) + count) % count)
   }, [count])
 
   // Rotación automática: un temporizador que se reinicia en cada cambio.
   useEffect(() => {
-    if (!autoplayOn || paused) return undefined
-    const id = window.setTimeout(() => goTo(active + 1, false), Math.max(3, cfg.intervalSeconds) * 1000)
+    const delay = heroAdvanceDelay({ autoplay: autoplayOn, paused, video: videoActive, result: videoResult, intervalSeconds: cfg.intervalSeconds })
+    if (delay === null) return undefined
+    if (delay === 0) { goTo(active + 1, false); return undefined }
+    const id = window.setTimeout(() => goTo(active + 1, false), delay)
     return () => window.clearTimeout(id)
-  }, [autoplayOn, paused, active, cfg.intervalSeconds, goTo])
+  }, [autoplayOn, paused, active, cfg.intervalSeconds, goTo, videoActive, videoResult])
 
   const onKeyDown = (e) => {
     if (!multi) return
@@ -169,14 +185,14 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
                 {...(current ? {} : { inert: '' })}
                 className="h-full w-full shrink-0 basis-full"
               >
-                <HeroSlide slide={slide} priority={i === 0} controls={multi} mobileFocus />
+                <HeroSlide slide={slide} priority={i === 0} controls={multi} mobileFocus active={current} paused={userPaused || pageHidden} reduced={reduced || cfg.autoplay === false} onVideoEnded={current ? videoEnded : undefined} onVideoFailed={current ? videoFailed : undefined} />
               </div>
             )
           })}
         </div>
       </div>
 
-      {multi && (
+      {(multi || videoActive) && (
         <>
           <button type="button" onClick={() => goTo(active - 1, true)} aria-label="Diapositiva anterior" className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header md:flex">
             <ChevronLeft className="h-6 w-6" aria-hidden="true" />
@@ -186,7 +202,7 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
           </button>
 
           <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-3">
-            {autoplayOn && (
+            {(autoplayOn || videoActive) && (
               <button
                 type="button"
                 onClick={() => setUserPaused((v) => !v)}

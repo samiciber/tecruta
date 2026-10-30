@@ -5,7 +5,7 @@ import {pathToFileURL,fileURLToPath} from 'node:url'
 import {createInventoryRuntime} from '../server/prisma/tests/helpers/inventory-runtime.mjs'
 import {seedFinalHome} from '../server/prisma/tests/helpers/final-home-fixtures.mjs'
 
-export async function createStoreReviewsPreview({storePort=5201,panelPort=5202}={}){
+export async function createStoreReviewsPreview({storePort=5201,panelPort=5202,plugins=[]}={}){
  const shop=`http://127.0.0.1:${storePort}`,panel=`http://127.0.0.1:${panelPort}`
  process.env.CORS_ORIGINS=`${shop},${panel}`;process.env.STORE_ORIGIN=shop;process.env.PANEL_ORIGIN=panel;process.env.TRUST_PROXY='0'
  for(const key of ['RESEND_API_KEY','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','CLOUDINARY_API_KEY','CLOUDINARY_API_SECRET','REVIEW_INVITATIONS_ENABLED'])delete process.env[key]
@@ -48,7 +48,7 @@ export async function createStoreReviewsPreview({storePort=5201,panelPort=5202}=
      res.end(`<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Revisión local QA</title><body style="font:18px system-ui;padding:32px"><h1>Revisión de tienda y reseñas — solo QA</h1><p>PostgreSQL local desechable. Productos y opiniones sintéticos, sin correos ni ventas reales.</p><p><a href="${shop}">Tienda</a> · <a href="${panel}/resenas">Moderación</a></p><p>Cliente QA: ${rt.customer.email}</p><p>Administrador QA: adminqa</p><p>Contraseña efímera de esta revisión: <code>${password}</code></p></body></html>`)
    })}}
    process.chdir(rt.root)
-   const options=mode=>({root:rt.root,configFile:join(rt.root,'vite.config.js'),envFile:false,mode,cacheDir:join(rt.tempRoot,mode),plugins:[previewPlugin],define:{'import.meta.env.VITE_API_URL':JSON.stringify(api),'import.meta.env.VITE_STORE_ORIGIN':JSON.stringify(shop),'import.meta.env.VITE_PANEL_ORIGIN':JSON.stringify(panel)},server:{host:'127.0.0.1',port:mode==='panel'?panelPort:storePort,strictPort:true}})
+   const options=mode=>({root:rt.root,configFile:join(rt.root,'vite.config.js'),envFile:false,mode,cacheDir:join(rt.tempRoot,mode),plugins:[previewPlugin,...plugins],define:{'import.meta.env.VITE_API_URL':JSON.stringify(api),'import.meta.env.VITE_STORE_ORIGIN':JSON.stringify(shop),'import.meta.env.VITE_PANEL_ORIGIN':JSON.stringify(panel)},server:{host:'127.0.0.1',port:mode==='panel'?panelPort:storePort,strictPort:true}})
    store=await createServer(options('store'));await store.listen();admin=await createServer(options('panel'));await admin.listen()
    return{...rt,shop,panel,password,products:fixture.products,close:async()=>{await Promise.all([store.close(),admin.close()]);await rt.close()}}
  }catch(e){await store?.close();await admin?.close();await rt.close();throw e}

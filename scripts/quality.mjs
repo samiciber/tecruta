@@ -10,7 +10,7 @@ const walk = directory => readdirSync(directory, { withFileTypes: true }).flatMa
 const mode = process.argv[2] || 'unit'
 const unit = walk('server/tests').filter(path => path.endsWith('.test.mjs'))
 const integration = walk('server/prisma/tests').filter(path => path.endsWith('.test.mjs'))
-const current = ['inventory-part1', 'pos-part2', 'staff-system', 'product-reviews', 'order-emails', 'public-performance', 'store-search']
+const current = ['inventory-part1', 'pos-part2', 'staff-system', 'product-reviews', 'order-emails', 'public-performance', 'store-search', 'hero-video']
 const selected = integration.filter(path => current.some(name => path.endsWith(name + '.test.mjs')))
 const suites = { unit, integration: selected, all: [...unit, ...integration] }
 const run = args => {

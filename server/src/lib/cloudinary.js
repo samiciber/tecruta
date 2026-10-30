@@ -66,6 +66,10 @@ export async function uploadImageToCloudinary(dataUrl) {
   return uploadToCloudinary({ dataUrl, resourceType: 'image', folder: 'tecruta/products' })
 }
 
+export async function uploadVideoToCloudinary(dataUrl) {
+  return uploadToCloudinary({ dataUrl, resourceType: 'video', folder: 'tecruta/banners/videos' })
+}
+
 // Modelos 3D (.glb/.gltf) — van a una carpeta separada de las imágenes y
 // se suben como "raw" (Cloudinary no los procesa como imagen/video, solo
 // los aloja tal cual).

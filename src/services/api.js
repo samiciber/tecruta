@@ -213,6 +213,7 @@ export const api = {
     // `image` debe ser una data URL completa (lo que produce
     // FileReader.readAsDataURL en el navegador), no solo el base64.
     uploadImage: (image, token) => request('/api/admin/uploads', { method: 'POST', body: { image }, token }),
+    uploadVideo: (video, token) => request('/api/admin/uploads/video', { method: 'POST', body: { video }, token }),
     // Modelo 3D del producto (.glb/.gltf). `file` es la data URL
     // completa; `filename` se usa solo para validar la extensión.
     uploadModel: (file, filename, token) =>

@@ -3,6 +3,15 @@ import { OrderError } from './orderPolicy.js'
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024
 export const RECEIPT_MAX_BYTES = 8 * 1024 * 1024
 export const MODEL_MAX_BYTES = 15 * 1024 * 1024
+export const VIDEO_MAX_BYTES = 20 * 1024 * 1024
+export function validateVideo(value) {
+  const decoded = decodeDataUrl(value, VIDEO_MAX_BYTES)
+  const { bytes, mime } = decoded
+  const mp4 = mime === 'video/mp4' && bytes.length >= 16 && bytes.toString('ascii', 4, 8) === 'ftyp' && bytes.readUInt32BE(0) >= 16 && bytes.readUInt32BE(0) <= bytes.length
+  const webm = mime === 'video/webm' && bytes.length >= 16 && bytes.subarray(0, 4).equals(Buffer.from('1a45dfa3', 'hex')) && bytes.subarray(0, 4096).includes(Buffer.from('webm'))
+  if (!mp4 && !webm) throw new OrderError(400, 'El video debe ser un archivo MP4 o WebM válido.')
+  return decoded
+}
 export function decodeDataUrl(value, maxBytes) {
   if (typeof value !== 'string') throw new OrderError(400, 'Envía un archivo como data URL en base64.')
   const comma = value.indexOf(',')

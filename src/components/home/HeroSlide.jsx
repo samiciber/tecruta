@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { imageSrcSet, optimizeImage } from '../../utils/imageUrl.js'
+import HeroVideo from './HeroVideo.jsx'
 
 // Posición del bloque de texto en la grilla 3×3.
 export const POSITION_CLASSES = {
@@ -58,7 +59,7 @@ const isExternal = (h) => /^https?:\/\//.test(h || '')
 //   priority: primera imagen con prioridad de carga; el resto, perezosas.
 //   preview:  vista previa del admin (botones no navegan, sin interacción).
 //   controls: reserva espacio abajo para los puntos y el botón de pausa.
-export default function HeroSlide({ slide, priority = false, preview = false, controls = false, size = 'auto', mobileFocus = false, className = '' }) {
+export default function HeroSlide({ slide, priority = false, preview = false, controls = false, size = 'auto', mobileFocus = false, className = '', active = true, paused = false, reduced = false, onVideoEnded, onVideoFailed }) {
   const sz = SIZES[size] ?? SIZES.auto
   const isInlineBanner = size === 'banner'
   const color = slide.textColor === 'dark' ? 'dark' : 'light'
@@ -82,6 +83,7 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
   const buttons = (slide.buttons || []).slice(0, 2)
   const desktop = slide.imageDesktop
   const mobile = slide.imageMobile
+  const isVideo = slide.mediaType === 'video' && slide.videoDesktop && !isInlineBanner
 
   let media = null
   if (desktop || mobile) {
@@ -117,14 +119,14 @@ export default function HeroSlide({ slide, priority = false, preview = false, co
 
   return (
     <div className={`store-hero-slide relative ${isInlineBanner ? 'min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'h-full'} w-full overflow-hidden bg-gradient-to-br from-header to-route-dark ${className}`}>
-      {media}
-      {mobileFocus && !mobile && (
+      {isVideo ? <HeroVideo slide={slide} active={active} paused={paused} reduced={reduced} preview={preview} size={size} onEnded={onVideoEnded} onFailed={onVideoFailed} /> : media}
+      {!isVideo && mobileFocus && !mobile && (
         <div aria-hidden="true" className={`absolute inset-0 sm:hidden ${mobileImageShade[mobileTextSide] || mobileImageShade.center}`} />
       )}
-      {slide.overlay > 0 && <div aria-hidden="true" className="absolute inset-0 bg-black" style={{ opacity: slide.overlay / 100 }} />}
+      {slide.overlay > 0 && <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: slide.overlay / 100 }} />}
 
-      <div className={`${isInlineBanner ? 'relative min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'absolute inset-0'} flex ${sz.pad} ${controls ? sz.padControls : ''} ${position}`}>
-        <div className={`${mobileTextWidth} ${align} ${color === 'dark' ? 'text-ink' : 'text-white'} ${isInlineBanner ? '[overflow-wrap:anywhere]' : ''}`}>
+      <div className={`${isInlineBanner ? 'relative min-h-[360px] sm:min-h-[400px] lg:min-h-[420px]' : 'absolute inset-0'} ${isVideo ? 'pointer-events-none' : ''} flex ${sz.pad} ${controls ? sz.padControls : ''} ${position}`}>
+        <div className={`${isVideo ? 'pointer-events-auto' : ''} ${mobileTextWidth} ${align} ${color === 'dark' ? 'text-ink' : 'text-white'} ${isInlineBanner ? '[overflow-wrap:anywhere]' : ''}`}>
           {slide.eyebrow && <p className="mb-2 text-xs font-semibold uppercase tracking-widest opacity-90">{slide.eyebrow}</p>}
           {slide.title && <h2 className={`store-hero-title font-display font-extrabold leading-[1.05] tracking-tight ${sz.title}`}>{slide.title}</h2>}
           {slide.description && <p className={`store-hero-description mt-3 ${sz.desc}`}>{slide.description}</p>}

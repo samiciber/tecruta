@@ -6,6 +6,7 @@ import { invalidate } from '../../hooks/useCachedResource.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
 import { Check, EmptyRow, Field, SectionHeader, readFileAsDataUrl } from '../../components/admin/adminUi.jsx'
 import HeroSlide from '../../components/home/HeroSlide.jsx'
+import { validHeroVideoUrl } from '../../utils/heroMedia.js'
 
 const MAX_IMAGE_MB = 10
 const POSITIONS = [
@@ -19,6 +20,7 @@ const ALIGNS = [
 
 const newBanner = () => ({
   id: `b${Date.now().toString(36)}`, eyebrow: '', title: '', description: '', buttons: [], imageDesktop: null, imageMobile: null, imageAlt: '',
+  mediaType: 'image', videoDesktop: null, videoMobile: null,
   position: 'bottom-left', textAlign: 'left', textColor: 'light', overlay: 35, active: true, startsAt: null, endsAt: null, placement: 'hero', width: 'full', slot: '',
 })
 const validHref = (h) => /^(\/|https?:\/\/)/.test((h || '').trim())
@@ -33,7 +35,11 @@ const fromLocalInput = (v) => (v ? new Date(v).toISOString() : null)
 // Problemas que impiden guardar (mismas reglas que la API).
 function problems(b) {
   const out = []
-  if (!b.title.trim() && !b.imageDesktop) out.push('Necesita al menos un título o una imagen de escritorio.')
+  if (!b.title.trim() && !b.imageDesktop && !b.videoDesktop) out.push('Necesita un título, imagen o video de escritorio.')
+  if (b.mediaType === 'video' && (!b.videoDesktop || b.placement !== 'hero')) out.push('El video necesita una URL de escritorio y ubicación Hero.')
+  for (const url of [b.videoDesktop, b.videoMobile]) {
+    if (!validHeroVideoUrl(url)) out.push('El video debe ser una URL HTTPS directa de MP4 o WebM.')
+  }
   b.buttons.forEach((btn, i) => {
     if (!btn.label.trim()) out.push(`Botón ${i + 1}: falta el texto.`)
     if (!validHref(btn.href)) out.push(`Botón ${i + 1}: el enlace debe empezar con «/» o «https://».`)
@@ -101,6 +107,24 @@ function ImageField({ label, hint, value, onChange, token, testId }) {
   )
 }
 
+function VideoField({ label, value, onChange, token }) {
+  const toast = useContext(ToastContext)
+  const [busy, setBusy] = useState(false)
+  const upload = async file => {
+    if (!file) return
+    if (!['video/mp4', 'video/webm'].includes(file.type) || file.size > 20 * 1048576) return toast?.showToast('Usa MP4 o WebM de hasta 20 MB.', 'error')
+    setBusy(true)
+    try { const result = await api.admin.uploadVideo(await readFileAsDataUrl(file), token); onChange(result.url) }
+    catch { toast?.showToast('No se pudo subir el video. Reintenta o usa una URL HTTPS directa.', 'error') }
+    finally { setBusy(false) }
+  }
+  return <div className="rounded-xl2 border border-paper-line p-3 dark:border-night-line">
+    <Field label={label}><input type="url" className="input-tr" value={value || ''} maxLength={1000} disabled={busy} placeholder="https://…/video.mp4" onChange={e => onChange(e.target.value.trim() || null)} /></Field>
+    <label className="btn-secondary mt-2 inline-block cursor-pointer px-3 py-2 text-xs">{busy ? 'Subiendo video…' : 'Subir video'}<input type="file" className="sr-only" accept="video/mp4,video/webm" disabled={busy} onChange={e => { void upload(e.target.files?.[0]); e.target.value = '' }} /></label>
+    {value && <button type="button" className="btn-ghost ml-2" disabled={busy} onClick={() => onChange(null)}>Quitar video</button>}
+  </div>
+}
+
 function Editor({ banner, onChange, token }) {
   const [mode, setMode] = useState('desktop')
   const set = (patch) => onChange({ ...banner, ...patch })
@@ -110,6 +134,13 @@ function Editor({ banner, onChange, token }) {
   return (
     <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="space-y-4">
+        <Field label="Contenido del banner"><select className="input-tr" value={banner.mediaType || 'image'} onChange={e => set({ mediaType: e.target.value, ...(e.target.value === 'video' ? { placement: 'hero' } : {}) })}><option value="image">Imagen</option><option value="video">Video (carrusel principal)</option></select></Field>
+        {banner.mediaType === 'video' && <>
+          <p className="text-sm">MP4 (H.264 recomendado) o WebM. Sube un archivo HD o Full HD de hasta 20 MB, o pega una URL HTTPS directa. No se mejora la resolución original. El video se muestra completo, sin recorte ni deformación; pueden quedar franjas. Se reproduce sin sonido y el carrusel avanza al terminar, si la rotación está activa.</p>
+          <VideoField label="Video de escritorio (URL)" value={banner.videoDesktop} onChange={videoDesktop => set({ videoDesktop })} token={token} />
+          <VideoField label="Video para móvil (opcional, URL)" value={banner.videoMobile} onChange={videoMobile => set({ videoMobile })} token={token} />
+          <p className="text-xs">Las imágenes de abajo sirven como portada del video. Puedes conservar títulos y botones, o dejarlos vacíos para mostrar solo el video. El oscurecimiento también se aplica al video.</p>
+        </>}
         <ImageField testId="img-desktop" label="Imagen de escritorio" hint="Recomendado: 1920×600 px (JPG o WebP). Máximo 10 MB; ideal menos de 500 KB para que cargue rápido. Si no hay imagen se usa el degradado de marca." value={banner.imageDesktop} onChange={(v) => set({ imageDesktop: v })} token={token} />
         <ImageField testId="img-mobile" label="Imagen para móvil (opcional)" hint="Recomendado: 900×1100 px. Si la dejas vacía, en móvil se recorta la de escritorio." value={banner.imageMobile} onChange={(v) => set({ imageMobile: v })} token={token} />
         <Field label="Texto alternativo de la imagen (accesibilidad)"><input className="input-tr h-9 py-0" value={banner.imageAlt} maxLength={160} onChange={(e) => set({ imageAlt: e.target.value })} placeholder="Déjalo vacío si la imagen es decorativa" /></Field>

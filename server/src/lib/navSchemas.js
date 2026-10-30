@@ -1,3 +1,4 @@
+import { validHeroVideoUrl } from '../../../src/utils/heroMedia.js'
 import { z } from 'zod'
 import { storeBusinessSchema } from './storeBusinessSchema.js'
 import { homeLayoutSchema } from './homeSchemas.js'
@@ -107,6 +108,9 @@ export const bannerSchema = z
     imageDesktop: optionalUrl,
     imageMobile: optionalUrl,
     imageAlt: z.string().trim().max(160).optional().default(''),
+    mediaType: z.enum(['image', 'video']).optional().default('image'),
+    videoDesktop: optionalUrl.refine(validHeroVideoUrl, 'Usa una URL HTTPS directa de MP4 o WebM.'),
+    videoMobile: optionalUrl.refine(validHeroVideoUrl, 'Usa una URL HTTPS directa de MP4 o WebM.'),
     position: z.enum(BANNER_POSITIONS, { error: 'Posición inválida.' }).optional().default('bottom-left'),
     textAlign: z.enum(BANNER_ALIGNS, { error: 'Alineación inválida.' }).optional().default('left'),
     textColor: z.enum(['light', 'dark'], { error: 'El color del texto debe ser light o dark.' }).optional().default('light'),
@@ -118,7 +122,8 @@ export const bannerSchema = z
     width: z.enum(['full', 'half'], { error: 'width debe ser full o half.' }).optional().default('full'),
     slot: z.string().trim().max(40).optional().default(''),
   })
-  .refine((b) => b.title || b.imageDesktop, { error: 'El banner necesita al menos un título o una imagen.', path: ['title'] })
+  .refine((b) => b.title || b.imageDesktop || b.videoDesktop, { error: 'El banner necesita un título, imagen o video.', path: ['title'] })
+  .refine(b => b.mediaType !== 'video' || Boolean(b.videoDesktop) && b.placement === 'hero', { error: 'El video necesita una URL de escritorio y ubicación Hero.', path: ['videoDesktop'] })
   .refine((b) => !b.startsAt || !b.endsAt || new Date(b.endsAt) > new Date(b.startsAt), {
     error: 'La fecha de fin debe ser posterior a la de inicio.',
     path: ['endsAt'],
@@ -131,7 +136,7 @@ export const homeBannersSchema = z.array(bannerSchema).max(30, 'Máximo 30 banne
 // texto a la izquierda. Es idempotente: lo que ya tiene la forma nueva no se toca.
 export function legacyBannerToNew(b) {
   if (!b || typeof b !== 'object') return b
-  if ('buttons' in b || 'imageDesktop' in b || 'description' in b) return b
+  if ('buttons' in b || 'imageDesktop' in b || 'description' in b || 'mediaType' in b || 'videoDesktop' in b) return b
   return {
     id: b.id,
     eyebrow: b.eyebrow ?? '',

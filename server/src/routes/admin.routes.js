@@ -1,11 +1,12 @@
 import { Router } from 'express'
+import { rateLimit } from 'express-rate-limit'
 import { prisma } from '../lib/prisma.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 import { serializeCategory, serializeOrder, serializeUser } from '../lib/serializers.js'
-import { uploadImageToCloudinary, uploadModelToCloudinary } from '../lib/cloudinary.js'
-import { imageJson, modelJson } from '../middleware/bodyLimits.js'
-import { validateUpload, validateModel } from '../lib/uploadValidation.js'
+import { uploadImageToCloudinary, uploadModelToCloudinary, uploadVideoToCloudinary } from '../lib/cloudinary.js'
+import { imageJson, modelJson, videoJson } from '../middleware/bodyLimits.js'
+import { validateUpload, validateModel, validateVideo } from '../lib/uploadValidation.js'
 import { orderInclude, changeOrderStatus } from '../lib/orderService.js'
 import { ORDER_STATUSES } from '../lib/orderPolicy.js'
 import { z } from 'zod'
@@ -13,13 +14,18 @@ import { validate } from '../middleware/validate.js'
 import { productCreateSchema, productUpdateSchema, categoryCreateSchema, categoryUpdateSchema, paymentMethodUpdateSchema } from '../lib/adminSchemas.js'
 import { createAdminProduct, updateAdminProduct } from '../lib/adminProducts.js'
 
-export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploadModel = uploadModelToCloudinary } = {}) {
+export function createAdminRouter({ uploadImage = uploadImageToCloudinary, uploadModel = uploadModelToCloudinary, uploadVideo = uploadVideoToCloudinary } = {}) {
   const adminRouter = Router()
 
   // Todo lo de este archivo requiere sesión + rol ADMIN. No existe ningún
   // endpoint público que otorgue este rol — se asigna a mano con
   // `npm run make-admin -- correo@ejemplo.com` (ver prisma/make-admin.js).
   adminRouter.use(requireAuth, requireRole('ADMIN'))
+  adminRouter.post('/uploads/video', rateLimit({ windowMs: 600000, limit: 10, standardHeaders: 'draft-8', legacyHeaders: false }), videoJson, asyncHandler(async (req, res) => {
+    validateVideo(req.body?.video)
+    const url = await uploadVideo(req.body.video)
+    res.json({ url })
+  }))
 
   const statusSchema = z.enum(ORDER_STATUSES)
   const statusBodySchema = z.object({ status: statusSchema, note: z.string().trim().max(1000).optional() })
