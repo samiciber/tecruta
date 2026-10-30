@@ -124,7 +124,7 @@ export function createAuthRouter({ db = prisma, now = () => new Date(),
     res.json({ user: serializeUser(user) })
   }))
   router.post('/change-password', requireAuth, loginRateLimiter, validate(changePasswordSchema), asyncHandler(async (req, res) => {
-    if (isStaff(req.user)) return res.status(403).json({error:'Cambia tu contraseña desde Seguridad del panel.'})
+    if (isStaff(req.user)) return res.status(403).json({error:'El personal debe solicitar el restablecimiento a su administrador. El administrador principal conserva Seguridad y recuperación.'})
     await db.$transaction(async tx => {
       const user = await lockUser(tx, req.user.id)
       if (version(user) !== version(req.user)) throw new AuthError(401, 'La sesión cambió. Inicia sesión nuevamente.')

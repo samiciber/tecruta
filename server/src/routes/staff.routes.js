@@ -10,13 +10,18 @@ import { lockUser, version } from '../lib/authCodes.js'
 import { AuthError, randomSecret } from '../lib/authSecurity.js'
 import { normalizeAdminUsername } from '../lib/adminUsername.js'
 import { audit, revokeStaff, STAFF_ROLES } from '../lib/staffSecurity.js'
+import { isStrongStaffPassword, STAFF_PASSWORD_HELP } from '../../../src/utils/staffPassword.js'
 
 const profile = z.enum(['ADMIN','CASHIER','WAREHOUSE'])
 const username = z.string().trim().min(4).max(32).refine(value => { try { normalizeAdminUsername(value); return true } catch { return false } }, 'Usuario no válido.')
-const temporary = z.string().min(12, 'Usa al menos 12 caracteres para la contraseña temporal.').max(72).refine(value=>Buffer.byteLength(value,'utf8')<=72,'La contraseña no debe superar 72 bytes UTF-8.')
-const creation = z.object({ username, nombre: z.string().trim().min(1).max(100), apellido: z.string().trim().min(1).max(100), role: profile, temporaryPassword: temporary }).strict()
+const assignedPassword = z.string().refine(isStrongStaffPassword, STAFF_PASSWORD_HELP)
+// Accept the former field during an API-first rollout. Both names together
+// are rejected, so there is exactly one unambiguous credential per request.
+const credentialFields = { password: assignedPassword.optional(), temporaryPassword: assignedPassword.optional() }
+const onePassword = value => (value.password !== undefined) !== (value.temporaryPassword !== undefined)
+const creation = z.object({ username, nombre: z.string().trim().min(1).max(100), apellido: z.string().trim().min(1).max(100), role: profile, ...credentialFields }).strict().refine(onePassword, 'Indica una sola contraseña asignada.').refine(value => (value.password ?? value.temporaryPassword)?.toLowerCase() !== value.username.toLowerCase(), 'La contraseña debe ser diferente del usuario.')
 const change = z.object({ username: username.optional(), role: profile.optional(), isSuspended: z.boolean().optional(), reason: z.string().trim().min(5).max(500) }).strict().refine(data => ['username','role','isSuspended'].some(key => data[key] !== undefined),'Indica un cambio.')
-const reset = z.object({ temporaryPassword: temporary, reason: z.string().trim().min(5).max(500) }).strict()
+const reset = z.object({ ...credentialFields, reason: z.string().trim().min(5).max(500) }).strict().refine(onePassword, 'Indica una sola contraseña asignada.')
 const publicStaff = user => ({ id:user.id, username:user.adminUsername, nombre:user.nombre, apellido:user.apellido, role:user.role, isSuspended:user.isSuspended, mustChangePassword:user.mustChangePassword, temporaryPasswordExpiresAt:user.temporaryPasswordExpiresAt, ownerRecoveryEnabled:user.ownerRecoveryEnabled, mfaEnabled:user.mfaEnabled })
 export function createStaffRouter({ db = prisma } = {}) {
   const router = Router(), { requireAuth } = createAuthMiddleware({db})
@@ -36,12 +41,12 @@ export function createStaffRouter({ db = prisma } = {}) {
     res.json({items,total,page})
   }))
   router.post('/',authActionRateLimiter,validate(creation),asyncHandler(async (req,res) => {
-    const alias=normalizeAdminUsername(req.body.username),passwordHash=await bcrypt.hash(req.body.temporaryPassword,12)
+    const alias=normalizeAdminUsername(req.body.username),passwordHash=await bcrypt.hash(req.body.password ?? req.body.temporaryPassword,12)
     const user=await db.$transaction(async tx => {
       await actor(tx,req.user)
       if(await tx.user.findUnique({where:{adminUsername:alias}}))throw new AuthError(409,'Ese usuario ya está asignado.')
-      const created=await tx.user.create({data:{adminUsername:alias,email:null,nombre:req.body.nombre,apellido:req.body.apellido,role:req.body.role,passwordHash,verified:true,mustChangePassword:true,temporaryPasswordExpiresAt:new Date(Date.now()+24*3600000)}})
-      await audit(tx,req.user.id,'STAFF_CREATED',created.id,{username:alias,role:created.role})
+      const created=await tx.user.create({data:{adminUsername:alias,email:null,nombre:req.body.nombre,apellido:req.body.apellido,role:req.body.role,passwordHash,verified:true,mustChangePassword:false,temporaryPasswordExpiresAt:null}})
+      await audit(tx,req.user.id,'STAFF_CREATED',created.id,{username:alias,role:created.role,credentialPolicy:'ADMIN_ASSIGNED'})
       return created
     })
     res.status(201).json(publicStaff(user))
@@ -66,14 +71,16 @@ export function createStaffRouter({ db = prisma } = {}) {
     res.json(publicStaff(user))
   }))
   router.post('/:id/reset-password',authActionRateLimiter,validate(reset),asyncHandler(async(req,res)=>{
-    if(req.params.id===req.user.id)throw new AuthError(409,'Cambia tu contraseña desde Seguridad.')
-    const passwordHash=await bcrypt.hash(req.body.temporaryPassword,12)
+    if(req.params.id===req.user.id)throw new AuthError(409,'Otro administrador debe restablecer tu contraseña. El administrador principal conserva su recuperación.')
+    const passwordHash=await bcrypt.hash(req.body.password ?? req.body.temporaryPassword,12)
     const user=await db.$transaction(async tx=>{
       await actor(tx,req.user)
       const target=await lockUser(tx,req.params.id)
       if(!target||!STAFF_ROLES.includes(target.role))throw new AuthError(404,'Trabajador no encontrado.')
-      const updated=await revokeStaff(tx,target,{passwordHash,mustChangePassword:true,temporaryPasswordExpiresAt:new Date(Date.now()+24*3600000),resetCode:null,resetCodeHash:null,resetCodeExpiresAt:null,mfaPendingSecretEncrypted:null})
-      await audit(tx,req.user.id,'STAFF_PASSWORD_RESET',target.id,{reason:req.body.reason})
+      const assigned=req.body.password ?? req.body.temporaryPassword
+      if(assigned.toLowerCase()===target.adminUsername?.toLowerCase()||await bcrypt.compare(assigned,target.passwordHash))throw new AuthError(400,'Usa una contraseña nueva, diferente de la anterior y del usuario.')
+      const updated=await revokeStaff(tx,target,{passwordHash,mustChangePassword:false,temporaryPasswordExpiresAt:null,resetCode:null,resetCodeHash:null,resetCodeExpiresAt:null,resetCodeAttempts:0,resetCodeLockedUntil:null,mfaPendingSecretEncrypted:null})
+      await audit(tx,req.user.id,'STAFF_PASSWORD_RESET',target.id,{reason:req.body.reason,credentialPolicy:'ADMIN_ASSIGNED'})
       return updated
     })
     res.json(publicStaff(user))

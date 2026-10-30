@@ -31,7 +31,7 @@ export function createAuthMiddleware({ db = prisma, verify = verifyToken } = {})
         if (now - session.lastSeenAt > 60000) await db.staffSession.update({where:{id:session.id},data:{lastSeenAt:now}})
       }
       const path = req.originalUrl.split('?')[0]
-      if (user.mustChangePassword && !((req.method === 'GET' && path === '/api/auth/me') || ['/api/auth/staff-change-password','/api/auth/logout-all'].includes(path))) return res.status(403).json({error:'Debes cambiar tu contraseña temporal antes de continuar.',code:'PASSWORD_CHANGE_REQUIRED'})
+      if (user.mustChangePassword && !((req.method === 'GET' && path === '/api/auth/me') || ['/api/auth/staff-change-password','/api/auth/logout-all'].includes(path))) return res.status(403).json(user.ownerRecoveryEnabled ? {error:'Debes actualizar tu contraseña desde Seguridad antes de continuar.',code:'PASSWORD_CHANGE_REQUIRED'} : {error:'Solicita al administrador que restablezca tu contraseña antes de continuar.',code:'PASSWORD_RESET_REQUIRED'})
       req.user = user
       return next()
     } catch (error) {

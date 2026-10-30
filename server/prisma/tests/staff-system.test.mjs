@@ -7,8 +7,8 @@ import {createInventoryRuntime} from './helpers/inventory-runtime.mjs'
 import {runPrisma,runDocker,createPrismaWorkspace} from './helpers/isolated-runtime.mjs'
 import {totp,base32} from '../../src/lib/staffSecurity.js'
 import {hash,challenge} from '../../src/lib/authSecurity.js'
-let rt,base,limits,bcrypt,adminToken,worker,workerToken,permanent,mail=[],owner
-const initial=randomBytes(20).toString('hex'),nextPassword=randomBytes(20).toString('hex')
+let rt,base,limits,bcrypt,adminToken,worker,workerToken,mail=[],owner
+const initial='Aa7!'+randomBytes(20).toString('hex'),nextPassword='Bb8@'+randomBytes(20).toString('hex')
 // Synchronous migration checks can outlive an idle HTTP socket; each QA request opens its own connection.
 async function request(path,{body,token=adminToken,method=body?'POST':'GET'}={}){
  const response=await fetch(base+path,{method,headers:{'Content-Type':'application/json','Connection':'close',...(token?{Authorization:`Bearer ${token}`}:{})},body:body?JSON.stringify(body):undefined,redirect:'manual'})
@@ -33,12 +33,49 @@ beforeEach(()=>{limits.loginRateLimiter.resetKey('127.0.0.1');limits.authActionR
 after(async()=>{await rt?.close()})
 test('crear personal sin correo, alias único y auditoría sin credenciales',async()=>{
  const result=await request('/api/admin/staff',{body:{username:' VENDEDOR01 ',nombre:'QA',apellido:'Caja',role:'CASHIER',temporaryPassword:initial}})
- assert.equal(result.status,201);worker=result.data;assert.equal(worker.username,'vendedor01');assert.equal(worker.mustChangePassword,true)
+ assert.equal(result.status,201);worker=result.data;assert.equal(worker.username,'vendedor01');assert.equal(worker.mustChangePassword,false);assert.equal(worker.temporaryPasswordExpiresAt,null)
  const row=await rt.db.user.findUnique({where:{id:worker.id}});assert.equal(row.email,null);assert.ok(await bcrypt.compare(initial,row.passwordHash))
  assert.equal(JSON.stringify(result.data).includes(initial),false)
  assert.equal((await request('/api/admin/staff',{body:{username:'VENDEDOR01',nombre:'QA',apellido:'Otro',role:'WAREHOUSE',temporaryPassword:initial}})).status,409)
  const events=await rt.db.staffAuditEvent.findMany({where:{subjectId:worker.id}});assert.equal(events.length,1);assert.equal(JSON.stringify(events).includes(initial),false)
  assert.equal((await request('/api/admin/users/'+rt.customer.id+'/role',{method:'PATCH',body:{role:'CASHIER'}})).status,410)
+})
+
+test('creación y restablecimiento ADMIN rechazan contraseñas débiles, ambiguas y permisos ajenos',async()=>{
+ const body={username:'qa-worker-secure',nombre:'QA',apellido:'Política',role:'CASHIER',password:'ADMIN1234'}
+ assert.equal((await request('/api/admin/staff',{body})).status,400)
+ assert.equal((await request('/api/admin/staff',{body:{...body,password:initial,temporaryPassword:initial}})).status,400)
+ assert.equal((await request('/api/admin/staff',{body:{...body,password:undefined}})).status,400)
+ assert.equal((await request('/api/admin/staff',{body:{...body,username:'AdminSeguro123',password:'AdminSeguro123'}})).status,400)
+ const workerSession=(await login('vendedor01')).data.token
+ assert.equal((await request('/api/admin/staff',{token:workerSession,body:{...body,password:initial}})).status,403)
+ assert.equal((await request('/api/admin/staff/'+owner.id+'/reset-password',{token:workerSession,body:{password:nextPassword,reason:'Intento sin autorización'}})).status,403)
+ assert.equal((await request('/api/admin/staff/'+owner.id+'/reset-password',{body:{password:nextPassword,reason:'No permitir restablecerse a sí mismo'}})).status,409)
+ assert.equal((await request('/api/admin/staff/'+worker.id+'/reset-password',{body:{password:'ADMIN1234',reason:'Clave débil rechazada'}})).status,400)
+ assert.equal((await request('/api/admin/staff/'+worker.id+'/reset-password',{body:{password:nextPassword,reason:'x'}})).status,400)
+ assert.equal((await login('vendedor01')).status,200)
+})
+
+test('almacén y administrador adicional no cambian su clave; legado pendiente requiere restablecimiento ADMIN',async()=>{
+ for(const [role,alias] of [['WAREHOUSE','qa-warehouse-new'],['ADMIN','qa-additional-admin']]){
+  const created=await request('/api/admin/staff',{body:{username:alias,nombre:'QA',apellido:'Perfil',role,password:initial}})
+  assert.equal(created.status,201);assert.equal(created.data.mustChangePassword,false)
+  const session=await login(alias);assert.equal(session.status,200)
+  const body={currentPassword:initial,newPassword:nextPassword}
+  assert.equal((await request('/api/auth/staff-change-password',{token:session.data.token,body})).status,403)
+  assert.equal((await request('/api/auth/change-password',{token:session.data.token,body})).status,403)
+  assert.equal((await login(alias,initial)).status,200)
+  assert.equal((await login(alias,nextPassword)).status,401)
+ }
+ const row=await rt.db.user.findUnique({where:{adminUsername:'qa-warehouse-new'}})
+ await rt.db.user.update({where:{id:row.id},data:{mustChangePassword:true,temporaryPasswordExpiresAt:new Date(Date.now()+3600000)}})
+ const legacy=await login('qa-warehouse-new');assert.equal(legacy.status,200)
+ assert.equal((await request('/api/admin/inventory/summary',{token:legacy.data.token})).data.code,'PASSWORD_RESET_REQUIRED')
+ assert.equal((await request('/api/auth/staff-change-password',{token:legacy.data.token,body:{currentPassword:initial,newPassword:nextPassword}})).status,403)
+ const reset=await request(`/api/admin/staff/${row.id}/reset-password`,{body:{password:nextPassword,reason:'Asignación segura de cuenta heredada'}})
+ assert.equal(reset.status,200);assert.equal(reset.data.mustChangePassword,false);assert.equal(reset.data.temporaryPasswordExpiresAt,null)
+ const restored=await login('qa-warehouse-new',nextPassword);assert.equal(restored.status,200)
+ assert.equal((await request('/api/admin/inventory/summary',{token:restored.data.token})).status,200)
 })
 test('actualización de personal conserva cuentas reales previas y solo habilita recuperación del titular',()=>{
  const name='qa_staff_upgrade'
@@ -61,16 +98,16 @@ test('actualización de personal conserva cuentas reales previas y solo habilita
  assert.equal(sql(`SELECT count(*) FROM users WHERE role<>'CUSTOMER' AND "mustChangePassword" AND "tokenVersion"=1`),'3')
  assert.equal(sql(`SELECT count(*) FROM users WHERE role='CUSTOMER' AND NOT "mustChangePassword" AND "tokenVersion"=0`),'1')
 })
-test('usuario obligatorio, cambio forzado de contraseña y revocación del acceso temporal',async()=>{
+test('usuario obligatorio y contraseña asignada: acceso directo y cambio propio prohibido en ambas APIs',async()=>{
  for(const value of ['vendedor01',' VENDEdor01 ']){const r=await login(value);assert.equal(r.status,200);assert.equal(r.data.user.id,worker.id);workerToken=r.data.token}
  assert.equal((await login(owner.email)).status,401)
- assert.equal((await request('/api/pos/config',{token:workerToken})).status,403)
+ assert.equal((await request('/api/pos/config',{token:workerToken})).status,200)
  assert.equal((await request('/api/auth/me',{token:workerToken})).status,200)
- assert.equal((await request('/api/auth/staff-change-password',{token:workerToken,body:{currentPassword:initial,newPassword:initial}})).status,400)
- assert.equal((await request('/api/auth/staff-change-password',{token:workerToken,body:{currentPassword:initial,newPassword:nextPassword}})).status,200)
- assert.equal((await request('/api/auth/me',{token:workerToken})).status,401)
- assert.equal((await login('vendedor01')).status,401)
- workerToken=(await login('vendedor01',nextPassword)).data.token
+ assert.equal((await request('/api/auth/staff-change-password',{token:workerToken,body:{currentPassword:initial,newPassword:nextPassword}})).status,403)
+ assert.equal((await request('/api/auth/change-password',{token:workerToken,body:{currentPassword:initial,newPassword:nextPassword}})).status,403)
+ assert.equal((await request('/api/auth/me',{token:workerToken})).status,200)
+ assert.equal((await login('vendedor01',nextPassword)).status,401)
+ assert.equal((await login('vendedor01')).status,200)
  assert.equal((await request('/api/pos/config',{token:workerToken})).status,200)
  assert.equal((await request('/api/admin/staff',{token:workerToken})).status,403)
  assert.equal((await request('/api/admin/inventory/summary',{token:workerToken})).status,200)
@@ -86,13 +123,18 @@ test('sin Google ni recuperación para trabajadores; clientes conservan recupera
  await new Promise(r=>setTimeout(r,20));assert.equal(mail.at(-1).to,rt.customer.email)
  const store=await request('/api/auth/login',{token:null,body:{email:owner.email,password:initial}});assert.equal(store.status,401)
 })
-test('restablecimiento administrativo no revela contraseñas y exige cambio nuevamente',async()=>{
- const reset=await request(`/api/admin/staff/${worker.id}/reset-password`,{body:{temporaryPassword:initial,reason:'Identidad verificada por titular'}})
- assert.equal(reset.status,200);assert.equal(reset.data.mustChangePassword,true)
+test('restablecimiento administrativo cambia contraseña, cierra sesiones y permite ingreso directo',async()=>{
+ const previous=(await login('vendedor01')).data.token
+ assert.equal((await request(`/api/admin/staff/${worker.id}/reset-password`,{body:{password:initial,reason:'No permitir repetir contraseña anterior'}})).status,400)
+ const reset=await request(`/api/admin/staff/${worker.id}/reset-password`,{body:{password:nextPassword,reason:'Identidad verificada por titular'}})
+ assert.equal(reset.status,200);assert.equal(reset.data.mustChangePassword,false);assert.equal(reset.data.temporaryPasswordExpiresAt,null)
+ assert.equal(JSON.stringify(reset.data).includes(nextPassword),false)
  assert.equal((await request('/api/pos/config',{token:workerToken})).status,401)
- const temp=await login('vendedor01');assert.equal(temp.status,200)
- assert.equal((await request('/api/auth/staff-change-password',{token:temp.data.token,body:{currentPassword:initial,newPassword:nextPassword}})).status,200)
+ assert.equal((await request('/api/auth/me',{token:previous})).status,401)
+ assert.equal((await login('vendedor01')).status,401)
  workerToken=(await login('vendedor01',nextPassword)).data.token
+ assert.equal((await request('/api/pos/config',{token:workerToken})).status,200)
+ assert.equal((await request('/api/auth/staff-change-password',{token:workerToken,body:{currentPassword:nextPassword,newPassword:initial}})).status,403)
 })
 test('suspender con caja abierta revoca todas las sesiones y conserva caja/historial',async()=>{
  const cash=await request('/api/pos/cash',{token:workerToken,body:{requestId:crypto.randomUUID(),openingAmount:'10.00'}});assert.equal(cash.status,200)
@@ -175,4 +217,19 @@ test('TOTP RFC 6238, alta real, desafío, códigos de respaldo de un uso y desac
  assert.equal((await request('/api/auth/staff-mfa/disable',{body:{currentPassword:initial,code:enabled.data.recoveryCodes[1]}})).status,200)
  adminToken=(await login('ADMIN1234')).data.token
  const user=await rt.db.user.findUnique({where:{id:owner.id}});assert.equal(user.mfaEnabled,false);assert.equal(user.mfaSecretEncrypted,null)
+})
+
+test('titular conserva cambio propio de contraseña y revocación de sesiones',async()=>{
+ const replacement='Cc9#'+randomBytes(20).toString('hex')
+ const previous=adminToken
+ const result=await request('/api/auth/staff-change-password',{body:{currentPassword:initial,newPassword:replacement}})
+ assert.equal(result.status,200)
+ assert.equal((await request('/api/auth/me',{token:previous})).status,401)
+ assert.equal((await login('admin1234',initial)).status,401)
+ const session=await login('admin1234',replacement);assert.equal(session.status,200)
+ adminToken=session.data.token
+ assert.equal((await request('/api/admin/staff')).status,200)
+ const saved=await rt.db.user.findUnique({where:{id:owner.id}})
+ assert.equal(saved.ownerRecoveryEnabled,true);assert.equal(saved.role,'ADMIN')
+ assert.equal(await rt.db.staffAuditEvent.count({where:{action:'STAFF_PASSWORD_CHANGED',subjectId:owner.id}}),1)
 })

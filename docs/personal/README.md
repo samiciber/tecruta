@@ -1,5 +1,9 @@
 # Sistema integrado de TecRuta: entrega para revisión
 
+> Cambio posterior preparado localmente: [contraseñas asignadas por el administrador](credenciales-administradas.md).
+> Sustituye el cambio obligatorio de contraseña del personal para nuevas altas y
+> restablecimientos; el contenido siguiente conserva la entrega histórica.
+
 > Nueva organización visual preparada localmente en `mejora/panel-operacion-clara`:
 > [diseño, rutas y capturas](../interfaz/README.md). Esta mejora todavía no se publicó;
 > no modifica la base del sistema integrado ya publicado.

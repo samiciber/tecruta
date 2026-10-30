@@ -55,10 +55,12 @@ export function createStaffAuthRouter({db=prisma}={}) {
    res.json(result)
  }))
  router.post('/staff-change-password',requireAuth,panelOnly,loginRateLimiter,validate(change),asyncHandler(async(req,res)=>{
+   if(req.user.role!=='ADMIN'||!req.user.ownerRecoveryEnabled)throw new AuthError(403,'Solo el administrador puede restablecer tu contraseña. Contacta a tu administrador.')
    if(req.body.currentPassword===req.body.newPassword)throw new AuthError(400,'La nueva contraseña debe ser diferente.')
    const passwordHash=await bcrypt.hash(req.body.newPassword,12)
    await db.$transaction(async tx=>{
      const user=await lockUser(tx,req.user.id)
+     if(user.role!=='ADMIN'||!user.ownerRecoveryEnabled)throw new AuthError(403,'Solo el administrador puede restablecer tu contraseña.')
      if(version(user)!==version(req.user)||!await bcrypt.compare(req.body.currentPassword,user.passwordHash))throw new AuthError(400,'La contraseña actual no es correcta o tu sesión cambió.')
      await revokeStaff(tx,user,{passwordHash,mustChangePassword:false,temporaryPasswordExpiresAt:null,resetCode:null,resetCodeHash:null,resetCodeExpiresAt:null})
      await audit(tx,user.id,'STAFF_PASSWORD_CHANGED',user.id)
