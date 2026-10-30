@@ -194,12 +194,14 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
 
       {(multi || videoActive) && (
         <>
+          {multi && <>
           <button type="button" onClick={() => goTo(active - 1, true)} aria-label="Diapositiva anterior" className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header md:flex">
             <ChevronLeft className="h-6 w-6" aria-hidden="true" />
           </button>
           <button type="button" onClick={() => goTo(active + 1, true)} aria-label="Diapositiva siguiente" className="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header md:flex">
             <ChevronRight className="h-6 w-6" aria-hidden="true" />
           </button>
+          </>}
 
           <div className="absolute inset-x-0 bottom-3 flex items-center justify-center gap-3">
             {(autoplayOn || videoActive) && (
