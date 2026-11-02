@@ -88,7 +88,7 @@ export default function CategoryPage() {
         {!loadingProducts && products.length === 0 ? (
           <EmptyState title="Aún no tenemos productos en esta categoría" description="Estamos sumando novedades. Mientras tanto, explora todo el catálogo." action={<Link to="/catalogo" className="btn-primary mt-2">Ver todos los productos</Link>} />
         ) : (
-          <ProductBrowser products={products} loading={loadingProducts} />
+          <ProductBrowser key={slug} products={products} loading={loadingProducts} categoryScope={slug} />
         )}
       </div>
     </div>

@@ -4,6 +4,8 @@
 // en vez del array estático, los componentes (ProductCard, Catalog,
 // ProductDetail, etc.) no necesitan cambios.
 
+import { productFilterAttributes } from '../../../src/utils/catalogFilters.js'
+
 export function serializeUser(user) {
   return {
     id: user.id,
@@ -97,6 +99,7 @@ export function serializeProduct(product) {
     description: product.description,
     tags: product.tags,
     specifications: product.specifications,
+    filterAttributes: productFilterAttributes(product.specifications),
     // Campos 3D — undefined-safe: productos creados antes de esta
     // migración no los tendrán en la fila de la BD hasta que se
     // regenere el cliente de Prisma, así que se leen con `?? null` /
@@ -123,6 +126,7 @@ export function serializeProductCard(product) {
     price: Number(product.price), compareAtPrice: product.compareAtPrice == null ? null : Number(product.compareAtPrice),
     stock: product.stock, ratingCount: product.ratingCount, ratingSum: product.ratingSum,
     featured: product.featured, bestSeller: product.bestSeller, tags: product.tags, searchText: product.searchText,
+    filterAttributes: productFilterAttributes(product.specifications),
     image: product.image || product.images[0]?.url || null,
     images: product.image ? [product.image] : product.images.map(row => row.url), summary: true,
   }

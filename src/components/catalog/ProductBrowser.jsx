@@ -3,6 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import SortSelect from '../filters/SortSelect.jsx'
 import FilterPanel from '../filters/FilterPanel.jsx'
+import ActiveFilters from '../filters/ActiveFilters.jsx'
+import { catalogFacets, readAttributeFilters, writeAttributeFilters } from '../../utils/catalogFilters.js'
+import { useCategories } from '../../hooks/useCategories.js'
+import { descendantSlugs, findNode } from '../../utils/categoryTree.js'
 import ProductGrid from '../product/ProductGrid.jsx'
 import Modal from '../ui/Modal.jsx'
 import { useProducts } from '../../hooks/useProducts.js'
@@ -11,20 +15,29 @@ const PAGE_SIZE = 24
 
 // Productos ya acotados (por categoría o marca) con los filtros del
 // catálogo: marca, precio, disponibilidad, orden y paginación (en la URL).
-export default function ProductBrowser({ products, loading = false, hideCategories = true }) {
+export default function ProductBrowser({ products, loading = false, hideBrands = false, categoryScope }) {
   const [params, setParams] = useSearchParams()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { tree, getCategoryBySlug } = useCategories()
+  const category = params.get('categoria') || undefined
+  const categorySlugs = useMemo(() => {
+    const node = findNode(tree, category)
+    return node ? descendantSlugs(node) : undefined
+  }, [tree, category])
 
   const sort = params.get('ordenar') || 'relevance'
   const pagina = Math.max(1, Number(params.get('pagina') || 1))
   const filters = useMemo(
     () => ({
+      category,
+      categorySlugs,
       brands: params.get('marcas') ? params.get('marcas').split(',') : [],
       minPrice: params.get('min') ? Number(params.get('min')) : undefined,
       maxPrice: params.get('max') ? Number(params.get('max')) : undefined,
       inStockOnly: params.get('stock') === '1',
+      attributes: readAttributeFilters(params),
     }),
-    [params],
+    [params, category, categorySlugs],
   )
 
   const results = useProducts(products, { filters, sort })
@@ -32,7 +45,8 @@ export default function ProductBrowser({ products, loading = false, hideCategori
   const paginaSegura = Math.min(pagina, totalPaginas)
   const pageItems = results.slice((paginaSegura - 1) * PAGE_SIZE, paginaSegura * PAGE_SIZE)
 
-  const brands = useMemo(() => [...new Set(products.map((p) => p.brand))].filter(Boolean).sort(), [products])
+  const facetTree = useMemo(() => categoryScope ? (findNode(tree, categoryScope)?.children || []) : tree, [tree, categoryScope])
+  const facets = useMemo(() => catalogFacets(products, facetTree, filters), [products, facetTree, filters])
   const priceBounds = useMemo(
     () => products.reduce((acc, p) => ({ min: Math.min(acc.min, p.price), max: Math.max(acc.max, p.price) }), { min: Infinity, max: 0 }),
     [products],
@@ -40,12 +54,13 @@ export default function ProductBrowser({ products, loading = false, hideCategori
 
   const update = (next) => {
     const merged = new URLSearchParams(params)
-    const map = { ordenar: next.sort, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly ? '1' : undefined }
+    const map = { ordenar: next.sort, categoria: next.category, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly ? '1' : undefined }
     Object.entries(map).forEach(([key, value]) => {
       if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) merged.delete(key)
       else merged.set(key, Array.isArray(value) ? value.join(',') : String(value))
     })
     merged.delete('pagina')
+    writeAttributeFilters(merged, next.attributes)
     setParams(merged, { replace: true })
   }
   const handleFilterChange = (next) => update({ ...next, sort: sort === 'relevance' ? undefined : sort })
@@ -57,7 +72,7 @@ export default function ProductBrowser({ products, loading = false, hideCategori
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const panel = <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clear} brands={brands} priceBounds={priceBounds} hideCategories={hideCategories} />
+  const panel = <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clear} facets={facets} priceBounds={priceBounds} hideBrands={hideBrands} />
 
   return (
     <div>
@@ -75,9 +90,10 @@ export default function ProductBrowser({ products, loading = false, hideCategori
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <div className="sticky top-40">{panel}</div>
+          <div className="sticky top-40 max-h-[calc(100dvh-11rem)] overflow-y-auto pr-2">{panel}</div>
         </aside>
         <div className="min-w-0">
+          <ActiveFilters filters={filters} categoryName={getCategoryBySlug(category)?.name} onChange={handleFilterChange} />
           <ProductGrid
             products={pageItems}
             loading={loading}

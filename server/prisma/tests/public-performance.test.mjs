@@ -8,7 +8,7 @@ import { resolveCatalogDetail } from '../../../src/services/catalogDetail.js'
 let rt, base, product
 before(async () => {
   rt = await createInventoryRuntime()
-  product = await rt.product(5, { description: 'Descripción sintética para medición QA. '.repeat(400), specifications: [{ label: 'Dato QA', value: 'Valor sintético' }] })
+  product = await rt.product(5, { description: 'Descripción sintética para medición QA. '.repeat(400), specifications: [{ label: 'Dato QA', value: 'Valor sintético' }, { label: 'Memoria RAM', value: '16 GB' }, { label: 'Pantalla', value: '15,6 pulgadas' }] })
   base = await rt.start()
 }, { timeout: 180000 })
 after(async () => { await rt?.close() })
@@ -56,6 +56,8 @@ test('gzip negocia y reduce bytes públicos; cards reduce JSON sin quitar precio
   assert.equal(row.price, Number(product.price))
   assert.equal(row.stock, 6)
   assert.equal(row.description, undefined)
+  assert.equal(row.specifications, undefined)
+  assert.deepEqual(row.filterAttributes, { ram: '16 GB', pantalla: '15,6 pulgadas' })
   assert.equal(JSON.parse(full.text)[0].description, product.description)
   const encoded = await new Promise((resolve, reject) => {
     http.get(base + '/api/products', { headers: { 'Accept-Encoding': 'gzip' } }, res => {

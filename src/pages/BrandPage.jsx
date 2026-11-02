@@ -46,7 +46,7 @@ export default function BrandPage() {
           action={<div className="mt-2 flex flex-wrap justify-center gap-3"><Link to="/marcas" className="btn-secondary">Otras marcas</Link><Link to="/catalogo" className="btn-primary">Ver catálogo</Link></div>}
         />
       ) : (
-        <ProductBrowser products={products} loading={loadingProducts} hideCategories />
+        <ProductBrowser key={slug} products={products} loading={loadingProducts} hideBrands />
       )}
     </div>
   )

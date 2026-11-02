@@ -4,6 +4,8 @@ import { SlidersHorizontal, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import SearchBar from '../components/filters/SearchBar.jsx'
 import SortSelect from '../components/filters/SortSelect.jsx'
 import FilterPanel from '../components/filters/FilterPanel.jsx'
+import ActiveFilters from '../components/filters/ActiveFilters.jsx'
+import { catalogFacets, readAttributeFilters, writeAttributeFilters } from '../utils/catalogFilters.js'
 import ProductGrid from '../components/product/ProductGrid.jsx'
 import Modal from '../components/ui/Modal.jsx'
 import { useProducts } from '../hooks/useProducts.js'
@@ -39,6 +41,7 @@ export default function Catalog() {
       minPrice: params.get('min') ? Number(params.get('min')) : undefined,
       maxPrice: params.get('max') ? Number(params.get('max')) : undefined,
       inStockOnly: params.get('stock') === '1',
+      attributes: readAttributeFilters(params),
     }),
     [params, categorySlug, categorySlugs],
   )
@@ -50,13 +53,13 @@ export default function Catalog() {
   const paginaSegura = Math.min(pagina, totalPaginas)
   const resultadosPagina = results.slice((paginaSegura - 1) * PAGE_SIZE, paginaSegura * PAGE_SIZE)
 
-  const brands = useMemo(() => [...new Set(index.map((p) => p.brand))].sort(), [index])
+  const facets = useMemo(() => catalogFacets(index, tree, filters, query), [index, tree, filters, query])
   const priceBounds = useMemo(
     () => index.reduce((acc, p) => ({ min: Math.min(acc.min, p.price), max: Math.max(acc.max, p.price) }), { min: Infinity, max: 0 }),
     [index],
   )
 
-  const updateParams = (next) => {
+  const updateParams = (next, attributes = filters.attributes) => {
     const merged = new URLSearchParams(params)
     Object.entries(next).forEach(([key, value]) => {
       if (value === undefined || value === '' || value === false || (Array.isArray(value) && value.length === 0)) {
@@ -68,6 +71,7 @@ export default function Catalog() {
       }
     })
     merged.delete('pagina')
+    writeAttributeFilters(merged, attributes)
     setParams(merged, { replace: true })
   }
 
@@ -76,7 +80,7 @@ export default function Catalog() {
     // — hay que escribirlo siempre como el string '1' (o quitarlo si es
     // false) para que coincida. Antes se pasaba el booleano tal cual, que
     // updateParams serializaba como "true"/"false", y "true" !== '1'.
-    updateParams({ categoria: next.category, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly ? '1' : undefined })
+    updateParams({ categoria: next.category, marcas: next.brands, min: next.minPrice, max: next.maxPrice, stock: next.inStockOnly ? '1' : undefined }, next.attributes)
   }
 
   const clearFilters = () => setParams(query ? { q: query } : {}, { replace: true })
@@ -114,12 +118,13 @@ export default function Catalog() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[220px_1fr]">
         <aside className="hidden lg:block">
-          <div className="store-catalog-filters sticky top-24">
-            <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clearFilters} brands={brands} priceBounds={priceBounds} />
+          <div className="store-catalog-filters sticky top-40 max-h-[calc(100dvh-11rem)] overflow-y-auto pr-2">
+            <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clearFilters} facets={facets} priceBounds={priceBounds} />
           </div>
         </aside>
 
         <div>
+          <ActiveFilters filters={filters} categoryName={category?.name} onChange={handleFilterChange} />
           <p className="mb-4 text-sm text-ink-soft dark:text-paper/50">
             {loading ? 'Cargando productos…' : `${results.length} producto${results.length === 1 ? '' : 's'} encontrado${results.length === 1 ? '' : 's'}`}
           </p>
@@ -153,7 +158,7 @@ export default function Catalog() {
       </div>
 
       <Modal open={mobileFiltersOpen} onClose={() => setMobileFiltersOpen(false)} title="Filtros">
-        <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clearFilters} brands={brands} priceBounds={priceBounds} />
+        <FilterPanel filters={filters} onChange={handleFilterChange} onClear={clearFilters} facets={facets} priceBounds={priceBounds} />
         <button type="button" onClick={() => setMobileFiltersOpen(false)} className="btn-primary mt-6 w-full">
           Ver {results.length} resultado{results.length === 1 ? '' : 's'}
         </button>

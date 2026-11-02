@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma.js'
 import { serializeProduct, serializeProductCard, productCardSelect } from '../lib/serializers.js'
 import { asyncHandler } from '../middleware/errorHandler.js'
 import { normalizeSearch } from '../../../src/utils/searchText.js'
+import { attachCatalogAttributes } from '../lib/catalogAttributes.js'
 
 export const productsRouter = Router()
 
@@ -47,7 +48,8 @@ productsRouter.get(
       orderBy: { createdAt: 'desc' },
     })
 
-    res.json(products.map(cards ? serializeProductCard : serializeProduct))
+    const rows = cards ? await attachCatalogAttributes(prisma, products) : products
+    res.json(rows.map(cards ? serializeProductCard : serializeProduct))
   }),
 )
 
