@@ -77,10 +77,10 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
   const cfg = carouselConfig || settings.heroCarousel || { intervalSeconds: 6, autoplay: true }
 
   const slides = useMemo(() => {
-    if (Array.isArray(suppliedSlides)) return suppliedSlides.slice(0,3)
+    if (Array.isArray(suppliedSlides)) return suppliedSlides
     const now = new Date()
     const live = (settings.homeBanners || []).filter((b) => (b.placement ?? 'hero') === 'hero' && isLive(b, now))
-    return (live.length > 0 ? live : fallbackSlides(categories)).slice(0,3)
+    return live.length > 0 ? live : fallbackSlides(categories)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppliedSlides, settings.homeBanners, categories])
 
@@ -185,7 +185,8 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
                 {...(current ? {} : { inert: '' })}
                 className="h-full w-full shrink-0 basis-full"
               >
-                <HeroSlide slide={slide} priority={i === 0} controls={multi} mobileFocus active={current} paused={userPaused || pageHidden} reduced={reduced || cfg.autoplay === false} onVideoEnded={current ? videoEnded : undefined} onVideoFailed={current ? videoFailed : undefined} />
+                {/* Solo el slide actual y sus vecinos cargan medios, incluso con 30 banners. */}
+                {(current || i === (active + 1) % count || i === (active - 1 + count) % count) && <HeroSlide slide={slide} priority={i === 0} controls={multi} mobileFocus active={current} paused={userPaused || pageHidden} reduced={reduced || cfg.autoplay === false} onVideoEnded={current ? videoEnded : undefined} onVideoFailed={current ? videoFailed : undefined} />}
               </div>
             )
           })}
@@ -195,10 +196,10 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
       {(multi || videoActive) && (
         <>
           {multi && <>
-          <button type="button" onClick={() => goTo(active - 1, true)} aria-label="Diapositiva anterior" className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header md:flex">
+          <button type="button" onClick={() => goTo(active - 1, true)} aria-label="Diapositiva anterior" className={`absolute left-3 top-1/2 ${count > 7 ? 'flex' : 'hidden md:flex'} h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header`}>
             <ChevronLeft className="h-6 w-6" aria-hidden="true" />
           </button>
-          <button type="button" onClick={() => goTo(active + 1, true)} aria-label="Diapositiva siguiente" className="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header md:flex">
+          <button type="button" onClick={() => goTo(active + 1, true)} aria-label="Diapositiva siguiente" className={`absolute right-3 top-1/2 ${count > 7 ? 'flex' : 'hidden md:flex'} h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-header`}>
             <ChevronRight className="h-6 w-6" aria-hidden="true" />
           </button>
           </>}
@@ -214,7 +215,7 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
                 {userPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
               </button>
             )}
-            <div className="flex items-center gap-2 rounded-full bg-black/35 px-3 py-2">
+            {count > 7 ? <span className="rounded-full bg-black/60 px-4 py-2 text-sm font-semibold tabular-nums text-white" aria-label={`Diapositiva ${active + 1} de ${count}`}>{active + 1} / {count}</span> : <div className="flex items-center gap-2 rounded-full bg-black/35 px-3 py-2">
               {slides.map((slide, i) => (
                 <button
                   key={slide.id}
@@ -225,7 +226,7 @@ export default function HeroSlider({ slides: suppliedSlides, carouselConfig, loa
                   className={`h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black/50 ${i === active ? 'w-6 bg-white' : 'w-2.5 bg-white/60 hover:bg-white/90'}`}
                 />
               ))}
-            </div>
+            </div>}
           </div>
         </>
       )}

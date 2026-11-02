@@ -323,6 +323,7 @@ export default function AdminBanners() {
           <button type="button" onClick={save} disabled={!dirty || invalidCount > 0 || saving} className="btn-primary px-4 py-2 text-xs">{saving ? 'Guardando…' : 'Guardar cambios'}</button>
         </div>
       </SectionHeader>
+      <p className="mb-3 text-xs text-ink-soft dark:text-paper/60">{banners.length} de 30 banners. Puedes usar más de 10 en el carrusel; se muestran todos los de ubicación Hero que estén activos y vigentes. El límite de 30 incluye los intercalados.</p>
       {dirty && <p role="status" className="mb-3 text-xs text-signal-amber">Tienes cambios sin guardar{invalidCount > 0 ? ` · ${invalidCount} slide(s) con datos por corregir` : ''}.</p>}
       {loading && <p role="status" className="text-sm text-ink-soft dark:text-paper/60">Cargando…</p>}
       {error && <p role="alert" className="text-sm text-signal-red">{error} <button type="button" onClick={load} className="underline">Reintentar</button></p>}

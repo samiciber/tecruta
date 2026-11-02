@@ -62,7 +62,7 @@ export function HomeView({ data, error, refresh }) {
           style={index > 1 ? { contentVisibility: 'auto', containIntrinsicSize: '560px' } : undefined}
         >
           {section.type === 'hero' && data.hero && (
-            <HeroSlider slides={data.hero.slides.slice(0,3)} carouselConfig={data.hero.config} />
+            <HeroSlider slides={data.hero.slides} carouselConfig={data.hero.config} />
           )}
           {section.type === 'guestStrip' && <GuestStrip {...section} />}
           {section.type === 'reviews' && <CustomerReviews/>}
