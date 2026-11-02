@@ -87,7 +87,8 @@ Ctrl+C cierra servicios y limpia únicamente los recursos de ese entorno QA.
 
 ## Publicación y recuperación
 
-Pendiente de publicación. Desplegar primero la API y después la tienda. El panel
+Publicado el 2 de noviembre de 2026; véase [el registro de publicación](publicacion-filtros-20261102.md).
+Para próximas publicaciones, desplegar primero la API y después la tienda. El panel
 no necesita cambios. Con API anterior funcionan marca/categoría/precio, pero no
 se ofrecen características porque falta `filterAttributes`. Una reversión de
 código conserva todos los datos; no restaurar bases ni borrar especificaciones.
