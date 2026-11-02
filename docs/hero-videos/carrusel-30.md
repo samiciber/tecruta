@@ -1,7 +1,8 @@
 # Carrusel con más de diez diapositivas
 
 Preparado localmente el 2 de noviembre de 2026 en
-`fix/hero-hasta-30-diapositivas`, sobre `6e09ef1`. No publicado.
+`fix/hero-hasta-30-diapositivas`, sobre `6e09ef1`.
+Publicado el mismo día: [registro de publicación y verificaciones](publicacion-20261102.md).
 
 Se eliminaron los recortes de tres elementos de HomeView y HeroSlider. La tienda
 recorre todos los Hero activos y vigentes que devuelve la API, en su orden.
@@ -38,7 +39,7 @@ Pendiente: revisión visual en navegador en escritorio/móvil y reproducción re
 con más de diez slides. No se presentan las comprobaciones de marcado como una
 prueba de interacción o reproducción. No se modificaron datos de producción.
 
-Publicación futura: actualizar tienda y panel con sus configuraciones existentes;
+Procedimiento de publicación: actualizar tienda y panel con sus configuraciones existentes;
 la API actual ya admite los 30 banners, sin despliegue backend obligatorio.
 Conservar el código y los datos anteriores para reversión. Volver al frontend
 anterior volvería a mostrar solo los tres primeros, sin borrar los demás banners.

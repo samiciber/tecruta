@@ -1,7 +1,8 @@
 # Videos en el carrusel principal
 
-> Ajuste local posterior: [carrusel de hasta 30 banners](carrusel-30.md), que elimina
+> Publicado el 2 de noviembre: [carrusel de hasta 30 banners](carrusel-30.md), que elimina
 > el recorte de tres descrito en la entrega original de abajo.
+> [Despliegues y verificaciones](publicacion-20261102.md).
 
 > Publicación autorizada el 30 de octubre: [estado y continuación](publicacion-20261030.md).
 > La rama ya se subió a GitHub; el contenido siguiente describe la preparación original.
