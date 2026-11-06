@@ -46,7 +46,12 @@ before(async()=>{
     tokens[id]=signToken({sub:'qa-'+id,tokenVersion:0})
   }
   await db.category.create({data:{id:'qa-category',slug:'qa-category',name:'QA category',legacy:true}})
-  await db.product.create({data:{id:'qa-product',slug:'qa-product',name:'QA historical item',categoryId:'qa-category',price:99,stock:7,tags:[]}})
+  // Producto y saldo de apertura en la misma transacción: el trigger diferido de
+  // inventario exige que el stock coincida con los movimientos CONFIRMADOS.
+  await db.$transaction(async tx => {
+    await tx.product.create({data:{id:'qa-product',slug:'qa-product',name:'QA historical item',categoryId:'qa-category',price:99,stock:7,tags:[]}})
+    await tx.inventoryMovement.create({data:{id:'qa-movement',productId:'qa-product',type:'INITIAL_BALANCE',direction:'IN',status:'CONFIRMED',quantity:7,balanceAfter:7,reason:'QA saldo inicial',reference:'QA seed',sourceKey:'qa-initial:qa-product',createdById:'qa-admin',confirmedById:'qa-admin',confirmedAt:new Date()}})
+  })
   await db.order.create({data:orderData('qa-order-a','qa-a',{status:'PAID',receiptUrl:'https://res.cloudinary.com/qa-test/image/upload/v1/a.png',createdAt:new Date('2026-10-12T00:00:00Z'),
     items:{create:{productId:'qa-product',name:'QA snapshot name',quantity:2,unitPrice:5}},statusHistory:{create:[
       {id:'qa-ev-3',status:'PAID',createdAt:new Date('2026-10-12T17:00:00Z'),note:'QA internal note'},

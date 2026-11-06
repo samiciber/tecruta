@@ -86,6 +86,7 @@ export default function ProductForm({ categories, initialValues, submitting, onS
   const brandHelpId = useId()
   const toast = useContext(ToastContext)
   const { token } = useAuth()
+  const isCreate = !initialValues
   const [form, setForm] = useState(() => initialValues ?? { ...emptyValues, category: categories[0]?.slug || '' })
   const [tagInput, setTagInput] = useState('')
   // null cuando no hay ninguna subida en curso; si no, el identificador de
@@ -199,8 +200,8 @@ export default function ProductForm({ categories, initialValues, submitting, onS
   const handleSubmit = (e) => {
     e.preventDefault()
 
-    if (!form.slug.trim() || !form.name.trim() || !form.category || !form.price) {
-      toast?.showToast('Completa al menos slug, nombre, categoría y precio.', 'error')
+    if ((!isCreate && !form.slug.trim()) || !form.name.trim() || !form.category || form.price === '') {
+      toast?.showToast('Completa al menos nombre, categoría y precio.', 'error')
       return
     }
 
@@ -220,7 +221,8 @@ export default function ProductForm({ categories, initialValues, submitting, onS
       }))
 
     onSubmit({
-      slug: form.slug.trim(),
+      // Al crear, el slug se genera solo en el servidor a partir del nombre.
+      ...(!isCreate ? { slug: form.slug.trim() } : {}),
       name: form.name.trim(),
       category: form.category,
       sku: form.sku.trim() || null,
@@ -251,7 +253,13 @@ export default function ProductForm({ categories, initialValues, submitting, onS
       <div>
         <p className="mb-2 text-sm font-semibold text-ink dark:text-paper">Datos principales</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <input className="input-tr" placeholder="slug (ej: cargador-nuevo)" value={form.slug} onChange={set('slug')} />
+          {isCreate ? (
+            <p className="flex min-h-11 items-center rounded-xl border border-dashed border-paper-line px-4 text-xs leading-5 text-ink-soft dark:border-night-line dark:text-paper/60">
+              El slug se genera automáticamente a partir del nombre.
+            </p>
+          ) : (
+            <input className="input-tr" placeholder="slug (ej: cargador-nuevo)" value={form.slug} onChange={set('slug')} />
+          )}
           <input className="input-tr sm:col-span-2" placeholder="Nombre del producto" value={form.name} onChange={set('name')} />
           <select className="input-tr" value={form.category} onChange={set('category')}>
             {categories.map((c) => (

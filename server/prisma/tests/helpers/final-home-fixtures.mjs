@@ -3,7 +3,19 @@ export async function seedFinalHome(db, origin) {
   for (const [i, name] of ['Audio', 'Carga', 'Escritorio', 'Movilidad'].entries()) categories.push(await db.category.create({ data: { name, slug: `qa-categoria-${i}`, visible: true, legacy: false, position: i, image: `${origin}/fixtures/product-${i}.svg` } }))
   const brand = await db.brand.create({ data: { slug: 'qa-marca', name: 'Marca de prueba', visible: true, featured: true, logo: `${origin}/fixtures/logo.svg` } })
   const products = []
-  for (let i = 0; i < 8; i++) products.push(await db.product.create({ data: { name: ['Auriculares de prueba', 'Cargador de prueba', 'Soporte de prueba', 'Cable de prueba'][i % 4], slug: `qa-producto-${i}`, categoryId: categories[i % 4].id, brandId: brand.id, brand: brand.name, price: 49.9 + i * 20, compareAtPrice: i % 2 ? null : 79.9 + i * 20, stock: i === 1 ? 0 : i === 2 ? 3 : 12, featured: i < 4, bestSeller: i >= 4, image: `${origin}/fixtures/product-${i}.svg`, tags: [] } }))
+  for (let i = 0; i < 8; i++) {
+    const stock = i === 1 ? 0 : i === 2 ? 3 : 12
+    // Producto y saldo de apertura en la misma transacción: el trigger diferido
+    // de inventario exige que el stock coincida con los movimientos CONFIRMADOS.
+    const row = await db.$transaction(async tx => {
+      const product = await tx.product.create({ data: { name: ['Auriculares de prueba', 'Cargador de prueba', 'Soporte de prueba', 'Cable de prueba'][i % 4], slug: `qa-producto-${i}`, categoryId: categories[i % 4].id, brandId: brand.id, brand: brand.name, price: 49.9 + i * 20, compareAtPrice: i % 2 ? null : 79.9 + i * 20, stock, featured: i < 4, bestSeller: i >= 4, image: `${origin}/fixtures/product-${i}.svg`, tags: [] } })
+      if (stock > 0) {
+        await tx.inventoryMovement.create({ data: { id: `qa-movement-${i}`, productId: product.id, type: 'INITIAL_BALANCE', direction: 'IN', status: 'CONFIRMED', quantity: stock, balanceAfter: stock, reason: 'Saldo inicial QA', reference: 'QA seed', sourceKey: `qa-initial:${product.id}`, confirmedAt: new Date() } })
+      }
+      return product
+    })
+    products.push(row)
+  }
   const banners = [{ id: 'qa-hero', title: 'Tecnología que te acompaña', eyebrow: 'Selección de prueba', description: 'Encuentra accesorios para estudiar, trabajar y seguir tu propia ruta.', imageDesktop: `${origin}/fixtures/scene-hero.svg`, imageMobile: `${origin}/fixtures/scene-hero-mobile.svg`, imageAlt: 'Ilustración de prueba de tecnología', placement: 'hero', position: 'middle-left', overlay: 25, active: true, buttons: [{ label: 'Explorar catálogo', href: '/catalogo', style: 'primary' }] },
     { id: 'qa-editorial', title: 'Prepara tu espacio', description: 'Elige los accesorios que acompañan tus ideas, tus proyectos y tu música.', imageDesktop: `${origin}/fixtures/scene-editorial.svg`, imageAlt: 'Escena sintética de escritorio', placement: 'inline', slot: 'workspace', active: true, position: 'middle-left', overlay: 30, buttons: [{ label: 'Explorar accesorios', href: '/catalogo', style: 'primary' }] }]
   const tile = (id, title, i) => ({ id, title, description: ['Accesorios para concentrarte.', 'Organiza tus conexiones.', 'Lleva tu tecnología contigo.', 'Completa tu equipo.'][i % 4], image: `${origin}/fixtures/product-${i}.svg`, imageAlt: title, href: `/categoria/${categories[i % 4].slug}` })

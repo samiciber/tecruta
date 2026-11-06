@@ -209,6 +209,15 @@ export function createSale(db, user, input) {
       const { gross, ...fields } = line
       return { ...fields, lineTotal: amount(gross - allocation) }
     })
+    if (!input.orderId) {
+      // Bloquear los productos ANTES de insertar las líneas: la FK de
+      // pos_sale_items toma KEY SHARE y el FOR UPDATE posterior de la
+      // confirmación provocaría un deadlock (40P01) entre cajas concurrentes
+      // del mismo producto. Orden fijo por id (ya ordenado en `lines`).
+      for (const line of lines) {
+        await tx.$queryRaw`SELECT id FROM products WHERE id = ${line.productId} FOR UPDATE`
+      }
+    }
     const sale = await tx.posSale.create({ data: { orderId: input.orderId ?? null, userId: user.id, customerName, customerDocument,
       subtotal: amount(subtotal), discount: amount(discount), total: amount(total), discountReason: discount ? input.discountReason : null,
       approvedById: discount ? user.id : null, items: { create: items }, payments: { create: plan } }, include: saleInclude })

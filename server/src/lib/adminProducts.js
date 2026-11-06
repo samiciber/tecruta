@@ -1,6 +1,7 @@
 import { serializeProduct } from './serializers.js'
 import { changeStockFromProductEditor, InventoryError, recordConfirmedMovement } from './inventoryService.js'
 import { ensureSkuAvailable } from './productIdentity.js'
+import { slugify } from './slug.js'
 
 const include = { category: true, images: true, brandRef: true }
 const bad = message => Object.assign(new Error(message), { status: 400 })
@@ -45,13 +46,30 @@ async function categoryData(tx, category) {
   return { categoryId: row.id }
 }
 
+// Genera el slug si el cliente no envió uno: deriva del nombre y, si ya
+// existe, agrega -2, -3… hasta encontrar uno libre. Un slug enviado por el
+// usuario se respeta tal cual (el esquema ya validó su formato).
+async function resolveProductSlug(tx, requested, name) {
+  const provided = slugify(requested)
+  if (provided) return provided
+  const base = (slugify(name) || 'producto').slice(0, 150)
+  let candidate = base
+  for (let attempt = 2; attempt <= 1000; attempt++) {
+    const existing = await tx.product.findUnique({ where: { slug: candidate }, select: { id: true } })
+    if (!existing) return candidate
+    candidate = `${base}-${attempt}`
+  }
+  throw bad('No se pudo generar un slug único. Cambia el nombre del producto.')
+}
+
 export async function createAdminProduct(db, input, userId = null) {
   return db.$transaction(async tx => {
-    const { category, images, brand, brandId, stock: targetStock = 0, expectedStock, stockReason, sku, ...fields } = input
+    const { category, images, brand, brandId, stock: targetStock = 0, expectedStock, stockReason, sku, slug, ...fields } = input
     if (targetStock > 0 && !stockReason?.trim()) throw new InventoryError(400, 'Indica el motivo del saldo inicial.')
     const normalizedSku = await ensureSkuAvailable(tx, sku)
+    const resolvedSlug = await resolveProductSlug(tx, slug, fields.name)
     let row = await tx.product.create({ data: {
-      tags: [], ...fields, sku: normalizedSku ?? undefined, stock: 0,
+      tags: [], ...fields, slug: resolvedSlug, sku: normalizedSku ?? undefined, stock: 0,
       ...await categoryData(tx, category), ...await resolveBrand(tx, input, null),
       image: fields.image ?? images?.[0] ?? null,
       images: images?.length ? { create: images.map((url, position) => ({ url, position })) } : undefined,
@@ -79,9 +97,16 @@ export async function createAdminProduct(db, input, userId = null) {
 }
 export async function updateAdminProduct(db, id, input, userId = null) {
   return db.$transaction(async tx => {
+    let existing = await tx.product.findUnique({ where: { id } })
+    if (!existing) throw missing()
+    // Bloquear la marca ANTES del producto: el trigger de búsqueda
+    // (store_refresh_related_search) actualiza los productos de una marca al
+    // renombrarla; si el producto se bloqueara primero, se formaría un
+    // deadlock (40P01) entre edición de producto y renombre de marca.
+    const brandData = await resolveBrand(tx, input, existing)
     // Serializes competing product edits, including brand changes/image replacement.
     await tx.$queryRaw`SELECT id FROM products WHERE id = ${id} FOR UPDATE`
-    const existing = await tx.product.findUnique({ where: { id } })
+    existing = await tx.product.findUnique({ where: { id } })
     if (!existing) throw missing()
     const { category, images, brand, brandId, stock: targetStock, expectedStock, stockReason, sku, ...fields } = input
     if (targetStock !== undefined && targetStock !== existing.stock) {
@@ -93,7 +118,7 @@ export async function updateAdminProduct(db, id, input, userId = null) {
       if (!fields.sku) throw bad('El SKU es obligatorio.')
     }
     await tx.product.update({ where: { id }, data: {
-      ...fields, ...await categoryData(tx, category), ...await resolveBrand(tx, input, existing),
+      ...fields, ...await categoryData(tx, category), ...brandData,
     } })
     if (targetStock !== undefined) {
       await changeStockFromProductEditor(tx, {

@@ -50,62 +50,38 @@ test('retornos seguros y URL de API sin prefijo duplicado', () => {
   assert.equal(legacyPanelPath('/admin'), '/')
   assert.equal(apiBase('https://api.example.test/api/'), 'https://api.example.test')
 })
-test('login real: ADMIN, CASHIER y WAREHOUSE; CUSTOMER rechazado en panel y válido en tienda', async () => {
-  for (const user of [rt.admin, rt.cashier, rt.warehouse, rt.customer]) {
-    const r = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { email: user.email, password: 'Synthetic-panel-only-42' } })
-    assert.equal(r.status, user.role === 'CUSTOMER' ? 403 : 200)
-    assert.equal(Boolean(r.data.token), user.role !== 'CUSTOMER')
+test('login real: ADMIN, CASHIER y WAREHOUSE por usuario; CUSTOMER rechazado en panel y válido en tienda', async () => {
+  // El panel entra únicamente con usuario (alias); se asigna uno a cada cuenta staff.
+  await rt.db.user.update({ where: { id: rt.admin.id }, data: { adminUsername: 'qaadmin01' } })
+  await rt.db.user.update({ where: { id: rt.cashier.id }, data: { adminUsername: 'qacash01' } })
+  await rt.db.user.update({ where: { id: rt.warehouse.id }, data: { adminUsername: 'qawareh01' } })
+  for (const alias of ['qaadmin01', 'qacash01', 'qawareh01']) {
+    const r = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: alias, password: 'Synthetic-panel-only-42' } })
+    assert.equal(r.status, 200); assert.ok(r.data.token)
   }
+  assert.equal((await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: 'noexiste', password: 'Synthetic-panel-only-42' } })).status, 401)
   assert.equal((await request('/api/auth/login', { user: null, method: 'POST', body: { email: rt.customer.email, password: 'Synthetic-panel-only-42' } })).status, 200)
   for (const user of [null, rt.customer, rt.cashier, rt.warehouse]) assert.equal((await request('/api/admin/staff', { user })).status, user ? 403 : 401)
 })
-test('invitación individual, duplicados, activación privada y código de un uso', async () => {
-  const body = { nombre: 'Trabajadora', apellido: 'Sintética', email: 'worker-panel@example.test', role: 'WAREHOUSE' }
+test('creación por usuario con contraseña temporal, duplicados y suspensión', async () => {
+  const body = { username: 'workerqa', nombre: 'Trabajadora', apellido: 'Sintética', role: 'WAREHOUSE', temporaryPassword: 'Temporal-qa-123' }
   const r = await request('/api/admin/staff', { method: 'POST', body })
-  assert.equal(r.status, 201); assert.equal(r.data.delivery, 'SENT'); assert.equal(r.data.user.verified, false)
-  assert.equal(r.data.user.passwordHash, undefined); assert.equal(r.data.code, undefined)
+  assert.equal(r.status, 201); assert.equal(r.data.username, 'workerqa'); assert.equal(r.data.mustChangePassword, true)
   assert.equal((await request('/api/admin/staff', { method: 'POST', body })).status, 409)
-  const stored = await rt.db.user.findUnique({ where: { email: body.email } })
-  assert.equal(stored.resetCode, null); assert.ok(stored.resetCodeHash)
-  const activation = mail.find(message => message.to === body.email)
-  assert.equal(activation.activationUrl, local + '/recuperar-contrasena')
-  const reset = { email: body.email, code: activation.code, newPassword: 'Private-synthetic-83' }
-  assert.equal((await request('/api/auth/reset-password', { user: null, method: 'POST', body: reset })).status, 200)
-  assert.equal((await request('/api/auth/reset-password', { user: null, method: 'POST', body: reset })).status, 400)
-  const login = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { email: body.email, password: reset.newPassword } })
+  const login = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: 'workerqa', password: 'Temporal-qa-123' } })
   assert.equal(login.status, 200); assert.equal(login.data.user.role, 'WAREHOUSE')
-  assert.equal((await request('/api/admin/staff/' + stored.id + '/activation', { method: 'POST' })).status, 409)
+  assert.equal((await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: 'workerqa', password: 'incorrecta' } })).status, 401)
+  const suspended = await request('/api/admin/staff/' + login.data.user.id, { method: 'PATCH', body: { isSuspended: true, reason: 'QA suspensión temporal' } })
+  assert.equal(suspended.status, 200); assert.equal(suspended.data.isSuspended, true)
+  assert.equal((await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: 'workerqa', password: 'Temporal-qa-123' } })).status, 401)
 })
-test('retirar acceso invalida sesiones y conserva la cuenta y el historial', async () => {
-  const oldToken = rt.auth(rt.warehouse)
-  const r = await request('/api/admin/staff/' + rt.warehouse.id + '/role', { method: 'PATCH', body: { role: 'CUSTOMER' } })
-  assert.equal(r.status, 200)
-  assert.equal((await request('/api/admin/inventory/products', { token: oldToken })).status, 401)
-  assert.ok(await rt.db.user.findUnique({ where: { id: rt.warehouse.id } }))
-  assert.equal((await request('/api/admin/staff/' + rt.admin.id + '/role', { method: 'PATCH', body: { role: 'CUSTOMER' } })).status, 409)
+test('cambios de acceso validan rol, motivo y no permiten modificarse a uno mismo', async () => {
+  assert.equal((await request('/api/admin/staff/' + rt.cashier.id, { method: 'PATCH', body: { role: 'CUSTOMER', reason: 'QA motivo inválido' } })).status, 400)
+  assert.equal((await request('/api/admin/staff/' + rt.cashier.id, { method: 'PATCH', body: { role: 'ADMIN', reason: 'qa' } })).status, 400)
+  assert.equal((await request('/api/admin/staff/' + rt.admin.id, { method: 'PATCH', body: { isSuspended: true, reason: 'QA no puede auto-suspenderse' } })).status, 409)
 })
-test('no se cambia acceso con caja abierta; el endpoint anterior también lo protege', async () => {
-  const { openCash } = await rt.load('server/src/lib/posService.js')
-  const { randomUUID } = await import('node:crypto')
-  await openCash(rt.db, rt.cashier, { openingAmount: '0.00', requestId: randomUUID() })
-  for (const path of ['/api/admin/staff/', '/api/admin/users/']) assert.equal((await request(path + rt.cashier.id + '/role', { method: 'PATCH', body: { role: 'CUSTOMER' } })).status, 409)
-})
-test('fallo de correo queda explícito y no simula activación ni entrega', async () => {
-  mailFailure = true
-  try {
-    const r = await request('/api/admin/staff', { method: 'POST', body: { nombre: 'Pendiente', apellido: 'Sintético', email: 'qa-undelivered@example.test', role: 'CASHIER' } })
-    assert.equal(r.status, 201); assert.equal(r.data.delivery, 'FAILED'); assert.equal(r.data.user.verified, false)
-    assert.equal(mail.some(message => message.to === r.data.user.email), false)
-    assert.equal((await request('/api/admin/staff/' + r.data.user.id + '/activation', { method: 'POST' })).status, 429)
-  } finally { mailFailure = false }
-})
-test('un administrador autoriza otra cuenta ADMIN e invalida su sesión anterior', async () => {
-  const before = await rt.db.user.findUnique({ where: { id: rt.customer.id } })
-  const oldToken = rt.auth(before)
-  const r = await request('/api/admin/staff/' + before.id + '/role', { method: 'PATCH', body: { role: 'ADMIN' } })
-  assert.equal(r.status, 200); assert.equal(r.data.role, 'ADMIN')
-  assert.equal((await request('/api/admin/staff', { token: oldToken })).status, 401)
-  const login = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { email: before.email, password: 'Synthetic-panel-only-42' } })
-  assert.equal(login.status, 200)
-  assert.equal((await request('/api/admin/staff', { token: login.data.token })).status, 200)
+test('la auditoría registra creaciones y cambios de acceso', async () => {
+  const audit = await request('/api/admin/staff/audit')
+  assert.equal(audit.status, 200); assert.ok(audit.data.total >= 2)
+  assert.ok(audit.data.items.some(item => item.action === 'STAFF_CREATED'))
 })

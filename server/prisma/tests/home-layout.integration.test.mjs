@@ -68,28 +68,34 @@ async function request(path, { method = 'GET', auth, body } = {}) {
 }
 
 async function createCategory({ slug, name, visible = true, legacy = false, product: productData }) {
-  return prisma.category.create({
-    data: {
-      slug, name, visible, legacy, image: 'https://qa.invalid/category.webp',
-      ...(productData ? {
-        products: {
-          create: {
-            slug: productData.slug,
-            name: productData.name,
-            price: '25.00',
-            compareAtPrice: null,
-            stock: 3,
-            featured: productData.featured ?? false,
-            bestSeller: false,
-            image: `https://qa.invalid/${productData.slug}.webp`,
-            tags: [],
-            images: { create: [{ url: `https://qa.invalid/${productData.slug}-detail.webp`, position: 0 }] },
-          },
-        },
-      } : {}),
-    },
-    include: { products: true },
+  const category = await prisma.category.create({
+    data: { slug, name, visible, legacy, image: 'https://qa.invalid/category.webp' },
   })
+  const products = []
+  if (productData) {
+    // Producto y saldo de apertura en la misma transacción: el trigger diferido
+    // de inventario exige que el stock coincida con los movimientos CONFIRMADOS.
+    products.push(await prisma.$transaction(async tx => {
+      const created = await tx.product.create({
+        data: {
+          slug: productData.slug,
+          name: productData.name,
+          price: '25.00',
+          compareAtPrice: null,
+          stock: 3,
+          featured: productData.featured ?? false,
+          bestSeller: false,
+          image: `https://qa.invalid/${productData.slug}.webp`,
+          tags: [],
+          categoryId: category.id,
+          images: { create: [{ url: `https://qa.invalid/${productData.slug}-detail.webp`, position: 0 }] },
+        },
+      })
+      await tx.inventoryMovement.create({ data: { id: `qa-movement-${productData.slug}`, productId: created.id, type: 'INITIAL_BALANCE', direction: 'IN', status: 'CONFIRMED', quantity: 3, balanceAfter: 3, reason: 'Saldo inicial QA', reference: 'QA seed', sourceKey: `qa-initial:${created.id}`, confirmedAt: new Date() } })
+      return created
+    }))
+  }
+  return { ...category, products }
 }
 
 const banner = ({ id, title, placement, width = 'full', active = true, slot = '' }) => ({

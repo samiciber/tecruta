@@ -45,7 +45,19 @@ const bodyFor = (items) => ({ customer: { nombre: 'QA', apellido: 'Example', cor
   delivery: { tipoEntrega: 'envio', departamento: 'QA', provincia: 'QA', distrito: 'QA', direccion: 'Fictitious', numero: '0' }, paymentMethod: 'qa-payment', items })
 async function product(stock, price = '9.99') {
   const id = randomUUID()
-  return db.product.create({ data: { id, slug: id, name: 'QA product', categoryId: 'qa-category', price, compareAtPrice: '12.99', stock, tags: [] } })
+  // Producto y saldo de apertura en la misma transacción: el trigger diferido
+  // de inventario exige que el stock coincida con los movimientos CONFIRMADOS.
+  return db.$transaction(async tx => {
+    const row = await tx.product.create({ data: { id, slug: id, name: 'QA product', categoryId: 'qa-category', price, compareAtPrice: '12.99', stock, tags: [] } })
+    if (stock > 0) {
+      await tx.inventoryMovement.create({ data: {
+        id: randomUUID(), productId: id, type: 'INITIAL_BALANCE', direction: 'IN', status: 'CONFIRMED',
+        quantity: stock, balanceAfter: stock, reason: 'QA saldo inicial', reference: 'QA seed',
+        sourceKey: `qa-initial:${id}`, createdById: 'qa-admin', confirmedById: 'qa-admin', confirmedAt: new Date(),
+      } })
+    }
+    return row
+  })
 }
 const create = (body, options = {}) => request('/api/orders', { method: 'POST', body, key: randomUUID(), ...options })
 
@@ -89,6 +101,10 @@ before(async () => {
   const limits = await import('../../src/middleware/orderLimits.js')
   createLimit = limits.createOrderLimit; receiptLimit = limits.receiptLimit
   const { createApp } = await import('../../src/index.js')
+  // El grafo de módulos puede cargar un .env real del repositorio; aquí se
+  // restablecen las variables que este test controla explícitamente.
+  delete process.env.CORS_ORIGINS
+  process.env.CORS_ORIGIN = 'http://qa.invalid'
   const fakeUpload = async () => { uploads++; return 'https://qa-upload.invalid/qa.png' }
   server = createApp({ orders: createOrdersRouter({ uploadReceipt: fakeUpload }),
     admin: createAdminRouter({ uploadImage: fakeUpload, uploadModel: fakeUpload }) }).listen(0, '127.0.0.1')
@@ -215,6 +231,16 @@ test('legal delivery flow records each transition once; delivered order cannot c
   const path = `/api/admin/orders/${created.data.id}/status`
   const update = status => request(path, { method: 'PATCH', body: { status }, token: tokens.admin })
   assert.equal((await update('PENDING')).status, 200)
+  // PAID exige cobro verificado en POS (regla del flujo integrado): sin una
+  // venta POS confirmada la transición se rechaza.
+  assert.equal((await update('PAID')).status, 409)
+  const session = await db.cashSession.create({ data: { id: 'qa-session', userId: 'qa-admin', openingAmount: 0 } })
+  await db.posSale.create({ data: {
+    id: 'qa-pos-' + created.data.id, orderId: created.data.id, userId: 'qa-admin',
+    subtotal: 9.99, discount: 0, total: 9.99, status: 'CONFIRMED', confirmedAt: new Date(),
+    items: { create: [{ id: 'qa-pos-item-' + created.data.id, productId: p.id, name: 'QA product', sku: 'QA-SKU-1', quantity: 1, unitPrice: 9.99, lineTotal: 9.99 }] },
+    payments: { create: [{ id: 'qa-pos-pay-' + created.data.id, method: 'card', amount: 9.99, received: 9.99, change: 0, status: 'CONFIRMED', confirmedAt: new Date(), confirmedById: 'qa-admin', sessionId: session.id }] },
+  } })
   for (const status of ['CONFIRMED', 'PAID', 'SHIPPED', 'DELIVERED']) {
     assert.equal((await update(status)).status, 200)
     assert.equal((await update(status)).status, 200)

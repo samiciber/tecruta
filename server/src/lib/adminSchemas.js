@@ -24,7 +24,10 @@ const media = z.string({ error: 'La URL debe ser texto.' }).trim().max(2000, 'La
   }, 'Usa una URL HTTP(S) o una ruta local válida.').transform(value => value || null)
 const json = z.json({ error: 'El campo debe contener datos JSON válidos.' })
 const productFields = {
-  slug, name: text('El nombre'), category: text('La categoría'), sku,
+  // El slug es opcional al crear: si no se envía, el servidor lo genera
+  // automáticamente a partir del nombre (ver createAdminProduct).
+  slug: slug.optional(),
+  name: text('El nombre'), category: text('La categoría'), sku,
   brand: optionalText(120), brandId: text('El ID de marca').nullable().optional(),
   price: money, compareAtPrice: money.nullable().optional(), stock: stock.optional(), expectedStock: stock.optional(), stockReason: optionalText(240),
   featured: boolean.optional(), bestSeller: boolean.optional(),

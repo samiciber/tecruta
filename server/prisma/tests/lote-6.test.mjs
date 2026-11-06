@@ -24,7 +24,7 @@ async function request(path, { method = 'GET', body, user = 'admin' } = {}) {
 }
 const post = (path, body, user) => request('admin/' + path, { method: 'POST', body, user })
 const patch = (path, body, user) => request('admin/' + path, { method: 'PATCH', body, user })
-const body = extra => ({ slug: 'qa-' + randomUUID(), name: 'QA producto', category: 'qa-category', price: 19.9, stock: 3, ...extra })
+const body = extra => ({ slug: 'qa-' + randomUUID(), name: 'QA producto', category: 'qa-category', price: 19.9, stock: 3, stockReason: 'Saldo inicial QA', ...extra })
 async function create(extra = {}) {
   const result = await post('products', body(extra)); assert.equal(result.status, 201, JSON.stringify(result.data)); return result.data
 }
@@ -109,7 +109,7 @@ test('patch changes and clears both brand columns, preserving other fields and D
 test('editing reconciles old text with its relation/name; unknown legacy text requires explicit repair', async () => {
   const original = await create({brandId:'qa-a'})
   await db.product.update({where:{id:original.id},data:{brand:'QA stale text'}})
-  await assertPair((await patch('products/'+original.id,{stock:5})).data,'qa-a','UGREEN')
+  await assertPair((await patch('products/'+original.id,{stock:5,expectedStock:3,stockReason:'Ajuste QA'})).data,'qa-a','UGREEN')
   await db.product.update({where:{id:original.id},data:{brandId:null,brand:'ugreen'}})
   await assertPair((await patch('products/'+original.id,{price:20})).data,'qa-a','UGREEN')
   await db.product.update({where:{id:original.id},data:{brandId:null,brand:'QA unknown legacy'}})
@@ -139,7 +139,9 @@ test('categories/payments validate before writes and duplicates/missing records 
   assert.equal((await request('qa/missing',{method:'PATCH',body:{}})).status,404)
 })
 test('deletion returns 409 for real foreign keys, 204 after unlinking and 404 when missing', async () => {
-  const product = await create(), cart = await db.cart.create({data:{userId:'qa-client'}})
+  // Semilla directa sin movimientos: el flujo de borrado por API solo es
+  // alcanzable para productos sin historial de inventario (FK RESTRICT).
+  const product = await db.product.create({ data: { slug: 'qa-' + randomUUID(), name: 'QA producto', categoryId: 'qa-category', price: 19.9, stock: 0, tags: [] } }), cart = await db.cart.create({data:{userId:'qa-client'}})
   await db.cartItem.create({data:{cartId:cart.id,productId:product.id,quantity:1}})
   assert.equal((await request('admin/products/'+product.id,{method:'DELETE'})).status,409)
   assert.ok(await db.product.findUnique({where:{id:product.id}}))
@@ -149,7 +151,7 @@ test('deletion returns 409 for real foreign keys, 204 after unlinking and 404 wh
 })
 test('concurrent product patches preserve coherent brand pairs and fields omitted by the other edit', async () => {
   const original = await create({brandId:'qa-a'})
-  const results = await Promise.all([patch('products/'+original.id,{brandId:'qa-b',price:22}),patch('products/'+original.id,{brandId:'qa-a',stock:7})])
+  const results = await Promise.all([patch('products/'+original.id,{brandId:'qa-b',price:22}),patch('products/'+original.id,{brandId:'qa-a',stock:7,expectedStock:3,stockReason:'Ajuste QA'})])
   for (const result of results) { assert.equal(result.status,200); assert.equal(result.data.brand,result.data.brandSlug==='qa-a'?'UGREEN':'QA Segunda') }
   const row = await db.product.findUnique({where:{id:original.id},include:{brandRef:true}}); assert.equal(row.brand,row.brandRef.name); assert.equal(Number(row.price),22); assert.equal(row.stock,7)
 })
@@ -157,7 +159,7 @@ test('brand rename while the product waits on its lock is read again before stor
   const original = await create({brandId:'qa-rename'})
   let release, notify; const hold = new Promise(resolve=>release=resolve), locked = new Promise(resolve=>notify=resolve)
   const rename = db.$transaction(async tx=>{ await tx.$queryRaw`SELECT id FROM brands WHERE id = 'qa-rename' FOR UPDATE`; notify(); await hold; await tx.brand.update({where:{id:'qa-rename'},data:{name:'QA Después'}}) })
-  await locked; const pending = patch('products/'+original.id,{brandId:'qa-rename',stock:4})
+  await locked; const pending = patch('products/'+original.id,{brandId:'qa-rename',stock:4,expectedStock:3,stockReason:'Ajuste QA'})
   let waiting = false
   try {
     for (let i=0;i<100;i++) { const rows = await db.$queryRaw`SELECT pid FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND query LIKE 'SELECT id FROM brands%'`; if(rows.length){waiting=true;break} await new Promise(resolve=>setTimeout(resolve,10)) }

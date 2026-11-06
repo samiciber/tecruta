@@ -18,6 +18,7 @@ test('footer, layout preview and newsletter persist in disposable PostgreSQL wit
     }
     const config = (await request('/api/admin/footer-content', { role: 'admin' })).data
     config.footer.description = 'Descripción persistida de prueba.'
+    config.legal.privacidad.body = 'Si te suscribes a nuestras novedades, aceptas esta política de privacidad.'
     assert.equal((await request('/api/admin/footer-content', { role: 'admin', method: 'PUT', body: config })).status, 200)
     const invalid = structuredClone(config); invalid.footer.groups[0].links[0].href = 'javascript:alert(1)'
     assert.equal((await request('/api/admin/footer-content', { role: 'admin', method: 'PUT', body: invalid })).status, 400)

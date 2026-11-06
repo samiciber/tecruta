@@ -12,6 +12,9 @@ const root = fileURLToPath(new URL('../../../', import.meta.url))
 const migrations = join(root, 'server/prisma/migrations')
 const schema = join(root, 'server/prisma/schema.prisma')
 const name = '20261012000000_add_nav_brands_stores_saved_items'
+// store_search depende de brands (creada por `name`): debe excluirse también
+// del estado previo y aplicarse junto a `name` en el upgrade.
+const storeSearch = '20261021010000_store_search'
 const container = `tecruta-lote2-test-${process.pid}`
 const image = 'postgres@sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d'
 const legacySlugs = ['power-banks', 'cargadores', 'cables', 'audifonos', 'accesorios', 'celulares', 'tablets', 'laptops']
@@ -67,7 +70,7 @@ before(async () => {
   }
   assert.ok(ready, 'Disposable PostgreSQL started')
   currentWorkspace = createPrismaWorkspace({ tempRoot: temp, name: 'current', schemaSource: schema, migrationsSource: migrations })
-  previousWorkspace = createPrismaWorkspace({ tempRoot: temp, name: 'previous', schemaSource: schema, migrationsSource: migrations, excludedMigrations: [name] })
+  previousWorkspace = createPrismaWorkspace({ tempRoot: temp, name: 'previous', schemaSource: schema, migrationsSource: migrations, excludedMigrations: [name, storeSearch] })
 })
 after(() => {
   try { if (started) docker('rm', '--force', '--volumes', container) }
@@ -120,6 +123,7 @@ test('already matching schema and legacy data can be baselined without executing
   deploy('baseline', previousWorkspace.schemaPath)
   sql('baseline', readFileSync(new URL('./lote-2-fixtures.sql', import.meta.url), 'utf8'))
   sql('baseline', readFileSync(join(currentWorkspace.migrationsPath, name, 'migration.sql'), 'utf8'))
+  sql('baseline', readFileSync(join(currentWorkspace.migrationsPath, storeSearch, 'migration.sql'), 'utf8'))
   assertMatchesSchema('baseline')
   assert.equal(sql('baseline', 'SELECT count(*) FROM categories WHERE legacy;'), '8')
   sql('baseline', `
@@ -134,6 +138,7 @@ test('already matching schema and legacy data can be baselined without executing
   `)
   const before = snapshot('baseline')
   prisma('baseline', 'migrate', 'resolve', '--applied', name, '--schema', currentWorkspace.schemaPath)
+  prisma('baseline', 'migrate', 'resolve', '--applied', storeSearch, '--schema', currentWorkspace.schemaPath)
   assert.match(prisma('baseline', 'migrate', 'deploy', '--schema', currentWorkspace.schemaPath), /No pending migrations/)
   assert.deepEqual(snapshot('baseline'), before)
 })

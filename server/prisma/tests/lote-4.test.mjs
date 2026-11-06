@@ -14,6 +14,9 @@ import { createEmptyDotenv, createPrismaWorkspace, runDocker, runPrisma } from '
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const source = process.env.TECRUTA_QA_MIGRATIONS_DIR || join(root, 'server/prisma/migrations')
 const migration = '20261012000002_add_secure_auth_codes_oauth_sessions'
+// staff_credentials_security usa tokenVersion (creado por `migration`): se
+// excluye también del estado previo y se aplica junto a `migration` en el upgrade.
+const staffSecurity = '20261019000000_staff_credentials_security'
 const nav = '20261012000000_add_nav_brands_stores_saved_items'
 const schema = join(root, 'server/prisma/schema.prisma')
 const container = `tecruta-lote4-test-${process.pid}`
@@ -86,11 +89,12 @@ before(async () => {
   }
   assert.ok(ready)
   sql('postgres', 'CREATE DATABASE qa_auth; CREATE DATABASE qa_shadow; CREATE DATABASE qa_fresh;')
-  workspace = createPrismaWorkspace({ tempRoot: temp, name: 'prisma', schemaSource: schema, migrationsSource: source, excludedMigrations: [migration] })
+  workspace = createPrismaWorkspace({ tempRoot: temp, name: 'prisma', schemaSource: schema, migrationsSource: source, excludedMigrations: [migration, staffSecurity] })
   prisma('migrate', 'deploy', '--schema', workspace.schemaPath)
   const passwordHash = await bcrypt.hash(password, 10)
   sql('qa_auth', `INSERT INTO users (id, email, "passwordHash", nombre, apellido, role, verified, "verificationCode", "resetCode", "updatedAt") VALUES ('qa-old', 'qa-old@example.invalid', '${passwordHash}', 'QA', 'Old', 'ADMIN', true, 'legacy-verification', 'legacy-reset', '2026-01-01');`)
   cpSync(join(source, migration), join(workspace.migrationsPath, migration), { recursive: true })
+  cpSync(join(source, staffSecurity), join(workspace.migrationsPath, staffSecurity), { recursive: true })
   prisma('migrate', 'deploy', '--schema', workspace.schemaPath)
   const client = await import('../../src/lib/prisma.js'); db = client.prisma
   const tokens = await import('../../src/lib/token.js'); signSession = tokens.signSession; signToken = tokens.signToken
@@ -129,7 +133,10 @@ test('migration preserves account/password/role, invalidates plaintext codes and
   const old = await db.user.findUnique({ where: { id: 'qa-old' } })
   assert.equal(old.role, 'ADMIN'); assert.equal(old.email, 'qa-old@example.invalid'); assert.ok(old.verified)
   assert.ok(await bcrypt.compare(password, old.passwordHash))
-  assert.equal(old.verificationCode, null); assert.equal(old.resetCode, null); assert.equal(old.tokenVersion, 0)
+  assert.equal(old.verificationCode, null); assert.equal(old.resetCode, null)
+  // El upgrade aplica también staff_credentials_security, que invalida las
+  // sesiones existentes del personal (tokenVersion +1 para cuentas staff).
+  assert.equal(old.tokenVersion, 1)
   assert.match(prisma('migrate', 'diff', '--from-schema-datasource', workspace.schemaPath, '--to-schema-datamodel', workspace.schemaPath, '--script', '--exit-code'), /empty migration/)
   assert.match(prisma('migrate', 'diff', '--from-migrations', workspace.migrationsPath, '--to-schema-datamodel', workspace.schemaPath,
     '--shadow-database-url', process.env.DATABASE_URL.replace('/qa_auth', '/qa_shadow'), '--script', '--exit-code'), /empty migration/)
@@ -240,16 +247,24 @@ test('exchange URL contains no session token; per-tab verifier and one-use/60-se
   const later = await flow(), expired = exchangeCode(await callback(later)); clock += 60001
   assert.equal((await post('google/exchange', { code: expired, verifier: later.verifier })).status, 401)
 })
-test('verified local account links without changing password/name/role; new Google account never inherits provider role', async () => {
+test('verified local account links without changing password/name/role; staff and new Google accounts are never linked to provider roles', async () => {
   const email = uniqueEmail(), passwordHash = await bcrypt.hash(password, 10)
-  const existing = await db.user.create({ data: { email, passwordHash, nombre: 'QA existing', apellido: 'Preserved', verified: true, role: 'ADMIN' } })
+  const existing = await db.user.create({ data: { email, passwordHash, nombre: 'QA existing', apellido: 'Preserved', verified: true, role: 'CUSTOMER' } })
   const f = await flow({ sub: randomUUID(), email, email_verified: true, given_name: 'Changed' })
   const result = await callback(f)
   const signedIn = await post('google/exchange', { code: exchangeCode(result), verifier: f.verifier })
-  assert.equal(signedIn.status, 200); assert.equal(signedIn.data.user.id, existing.id); assert.equal(signedIn.data.user.role, 'ADMIN')
+  assert.equal(signedIn.status, 200); assert.equal(signedIn.data.user.id, existing.id); assert.equal(signedIn.data.user.role, 'CUSTOMER')
   const after = await db.user.findUnique({ where: { id: existing.id } })
   assert.ok(after.passwordHash === existing.passwordHash && after.verified && after.googleId)
   assert.equal(after.nombre, 'QA existing'); assert.equal(after.apellido, 'Preserved')
+  // El personal no vincula Google por diseño: el callback rechaza el acceso.
+  const staffEmail = uniqueEmail()
+  await db.user.create({ data: { email: staffEmail, passwordHash, nombre: 'QA', apellido: 'Staff', verified: true, role: 'ADMIN' } })
+  const staffFlow = await flow({ sub: randomUUID(), email: staffEmail, email_verified: true })
+  const staffCallback = await callback(staffFlow)
+  assert.equal(staffCallback.status, 302)
+  assert.match(staffCallback.location || '', /googleError=(access|linking)/)
+  assert.equal((await db.user.findUnique({ where: { email: staffEmail } })).googleId, null)
   const newFlow = await flow({ sub: randomUUID(), email: uniqueEmail(), email_verified: true, role: 'ADMIN' })
   const created = await post('google/exchange', { code: exchangeCode(await callback(newFlow)), verifier: newFlow.verifier })
   assert.equal(created.status, 200); assert.equal(created.data.user.role, 'CUSTOMER')
@@ -265,23 +280,26 @@ test('production OAuth cookie is host-only, Secure, HttpOnly and Lax with a shor
   } finally { process.env.NODE_ENV = beforeMode; process.env.GOOGLE_CALLBACK_URL = beforeCallback }
 })
 test('logout-all, password change and recovery invalidate every previous version, including legacy/null version', async () => {
+  // /login y change-password son solo para clientes; el personal usa el panel.
+  const customerEmail = uniqueEmail(), customerHash = await bcrypt.hash(password, 10)
+  await db.user.create({ data: { email: customerEmail, passwordHash: customerHash, nombre: 'QA', apellido: 'Customer', verified: true, role: 'CUSTOMER' } })
   await db.user.update({ where: { id: 'qa-old' }, data: { tokenVersion: null } })
   const legacy = signToken({ sub: 'qa-old' })
   assert.equal((await request('/api/auth/me', { token: legacy })).status, 200)
   assert.equal((await post('logout-all', {}, legacy)).status, 200)
   assert.equal((await request('/api/auth/me', { token: legacy })).status, 401)
-  let session = await login(); assert.equal(session.status, 200)
+  let session = await login(customerEmail, password); assert.equal(session.status, 200)
   const nextPassword = randomBytes(24).toString('hex')
   assert.equal((await post('change-password', { currentPassword: password, newPassword: nextPassword }, session.data.token)).status, 200)
   assert.equal((await request('/api/auth/me', { token: session.data.token })).status, 401)
-  assert.equal((await login()).status, 401)
-  session = await login('qa-old@example.invalid', nextPassword); assert.equal(session.status, 200)
-  await post('forgot-password', { email: 'qa-old@example.invalid' })
-  const code = lastCode('qa-old@example.invalid', 'reset'), newPassword = randomBytes(24).toString('hex')
-  assert.equal((await post('reset-password', { email: 'qa-old@example.invalid', code, newPassword })).status, 200)
+  assert.equal((await login(customerEmail, password)).status, 401)
+  session = await login(customerEmail, nextPassword); assert.equal(session.status, 200)
+  await post('forgot-password', { email: customerEmail })
+  const code = lastCode(customerEmail, 'reset'), newPassword = randomBytes(24).toString('hex')
+  assert.equal((await post('reset-password', { email: customerEmail, code, newPassword })).status, 200)
   assert.equal((await request('/api/auth/me', { token: session.data.token })).status, 401)
-  assert.equal((await post('reset-password', { email: 'qa-old@example.invalid', code, newPassword })).status, 400)
-  assert.equal((await login('qa-old@example.invalid', newPassword)).status, 200)
+  assert.equal((await post('reset-password', { email: customerEmail, code, newPassword })).status, 400)
+  assert.equal((await login(customerEmail, newPassword)).status, 200)
 })
 test('revocation after callback prevents exchanging a pending Google login into a fresh session', async () => {
   const profile = { sub: randomUUID(), email: uniqueEmail(), email_verified: true }

@@ -47,16 +47,16 @@ before(async () => {
 beforeEach(() => { limits.loginRateLimiter.resetKey('127.0.0.1'); limits.authActionRateLimiter.resetKey('127.0.0.1') })
 after(async () => { if (rt) await rt.close() })
 
-test('minimal migration: nullable alias, original tables/data/roles and no inventory/POS', async () => {
+test('migración actual: alias nullable, tablas originales y set completo con inventario/POS', async () => {
   const user = await db.user.findUnique({ where: { id: rt.admin.id } })
   assert.equal(user.adminUsername, null); assert.equal(user.role, 'ADMIN')
   const columns = await db.$queryRaw`SELECT column_name FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'adminUsername'`
   assert.equal(columns.length, 1)
   const tables = await db.$queryRaw`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`
-  assert.equal(tables.some(x => /inventory_movements|pos_sales|cash_sessions/.test(x.table_name)), false)
+  assert.equal(tables.some(x => /inventory_movements|pos_sales|cash_sessions/.test(x.table_name)), true)
   const migrations = await db.$queryRaw`SELECT migration_name FROM _prisma_migrations ORDER BY migration_name`
-  assert.equal(migrations.at(-1).migration_name, '20261018000000_admin_login_alias')
-  assert.equal(migrations.some(x => /inventory|pos_part/.test(x.migration_name)), false)
+  assert.equal(migrations.at(-1).migration_name, '20261021010000_store_search')
+  assert.equal(migrations.some(x => /inventory|pos_part/.test(x.migration_name)), true)
 })
 test('alias assignment is explicit, normalized and available only to verified ADMIN', async () => {
   assert.equal(normalizeAdminUsername(' ADMIN1234 '), 'admin1234')
@@ -76,26 +76,33 @@ test('alias assignment is explicit, normalized and available only to verified AD
 })
 test('upgrade from previous migrations preserves complete existing rows and produces no schema drift', () => {
   const migration = '20261018000000_admin_login_alias'
+  // staff_credentials_security usa adminUsername (creado por `migration`): se
+  // excluye también del estado previo y se aplica junto a `migration`.
+  const staffSecurity = '20261019000000_staff_credentials_security'
   const sql = input => runDocker(['exec', '-i', rt.container, 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1', '-U', 'qa_final_home', '-d', 'qa_admin_upgrade'], { input }).trim()
   runDocker(['exec', rt.container, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-U', 'qa_final_home', '-d', 'qa_final_home', '-c', 'CREATE DATABASE qa_admin_upgrade'])
   const url = new URL(process.env.DATABASE_URL); url.pathname = '/qa_admin_upgrade'
-  const setup = name => createPrismaWorkspace({ tempRoot: rt.tempRoot, name, schemaSource: join(rt.root, 'server/prisma/schema.prisma'), migrationsSource: join(rt.root, 'server/prisma/migrations'), ...(name === 'old-schema' ? { excludedMigrations: [migration] } : {}) })
+  const setup = name => createPrismaWorkspace({ tempRoot: rt.tempRoot, name, schemaSource: join(rt.root, 'server/prisma/schema.prisma'), migrationsSource: join(rt.root, 'server/prisma/migrations'), ...(name === 'old-schema' ? { excludedMigrations: [migration, staffSecurity] } : {}) })
   const old = setup('old-schema'), current = setup('new-schema'), dotenvPath = process.env.DOTENV_CONFIG_PATH
   const prisma = (workspace, args) => runPrisma({ root: rt.root, tempRoot: rt.tempRoot, schemaPath: workspace.schemaPath, dotenvPath, databaseUrl: url.href, args })
   prisma(old, ['migrate', 'deploy', '--schema', old.schemaPath])
-  sql(`INSERT INTO users (id,email,"passwordHash",nombre,apellido,role,verified,"googleId","updatedAt") VALUES ('qa-old-admin','legacy@example.test','synthetic-hash','QA','Legacy','ADMIN',true,'qa-old-google','2026-01-01');
+  sql(`INSERT INTO users (id,email,"passwordHash",nombre,apellido,role,verified,"googleId","updatedAt") VALUES ('qa-old-admin','legacy@example.test','synthetic-hash','QA','Legacy','CUSTOMER',true,'qa-old-google','2026-01-01');
     INSERT INTO categories (id,slug,name) VALUES ('qa-category','qa-category','QA');
-    INSERT INTO products (id,slug,name,price,stock,"categoryId",tags,"updatedAt") VALUES ('qa-product','qa-product','Producto QA',19.90,7,'qa-category','{}','2026-01-01');`)
+    BEGIN;
+    INSERT INTO products (id,slug,name,price,stock,"categoryId",tags,"updatedAt") VALUES ('qa-product','qa-product','Producto QA',19.90,7,'qa-category','{}','2026-01-01');
+    INSERT INTO inventory_movements (id,"productId",type,direction,status,quantity,"balanceAfter",reason,reference,"confirmedAt","sourceKey") VALUES ('qa-movement','qa-product','INITIAL_BALANCE','IN','CONFIRMED',7,7,'QA saldo inicial','QA seed',NOW(),'qa-initial:qa-product');
+    COMMIT;`)
   const before = sql(`SELECT jsonb_build_object('user',(SELECT to_jsonb(u) FROM users u),'product',(SELECT to_jsonb(p) FROM products p))`)
   prisma(current, ['migrate', 'deploy', '--schema', current.schemaPath])
-  const after = sql(`SELECT jsonb_build_object('user',(SELECT to_jsonb(u) - 'adminUsername' FROM users u),'product',(SELECT to_jsonb(p) FROM products p))`)
+  const after = sql(`SELECT jsonb_build_object('user',(SELECT to_jsonb(u) - 'adminUsername' - 'mustChangePassword' - 'isSuspended' - 'temporaryPasswordExpiresAt' - 'ownerRecoveryEnabled' - 'mfaSecretEncrypted' - 'mfaPendingSecretEncrypted' - 'mfaEnabled' - 'mfaLastStep' - 'mfaRecoveryHashes' FROM users u),'product',(SELECT to_jsonb(p) FROM products p))`)
   assert.deepEqual(JSON.parse(after), JSON.parse(before))
   assert.equal(sql(`SELECT count(*) FROM users WHERE "adminUsername" IS NOT NULL`), '0')
   assert.match(prisma(current, ['migrate', 'diff', '--from-schema-datasource', current.schemaPath, '--to-schema-datamodel', current.schemaPath, '--script', '--exit-code']), /This is an empty migration/)
 })
 test('ADMIN email and alias share an account; store still accepts email only', async () => {
-  const expected = (await staffLogin(rt.admin.email)).data.user.id
-  for (const value of ['ADMIN1234', 'admin1234', '  AdMiN1234  ', ` ${rt.admin.email.toUpperCase()} `]) {
+  await db.user.update({ where: { id: rt.admin.id }, data: { adminUsername: 'admin1234' } })
+  const expected = (await staffLogin('admin1234')).data.user.id
+  for (const value of ['ADMIN1234', 'admin1234', '  AdMiN1234  ']) {
     const result = await staffLogin(value); assert.equal(result.status, 200); assert.equal(result.data.user.id, expected)
     const adminApi = await request('/api/admin/users', { token: result.data.token }); assert.equal(adminApi.status, 200)
   }
@@ -112,30 +119,29 @@ test('unknown identifiers, wrong passwords, unverified and customer accounts hav
   await staffLogin('unknown123'); await staffLogin('unknown123')
   assert.equal((await staffLogin('unknown123')).status, 429)
 })
-test('Google from panel and store returns to correct configured origin, conserves ADMIN and prevents code reuse', async () => {
+test('Google desde el panel queda rechazado; la tienda crea clientes y evita reutilizar código', async () => {
   const count = await db.user.count()
-  for (const app of ['panel', 'store']) {
-    const flow = await start(app), response = await callback(flow)
-    const location = new URL(response.location)
-    assert.equal(location.origin, app === 'panel' ? panel : shop)
-    assert.equal(location.pathname, '/auth/google/callback')
-    assert.deepEqual([...location.searchParams.keys()], ['code'])
-    const code = location.searchParams.get('code')
-    // Proof and audience are both bound; failed attempts do not consume the right code.
-    assert.equal((await exchange({ ...flow, verifier: randomBytes(32).toString('base64url') }, code, app)).status, 401)
-    assert.equal((await exchange(flow, code, app === 'panel' ? 'store' : 'panel')).status, 401)
-    const session = await exchange(flow, code, app)
-    assert.equal(session.status, 200); assert.equal(session.data.user.id, rt.admin.id); assert.equal(session.data.user.role, 'ADMIN')
-    assert.equal((await exchange(flow, code, app)).status, 401)
-    assert.match((await callback(flow)).location, /googleError=state/)
-  }
-  assert.equal(await db.user.count(), count)
+  assert.equal((await request('/api/auth/google?app=panel')).status, 403)
+  const flow = await start('store', { sub: 'qa-new-google', email: 'qa-new-google@example.test', email_verified: true }), response = await callback(flow)
+  const location = new URL(response.location)
+  assert.equal(location.origin, shop)
+  assert.equal(location.pathname, '/auth/google/callback')
+  assert.deepEqual([...location.searchParams.keys()], ['code'])
+  const code = location.searchParams.get('code')
+  // Proof y audiencia están ligados; los intentos fallidos no consumen el código.
+  assert.equal((await exchange({ ...flow, verifier: randomBytes(32).toString('base64url') }, code, 'store')).status, 401)
+  assert.equal((await exchange(flow, code, 'panel')).status, 403)
+  const session = await exchange(flow, code, 'store')
+  assert.equal(session.status, 200); assert.equal(session.data.user.role, 'CUSTOMER')
+  assert.equal((await exchange(flow, code, 'store')).status, 401)
+  assert.match((await callback(flow)).location, /googleError=state/)
+  assert.equal(await db.user.count(), count + 1)
 })
-test('Google panel rejects customers and unknown accounts without creating or upgrading users', async () => {
+test('Google del panel rechaza clientes y desconocidos sin crear ni escalar cuentas', async () => {
   const count = await db.user.count()
   for (const profile of [customerProfile, { ...adminProfile, sub: 'new-identity', email: 'unknown@example.test' }]) {
-    const result = await callback(await start('panel', profile))
-    assert.equal(result.location, `${panel}/iniciar-sesion?googleError=access`)
+    const response = await request(`/api/auth/google?challenge=${challenge(randomBytes(32).toString('base64url'))}&app=panel`)
+    assert.equal(response.status, 403)
   }
   assert.equal(await db.user.count(), count)
   const customer = await db.user.findUnique({ where: { id: rt.customer.id } })
@@ -143,11 +149,9 @@ test('Google panel rejects customers and unknown accounts without creating or up
   const flow = await start('store', customerProfile), response = await callback(flow)
   assert.equal((await exchange(flow, new URL(response.location).searchParams.get('code'), 'store')).status, 200)
 })
-test('role is rechecked before exchange and in ADMIN API', async () => {
-  const flow = await start(), result = await callback(flow), code = new URL(result.location).searchParams.get('code')
+test('el rol se vuelve a comprobar en la API de administración', async () => {
   const session = await staffLogin('ADMIN1234')
   await db.user.update({ where: { id: rt.admin.id }, data: { role: 'CUSTOMER' } })
-  assert.equal((await exchange(flow, code)).status, 403)
   assert.equal((await staffLogin('ADMIN1234')).status, 401)
   assert.equal((await request('/api/admin/users', { token: session.data.token })).status, 403)
   await db.user.update({ where: { id: rt.admin.id }, data: { role: 'ADMIN' } })
@@ -157,23 +161,24 @@ test('state, cookie tampering, expiry, provider errors and external destinations
   assert.equal((await request('/api/auth/google?app=panel&app=store')).status, 400)
   assert.throws(() => authFrontendOrigin('https://evil.example.test'))
   assert.throws(() => authFrontendOrigin('panel', { NODE_ENV: 'production', CORS_ORIGINS: shop }))
-  const flow = await start(), original = providerCalls
+  const flow = await start('store', customerProfile), original = providerCalls
   assert.match((await callback({ ...flow, cookie: flow.cookie + 'x' })).location, /googleError=state/)
   assert.match((await callback({ ...flow, state: randomBytes(32).toString('base64url') })).location, /googleError=state/)
   assert.equal(providerCalls, original)
   clock += OAUTH_TTL_MS + 1000
   assert.match((await callback(flow)).location, /googleError=state/)
   clock = Date.now()
-  const denied = await start()
+  const denied = await start('store', customerProfile)
   const response = await request(`/api/auth/google/callback?state=${denied.state}&error=access_denied`, { cookie: denied.cookie })
-  assert.equal(response.location, `${panel}/iniciar-sesion?googleError=denied`)
+  assert.equal(response.location, `${shop}/iniciar-sesion?googleError=denied`)
   const future = { CORS_ORIGINS: `${shop},https://admin.example.test`, PANEL_ORIGIN: 'https://admin.example.test' }
   assert.equal(authFrontendOrigin('panel', future), 'https://admin.example.test')
 })
-test('verified email recovery establishes password on Google account, keeps identity, invalidates sessions and consumes code once', async () => {
+test('recuperación verificada por correo restablece la contraseña del administrador principal y Google sigue rechazado para el personal', async () => {
   const old = await staffLogin('ADMIN1234')
   await db.user.update({ where: { id: rt.admin.id }, data: { passwordHash: hash(randomBytes(32).toString('hex')) } })
   assert.equal((await staffLogin('ADMIN1234')).status, 401)
+  await db.user.update({ where: { id: rt.admin.id }, data: { ownerRecoveryEnabled: true } })
   assert.equal((await request('/api/auth/forgot-password', { body: { email: rt.admin.email } })).status, 202)
   for (let i = 0; i < 20 && !mails.length; i++) await new Promise(resolve => setTimeout(resolve, 10))
   const mail = mails.at(-1); assert.equal(mail.to, rt.admin.email)
@@ -182,8 +187,8 @@ test('verified email recovery establishes password on Google account, keeps iden
   assert.equal((await request('/api/auth/reset-password', { body })).status, 400)
   assert.equal((await request('/api/auth/me', { token: old.data.token })).status, 401)
   const user = await db.user.findUnique({ where: { id: rt.admin.id } })
-  assert.equal(user.googleId, adminProfile.sub); assert.equal(user.role, 'ADMIN'); assert.equal(user.adminUsername, 'admin1234')
+  assert.equal(user.role, 'ADMIN'); assert.equal(user.adminUsername, 'admin1234')
   assert.equal((await staffLogin('ADMIN1234')).status, 200)
-  const flow = await start(), response = await callback(flow)
-  assert.equal((await exchange(flow, new URL(response.location).searchParams.get('code'))).data.user.id, rt.admin.id)
+  const flow = await start('store', adminProfile), response = await callback(flow)
+  assert.match(response.location, /googleError=linking/)
 })

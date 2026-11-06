@@ -40,6 +40,11 @@ export default function ProductDetail() {
   const [detail, setDetail] = useState({ slug, status: 'loading' })
   const [retry, setRetry] = useState(0)
   const [zoomOpen, setZoomOpen] = useState(false)
+  // Ficha técnica compacta: muestra 5 filas y el resto tras "Más información".
+  const [allSpecs, setAllSpecs] = useState(false)
+  // Si la imagen falla, el área conserva su tamaño con un placeholder estable.
+  const [imageFailed, setImageFailed] = useState(false)
+  useEffect(() => { setImageFailed(false); setAllSpecs(false) }, [slug, activeImage])
   const zoomTrigger = useRef(null)
   const viewedProduct = useRef(null)
 
@@ -162,7 +167,11 @@ export default function ProductDetail() {
                     caso extremo de un banner desproporcionadamente alto;
                     si algún producto real lo llega a disparar, avisar
                     antes de tocar esto de nuevo — ver conversación. */}
-                {gallery.length ? <button ref={zoomTrigger} type="button" className="product-zoom-trigger" onClick={() => setZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}><img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" loading="eager" decoding="async" alt={product.name} className="h-auto max-h-[85vh] w-full" /><span>Ampliar imagen</span></button> : <p className="p-8 text-center">Imagen no disponible</p>}
+                {gallery.length ? (imageFailed ? (
+                  <div role="img" aria-label={`Imagen de ${product.name} no disponible`} className="flex aspect-square w-full items-center justify-center text-ink-soft dark:text-paper/50">
+                    <span className="flex flex-col items-center gap-2 p-8 text-center text-sm"><Images className="h-8 w-8" />Imagen no disponible</span>
+                  </div>
+                ) : <button ref={zoomTrigger} type="button" className="product-zoom-trigger" onClick={() => setZoomOpen(true)} aria-label={`Ampliar imagen de ${product.name}`}><img src={optimizeImage(gallery[Math.min(activeImage, gallery.length - 1)],1200)} width="1200" height="1200" loading="eager" decoding="async" alt={product.name} onError={() => setImageFailed(true)} className="h-auto max-h-[85vh] w-full" /><span>Ampliar imagen</span></button>) : <p className="p-8 text-center">Imagen no disponible</p>}
               </div>
               {gallery.length > 1 && (
                 <div className="mt-3 flex gap-2">
@@ -174,7 +183,7 @@ export default function ProductDetail() {
                       aria-label={`Ver imagen ${i + 1} de ${product.name}`}
                       className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-route-soft transition-colors dark:bg-route-softDark ${activeImage === i ? 'border-route' : 'border-transparent'}`}
                     >
-                      <img src={optimizeImage(img,128)} width="64" height="64" loading="lazy" alt="" className="h-full w-full object-contain" />
+                      <img src={optimizeImage(img,128)} width="64" height="64" loading="lazy" alt="" onError={(e) => { e.currentTarget.style.visibility = 'hidden' }} className="h-full w-full object-contain" />
                     </button>
                   ))}
                 </div>
@@ -242,10 +251,16 @@ export default function ProductDetail() {
             <div className="rounded-xl2 border border-paper-line p-4 dark:border-night-line">
               <table className="product-specifications">
                 <caption>Ficha técnica</caption><tbody>
-                {product.specifications.map((spec) => (
+                {(allSpecs ? product.specifications : product.specifications.slice(0, 5)).map((spec) => (
                   <tr key={spec.label}><th scope="row">{spec.label}</th><td>{spec.value}</td></tr>
                 ))}
                 </tbody></table>
+              {product.specifications.length > 5 && (
+                <button type="button" onClick={() => setAllSpecs((value) => !value)} className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-route hover:underline">
+                  {allSpecs ? 'Ver menos' : `Más información (${product.specifications.length - 5} más)`}
+                  <ChevronRight className={`h-4 w-4 transition-transform ${allSpecs ? 'rotate-90' : ''}`} />
+                </button>
+              )}
             </div>
           )}
         </div>

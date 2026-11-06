@@ -10,6 +10,9 @@ INSERT INTO "users" ("id", "email", "passwordHash", "nombre", "apellido", "updat
 VALUES ('qa-user', 'qa@example.invalid', 'not-a-real-hash', 'QA', 'Example', '2026-01-01', 'qa-google');
 INSERT INTO "addresses" ("id", "userId", "departamento", "provincia", "distrito", "direccion")
 VALUES ('qa-address', 'qa-user', 'QA', 'QA', 'QA', 'Fictitious address');
+-- Producto y saldo de apertura en la misma transacción: el trigger diferido de
+-- inventario exige que el stock coincida con los movimientos CONFIRMADOS.
+BEGIN;
 INSERT INTO "products" (
     "id", "slug", "name", "brand", "price", "compareAtPrice", "stock", "tags",
     "categoryId", "updatedAt", "enable3D", "hotspots", "model3DUrl", "model3DPoster"
@@ -17,6 +20,14 @@ INSERT INTO "products" (
     'qa-product', 'qa-product', 'QA product', 'UGREEN', 49.90, 59.90, 7, ARRAY['qa'],
     'qa-category-power-banks', '2026-01-01', true, '[{"id":"qa"}]', '/qa.glb', '/qa.webp'
 );
+INSERT INTO "inventory_movements" (
+    "id", "productId", "type", "direction", "status", "quantity", "balanceAfter",
+    "reason", "reference", "confirmedAt", "createdById", "confirmedById", "sourceKey"
+) VALUES (
+    'qa-movement', 'qa-product', 'INITIAL_BALANCE', 'IN', 'CONFIRMED', 7, 7,
+    'QA saldo inicial', 'QA seed', NOW(), 'qa-user', 'qa-user', 'qa-initial:qa-product'
+);
+COMMIT;
 INSERT INTO "product_images" ("id", "url", "productId")
 VALUES ('qa-image', '/qa.webp', 'qa-product');
 INSERT INTO "payment_methods" ("id", "key", "label", "config")

@@ -1,9 +1,10 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { Trash2, Save, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, Save, Pencil, ChevronDown, ChevronUp, Eye } from 'lucide-react'
 import { useWorkspacePreference, useWorkspaceScroll } from '../../hooks/useWorkspaceMemory.js'
 import { api } from '../../services/api.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { ToastContext } from '../../components/ui/ToastProvider.jsx'
+import { STORE_ORIGIN } from '../../app/urls.js'
 import ProductForm, { productToFormValues } from './ProductForm.jsx'
 
 const PRODUCTS_PER_PAGE = 25
@@ -40,6 +41,20 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
   const [expanded, setExpanded] = useState(false)
   const [savingFull, setSavingFull] = useState(false)
 
+  // Sincroniza los campos cuando el producto cambia (guardado rápido,
+  // recarga tras un 409 o actualización desde otra pestaña).
+  useEffect(() => {
+    setDraft({
+      price: product.price,
+      compareAtPrice: product.compareAtPrice ?? '',
+      stock: product.stock,
+      stockReason: '',
+      featured: product.featured,
+      bestSeller: product.bestSeller,
+      category: product.category,
+    })
+  }, [product])
+
   const dirty =
     Number(draft.price) !== product.price ||
     (draft.compareAtPrice === '' ? null : Number(draft.compareAtPrice)) !== product.compareAtPrice ||
@@ -73,7 +88,20 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
       onSaved(updated)
       toast?.showToast(`"${product.name}" actualizado.`, 'success')
     } catch (err) {
-      toast?.showToast(err.message, 'error')
+      // Stock obsoleto: otro usuario (POS, inventario) cambió el saldo
+      // después de cargar la lista. Recarga los valores actuales para que
+      // la fila no quede mostrando números viejos.
+      if (err.status === 409 && err.message.includes('stock cambió')) {
+        try {
+          const fresh = await api.getProductBySlug(product.slug)
+          onSaved(fresh)
+          toast?.showToast('El stock cambió en otro lugar. Se recargaron los valores actuales: revisa y vuelve a guardar.', 'error')
+        } catch {
+          toast?.showToast(err.message, 'error')
+        }
+      } else {
+        toast?.showToast(err.message, 'error')
+      }
     } finally {
       setSaving(false)
     }
@@ -98,7 +126,17 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
       setExpanded(false)
       toast?.showToast(`"${updated.name}" actualizado.`, 'success')
     } catch (err) {
-      toast?.showToast(err.message, 'error')
+      if (err.status === 409 && err.message.includes('stock cambió')) {
+        try {
+          const fresh = await api.getProductBySlug(product.slug)
+          onSaved(fresh)
+          toast?.showToast('El stock cambió en otro lugar. Se recargaron los valores actuales: revisa y vuelve a guardar.', 'error')
+        } catch {
+          toast?.showToast(err.message, 'error')
+        }
+      } else {
+        toast?.showToast(err.message, 'error')
+      }
     } finally {
       setSavingFull(false)
     }
@@ -112,7 +150,7 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
             <img src={product.image} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-ink dark:text-paper">{product.name}</p>
-              <p className="truncate text-xs text-ink-soft dark:text-paper/50">{product.slug}</p>
+              <p className="truncate font-mono text-xs text-ink-soft dark:text-paper/50">{product.slug}{product.sku ? ` · ${product.sku}` : ''}</p>
             </div>
           </div>
         </td>
@@ -177,6 +215,16 @@ function ProductRow({ product, categories, token, onSaved, onDeleted }) {
             >
               {expanded ? <ChevronUp className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
             </button>
+            <a
+              href={`${STORE_ORIGIN}/producto/${product.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-ink/5 dark:text-paper/60 dark:hover:bg-paper/10"
+              aria-label={`Ver ${product.name} en la tienda`}
+              title="Ver en la tienda"
+            >
+              <Eye className="h-4 w-4" />
+            </a>
             <button
               type="button"
               onClick={handleDelete}
@@ -241,7 +289,7 @@ export default function AdminProducts() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return products
-    return products.filter((p) => p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q))
+    return products.filter((p) => p.name.toLowerCase().includes(q) || p.slug.toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q))
   }, [products, search])
 
   const pages = Math.max(1, Math.ceil(filtered.length / PRODUCTS_PER_PAGE))
@@ -292,7 +340,7 @@ export default function AdminProducts() {
           aria-label="Buscar productos por nombre o slug en todo el catálogo"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o slug…"
+          placeholder="Buscar por nombre, slug o SKU…"
           className="input-tr max-w-xs"
         />
         <div className="flex items-center gap-3">
