@@ -189,6 +189,8 @@ export function createSale(db, user, input) {
       for (const item of [...input.items].sort((a, b) => a.productId.localeCompare(b.productId))) {
         if (seen.has(item.productId)) fail(400, 'Agrupa las líneas repetidas antes de guardar.')
         seen.add(item.productId)
+        // Orden fijo y bloqueo antes de leer precios, stock y crear las FK.
+        await tx.$queryRaw`SELECT id FROM products WHERE id = ${item.productId} FOR UPDATE`
         const product = await tx.product.findUnique({ where: { id: item.productId } })
         if (!product || product.stock < item.quantity) fail(409, 'Un producto no tiene existencias suficientes.')
         if (money(product.price) !== money(item.expectedPrice)) fail(409, 'Un precio cambió. Actualiza los productos antes de confirmar.')
@@ -209,15 +211,6 @@ export function createSale(db, user, input) {
       const { gross, ...fields } = line
       return { ...fields, lineTotal: amount(gross - allocation) }
     })
-    if (!input.orderId) {
-      // Bloquear los productos ANTES de insertar las líneas: la FK de
-      // pos_sale_items toma KEY SHARE y el FOR UPDATE posterior de la
-      // confirmación provocaría un deadlock (40P01) entre cajas concurrentes
-      // del mismo producto. Orden fijo por id (ya ordenado en `lines`).
-      for (const line of lines) {
-        await tx.$queryRaw`SELECT id FROM products WHERE id = ${line.productId} FOR UPDATE`
-      }
-    }
     const sale = await tx.posSale.create({ data: { orderId: input.orderId ?? null, userId: user.id, customerName, customerDocument,
       subtotal: amount(subtotal), discount: amount(discount), total: amount(total), discountReason: discount ? input.discountReason : null,
       approvedById: discount ? user.id : null, items: { create: items }, payments: { create: plan } }, include: saleInclude })

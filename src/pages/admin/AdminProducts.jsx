@@ -337,7 +337,7 @@ export default function AdminProducts() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <input
           type="search"
-          aria-label="Buscar productos por nombre o slug en todo el catálogo"
+          aria-label="Buscar productos por nombre, slug o SKU en todo el catálogo"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar por nombre, slug o SKU…"

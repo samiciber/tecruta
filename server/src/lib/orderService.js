@@ -50,11 +50,6 @@ export async function createOrder(db, body, user, idempotencyKey, secret) {
       const token = existing.userId === null ? guestToken(keyHash, requestHash, secret) : null
       return { order: existing, replayed: true, receiptToken: token && hashSecret(token) === existing.receiptTokenHash ? token : undefined }
     }
-    const products = await tx.product.findMany({
-      where: { id: { in: items.map(item => item.productId) } },
-      select: { id: true, name: true, price: true, compareAtPrice: true },
-    })
-    const byId = new Map(products.map(product => [product.id, product]))
     // Bloquear los productos ANTES de crear el pedido: la inserción de order_items
     // toma KEY SHARE por la FK y un FOR UPDATE posterior provocaría un deadlock
     // (40P01) entre pedidos concurrentes del mismo producto. Orden fijo por id
@@ -63,6 +58,13 @@ export async function createOrder(db, body, user, idempotencyKey, secret) {
       const locked = await tx.$queryRaw`SELECT id FROM products WHERE id = ${productId} FOR UPDATE`
       if (!locked.length) throw rejected(409, 'Un producto ya no está disponible. Revisa el carrito.', productId)
     }
+    // Leer el precio después de obtener los bloqueos: un editor pudo haber
+    // guardado un precio nuevo mientras este pedido esperaba su turno.
+    const products = await tx.product.findMany({
+      where: { id: { in: items.map(item => item.productId) } },
+      select: { id: true, name: true, price: true, compareAtPrice: true },
+    })
+    const byId = new Map(products.map(product => [product.id, product]))
     let subtotal = new Prisma.Decimal(0)
     let savings = new Prisma.Decimal(0)
     const resolved = []

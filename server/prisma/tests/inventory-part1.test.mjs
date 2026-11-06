@@ -36,6 +36,21 @@ test('API: cuentas y permisos reales, sin confiar en el rol del JWT', async () =
   await rt.db.user.update({ where: { id: rt.cashier.id }, data: { role: 'CASHIER' } })
 })
 
+test('Crear producto sin slug genera enlace único y conserva enlaces explícitos', async () => {
+  const category = await rt.db.category.findUnique({ where: { slug: 'qa-inventory' } })
+  const body = { name: 'Cargador sintético QA automático', category: category.slug, price: 0, stock: 0 }
+  const create = extra => api('/api/admin/products', { user: rt.admin, method: 'POST', body: { ...body, ...extra } })
+  const a = await create({}), b = await create({})
+  assert.equal(a.status, 201); assert.equal(b.status, 201)
+  assert.equal(a.data.slug, 'cargador-sintetico-qa-automatico')
+  assert.equal(b.data.slug, a.data.slug + '-2')
+  const explicit = await create({ slug: 'enlace-sintetico-qa-personalizado' })
+  assert.equal(explicit.status, 201)
+  assert.equal(explicit.data.slug, 'enlace-sintetico-qa-personalizado')
+  assert.equal((await create({ slug: explicit.data.slug })).status, 409)
+  assert.equal((await api('/api/products/' + a.data.slug)).data.id, a.data.id)
+})
+
 test('SKU, fabricante e internos: ceros iniciales y unicidad cruzada concurrente', async () => {
   const a = await rt.product(), b = await rt.product()
   const add = (product, code) => inv('/products/' + product.id + '/barcodes', { method: 'POST', user: rt.warehouse, body: { code, kind: 'MANUFACTURER' } })
