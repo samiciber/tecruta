@@ -63,10 +63,10 @@ test('login real: ADMIN, CASHIER y WAREHOUSE por usuario; CUSTOMER rechazado en 
   assert.equal((await request('/api/auth/login', { user: null, method: 'POST', body: { email: rt.customer.email, password: 'Synthetic-panel-only-42' } })).status, 200)
   for (const user of [null, rt.customer, rt.cashier, rt.warehouse]) assert.equal((await request('/api/admin/staff', { user })).status, user ? 403 : 401)
 })
-test('creación por usuario con contraseña temporal, duplicados y suspensión', async () => {
+test('creación por usuario con contraseña administrada, duplicados y suspensión', async () => {
   const body = { username: 'workerqa', nombre: 'Trabajadora', apellido: 'Sintética', role: 'WAREHOUSE', temporaryPassword: 'Temporal-qa-123' }
   const r = await request('/api/admin/staff', { method: 'POST', body })
-  assert.equal(r.status, 201); assert.equal(r.data.username, 'workerqa'); assert.equal(r.data.mustChangePassword, true)
+  assert.equal(r.status, 201); assert.equal(r.data.username, 'workerqa'); assert.equal(r.data.mustChangePassword, false)
   assert.equal((await request('/api/admin/staff', { method: 'POST', body })).status, 409)
   const login = await request('/api/auth/staff-login', { user: null, method: 'POST', body: { identifier: 'workerqa', password: 'Temporal-qa-123' } })
   assert.equal(login.status, 200); assert.equal(login.data.user.role, 'WAREHOUSE')
